@@ -645,7 +645,7 @@ graph TD
     B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
     B1 --> C3["Update Peruntukan Massal: Opsi Pilih Semua Barang Sekaligus / Per Item, Filter Sumber Belum Berlokasi vs Semua Barang, Pilihan Seluruh / Rentang NUP, serta Opsi Langsung Alokasi ke Ruangan Kantor DBR"]
     B1 --> C4["Import SIMAN / Excel High-Speed XMLReader Streaming Engine &amp; Batch Upsert: Mampu Memproses Berkas Raksasa &gt;13.500 Aset / XML &gt;30MB Hanya dalam 2–3 Detik (RAM &lt;40MB Bebas Libxml OOM), Kode &amp; NUP Sama = Update, Beda = Insert &amp; Export Excel"]
-    B1 --> C5["Cetak Sticker Barcode / QR BMN (Ukuran Presisi 10&times;4 cm: Atas 1,5 cm, Bawah 2,5 cm, QR 2&times;2 cm; Pilihan Kertas A4 &amp; A3 serta Orientasi Portrait / Landscape, Cetak Satuan / Terpilih / Filter &amp; Rentang NUP)"]
+    B1 --> C5["Cetak Sticker Barcode / QR BMN (Ukuran Presisi 10&times;4 cm: Atas 1,5 cm, Bawah 2,5 cm, QR 2&times;2 cm; Pilihan A4 2 Kolom, A3+/SRA3 Portrait 3 Kolom &amp; A3 Landscape 4 Kolom, Cetak Satuan / Terpilih / Filter &amp; Rentang NUP)"]
     B1 --> C6["Sanitasi Otomatis &amp; Proteksi Anti-Duplikasi Nama Barang / Spesifikasi BMN (Bersih di Seluruh Tabel &amp; Cetakan PDF)"]
     B1 --> C7["⚡ Server-Side DataTables AJAX: Pemuatan Data Instan &amp; Ringan untuk 10.000+ Aset BMN, Multi-Page Checkbox Persistence, Pencarian Cepat &amp; Sorting NUP Numerik"]
 
@@ -1627,10 +1627,10 @@ graph TD
                                                     <li><strong>Landscape (Mendatar):</strong> 2 sticker per baris (8 sticker per halaman A4 dengan menjaga ukuran asli stiker tetap tepat 10 &times; 4 cm).</li>
                                                 </ul>
                                             </li>
-                                            <li><strong>Kertas A3 (297 &times; 420 mm - Format Besar):</strong>
+                                            <li><strong>Kertas A3 / A3+ (SRA3 - Format Besar):</strong>
                                                 <ul class="pl-3">
-                                                    <li><strong>Portrait (Tegak):</strong> 2 sticker per baris (18 sticker per lembar A3), menjaga skala 1:1 tepat 10 &times; 4 cm.</li>
-                                                    <li><strong>Landscape (Mendatar):</strong> 4 sticker per baris (24 sticker per lembar A3), sangat efisien untuk pencetakan massal dalam volume besar.</li>
+                                                    <li><strong>Portrait (Tegak - SRA3 320 &times; 450 mm):</strong> 3 sticker per baris (30 sticker per lembar A3+/SRA3), ukuran tiap stiker tetap tepat 10 &times; 4 cm tanpa terpotong dengan margin kiri/kanan aman untuk kertas stiker lebih lebar dari A3 standar.</li>
+                                                    <li><strong>Landscape (Mendatar - A3 420 &times; 297 mm):</strong> 4 sticker per baris (24 sticker per lembar A3), sangat efisien untuk pencetakan massal dalam volume besar.</li>
                                                 </ul>
                                             </li>
                                         </ul>

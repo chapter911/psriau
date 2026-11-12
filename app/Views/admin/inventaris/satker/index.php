@@ -1201,8 +1201,8 @@
                             <div class="custom-control custom-radio p-2.5 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">
                                 <input type="radio" id="paper-a3" name="paper" class="custom-control-input" value="A3">
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-a3" style="cursor: pointer;">
-                                    <i class="fas fa-file-invoice mr-1 text-info"></i> Kertas A3
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">297 &times; 420 mm (Format besar, kapasitas 2x lipat).</small>
+                                    <i class="fas fa-file-invoice mr-1 text-info"></i> Kertas A3 / A3+ (SRA3)
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">Portrait: SRA3 320 &times; 450 mm (3 kolom) | Landscape: A3 420 &times; 297 mm (4 kolom).</small>
                                 </label>
                             </div>
                         </div>
@@ -1212,7 +1212,7 @@
                                 <input type="radio" id="orientation-portrait" name="orientation" class="custom-control-input" value="portrait" checked>
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-portrait" style="cursor: pointer;">
                                     <i class="fas fa-file-alt mr-1 text-primary"></i> Portrait (Tegak)
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (12 stiker/hal) | A3: 2 kolom (18 stiker/hal).</small>
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (12 stiker/hal) | A3+/SRA3: 3 kolom (30 stiker/hal).</small>
                                 </label>
                             </div>
                             <div class="custom-control custom-radio p-2.5 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">

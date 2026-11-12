@@ -1727,9 +1727,9 @@ class InventarisSatker extends BaseController
             $orientation = 'portrait';
         }
 
-        // Parameter pilihan ukuran kertas (A4 atau A3)
+        // Parameter pilihan ukuran kertas (A4, A3, atau SRA3)
         $paper = strtoupper(trim((string) ($this->request->getPost('paper') ?? $this->request->getGet('paper') ?? 'A4')));
-        if (! in_array($paper, ['A4', 'A3'], true)) {
+        if (! in_array($paper, ['A4', 'A3', 'SRA3'], true)) {
             $paper = 'A4';
         }
 
@@ -1910,9 +1910,10 @@ class InventarisSatker extends BaseController
         $dompdfOptions->setIsRemoteEnabled(true);
         $dompdfOptions->setIsHtml5ParserEnabled(true);
 
+        $dompdfPaper = (($paper === 'A3' && $orientation === 'portrait') || $paper === 'SRA3') ? 'sra3' : $paper;
         $dompdf = new Dompdf($dompdfOptions);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper($paper, $orientation);
+        $dompdf->setPaper($dompdfPaper, $orientation);
         $dompdf->render();
 
         $filename = 'Sticker_BMN_' . date('Ymd_His') . '.pdf';

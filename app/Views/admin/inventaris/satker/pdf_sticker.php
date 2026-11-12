@@ -6,7 +6,7 @@ if (! function_exists('esc')) {
 }
 
 $paper = strtoupper($paper ?? 'A4');
-if (! in_array($paper, ['A4', 'A3'], true)) {
+if (! in_array($paper, ['A4', 'A3', 'SRA3'], true)) {
     $paper = 'A4';
 }
 $isLandscape = ($orientation ?? 'portrait') === 'landscape';
@@ -15,21 +15,35 @@ $isLandscape = ($orientation ?? 'portrait') === 'landscape';
  * Ukuran setiap stiker dikunci tepat 10cm x 4cm (100mm x 40mm):
  * - A4 Portrait  (210mm x 297mm): 2 kolom (2 x 100mm = 200mm)
  * - A4 Landscape (297mm x 210mm): 2 kolom (3 kolom = 300mm tidak muat di 297mm)
- * - A3 Portrait  (297mm x 420mm): 2 kolom (3 kolom = 300mm tidak muat di 297mm)
+ * - A3 / SRA3 Portrait (320mm x 450mm): 3 kolom (3 x 100mm = 300mm + jarak 2x3mm + margin 2x7mm = 320mm)
  * - A3 Landscape (420mm x 297mm): 4 kolom (4 x 100mm = 400mm)
  */
-$perRow = ($paper === 'A3' && $isLandscape) ? 4 : 2;
+$isA3Group = in_array($paper, ['A3', 'SRA3'], true);
+if ($isA3Group) {
+    $perRow = $isLandscape ? 4 : 3;
+} else {
+    $perRow = 2;
+}
+
 $colGapMm = ($paper === 'A4' && ! $isLandscape) ? 2.5 : 3.0;
 $rowGapMm = 3.0;
 
 if ($paper === 'A4' && ! $isLandscape) {
     // 3.75 + 100 + 2.5 + 100 + 3.75 = 210.0mm
-    $pageMargin = '6mm 3.75mm 6mm 3.75mm';
-} elseif ($paper === 'A3' && $isLandscape) {
-    // 5.5 + 4*100 + 3*3.0 + 5.5 = 420.0mm
-    $pageMargin = '6mm 5.5mm 6mm 5.5mm';
+    $pageSizeCss = 'A4 portrait';
+    $pageMargin  = '6mm 3.75mm 6mm 3.75mm';
+} elseif ($isA3Group && ! $isLandscape) {
+    // SRA3 / A3+ Portrait (320 x 450 mm): 7 + 100 + 3 + 100 + 3 + 100 + 7 = 320.0mm
+    $pageSizeCss = '320mm 450mm';
+    $pageMargin  = '10mm 7mm 10mm 7mm';
+} elseif ($isA3Group && $isLandscape) {
+    // A3 Landscape (420 x 297 mm): 5.5 + 4*100 + 3*3.0 + 5.5 = 420.0mm
+    $pageSizeCss = 'A3 landscape';
+    $pageMargin  = '6mm 5.5mm 6mm 5.5mm';
 } else {
-    $pageMargin = '6mm 8mm 6mm 8mm';
+    // A4 Landscape (297 x 210 mm)
+    $pageSizeCss = 'A4 landscape';
+    $pageMargin  = '6mm 8mm 6mm 8mm';
 }
 ?>
 <!DOCTYPE html>
@@ -39,7 +53,7 @@ if ($paper === 'A4' && ! $isLandscape) {
     <title>Cetak Sticker BMN - <?= date('Y-m-d'); ?></title>
     <style>
         @page {
-            size: <?= $paper; ?> <?= $isLandscape ? 'landscape' : 'portrait'; ?>;
+            size: <?= $pageSizeCss; ?>;
             margin: <?= $pageMargin; ?>;
         }
         body, div, table, tr, td, img, span {
