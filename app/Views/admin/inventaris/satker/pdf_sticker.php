@@ -29,22 +29,41 @@ $colGapMm = ($paper === 'A4' && ! $isLandscape) ? 2.5 : 3.0;
 $rowGapMm = 3.0;
 
 if ($paper === 'A4' && ! $isLandscape) {
-    // 3.75 + 100 + 2.5 + 100 + 3.75 = 210.0mm
-    $pageSizeCss = 'A4 portrait';
-    $pageMargin  = '6mm 3.75mm 6mm 3.75mm';
+    $pageSizeCss   = 'A4 portrait';
+    $pageWidthMm   = 210.0;
+    $defaultTop    = 6.0;
+    $defaultHoriz  = 3.75;
 } elseif ($isA3Group && ! $isLandscape) {
-    // SRA3 / A3+ Portrait (320 x 450 mm): 7 + 100 + 3 + 100 + 3 + 100 + 7 = 320.0mm
-    $pageSizeCss = '320mm 450mm';
-    $pageMargin  = '10mm 7mm 10mm 7mm';
+    // SRA3 / A3+ Portrait (320 x 450 mm)
+    $pageSizeCss   = '320mm 450mm';
+    $pageWidthMm   = 320.0;
+    $defaultTop    = 0.0;
+    $defaultHoriz  = 0.0;
 } elseif ($isA3Group && $isLandscape) {
-    // A3 Landscape (420 x 297 mm): 5.5 + 4*100 + 3*3.0 + 5.5 = 420.0mm
-    $pageSizeCss = 'A3 landscape';
-    $pageMargin  = '6mm 5.5mm 6mm 5.5mm';
+    // A3 Landscape (420 x 297 mm)
+    $pageSizeCss   = 'A3 landscape';
+    $pageWidthMm   = 420.0;
+    $defaultTop    = 0.0;
+    $defaultHoriz  = 0.0;
 } else {
     // A4 Landscape (297 x 210 mm)
-    $pageSizeCss = 'A4 landscape';
-    $pageMargin  = '6mm 8mm 6mm 8mm';
+    $pageSizeCss   = 'A4 landscape';
+    $pageWidthMm   = 297.0;
+    $defaultTop    = 6.0;
+    $defaultHoriz  = 8.0;
 }
+
+$marginTopMm   = isset($marginTop) && is_numeric($marginTop) ? max(0.0, (float) $marginTop) : $defaultTop;
+$marginHorizMm = isset($marginHorizontal) && is_numeric($marginHorizontal) ? max(0.0, (float) $marginHorizontal) : $defaultHoriz;
+
+// Jaga agar jarak antar kolom otomatis menyesuaikan jika margin horizontal diperbesar
+$usableWidthMm = $pageWidthMm - (2.0 * $marginHorizMm);
+$neededWidthMm = ($perRow * 100.0) + (($perRow - 1) * $colGapMm);
+if ($perRow > 1 && $usableWidthMm < $neededWidthMm) {
+    $colGapMm = max(0.0, round(($usableWidthMm - ($perRow * 100.0)) / ($perRow - 1), 2));
+}
+
+$pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm ' . $marginHorizMm . 'mm';
 ?>
 <!DOCTYPE html>
 <html lang="id">

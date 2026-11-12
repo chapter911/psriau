@@ -1733,6 +1733,22 @@ class InventarisSatker extends BaseController
             $paper = 'A4';
         }
 
+        // Parameter margin halaman opsional (dalam mm): default A3/SRA3 = 0mm (tanpa margin)
+        $isA3Group = in_array($paper, ['A3', 'SRA3'], true);
+        $defaultMarginTop = $isA3Group ? 0.0 : 6.0;
+        $defaultMarginHorizontal = $isA3Group ? 0.0 : ($orientation === 'portrait' ? 3.75 : 8.0);
+
+        $rawMarginTop = $this->request->getPost('margin_top') ?? $this->request->getGet('margin_top');
+        $rawMarginHorizontal = $this->request->getPost('margin_horizontal') ?? $this->request->getGet('margin_horizontal');
+
+        $marginTop = ($rawMarginTop !== null && $rawMarginTop !== '' && is_numeric($rawMarginTop))
+            ? max(0.0, min(50.0, (float) $rawMarginTop))
+            : $defaultMarginTop;
+
+        $marginHorizontal = ($rawMarginHorizontal !== null && $rawMarginHorizontal !== '' && is_numeric($rawMarginHorizontal))
+            ? max(0.0, min(50.0, (float) $rawMarginHorizontal))
+            : $defaultMarginHorizontal;
+
         // Parameter input fleksibel
         $singleId  = $this->request->getGet('id') ?? $this->request->getPost('id');
         $rawIds    = $this->request->getPost('ids') ?? $this->request->getGet('ids');
@@ -1897,11 +1913,13 @@ class InventarisSatker extends BaseController
             : '';
 
         $data = [
-            'stickers'    => $stickerData,
-            'logoBase64'  => $logoBase64,
-            'kodeUakpb'   => '145060900691285000KP',
-            'orientation' => $orientation,
-            'paper'       => $paper,
+            'stickers'         => $stickerData,
+            'logoBase64'       => $logoBase64,
+            'kodeUakpb'        => '145060900691285000KP',
+            'orientation'      => $orientation,
+            'paper'            => $paper,
+            'marginTop'        => $marginTop,
+            'marginHorizontal' => $marginHorizontal,
         ];
 
         $html = view('admin/inventaris/satker/pdf_sticker', $data);

@@ -1225,6 +1225,31 @@
                         </div>
                     </div>
 
+                    <!-- Pengaturan Margin Halaman (Opsional) -->
+                    <div class="p-2.5 rounded mt-2 mb-1" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                        <div class="d-flex justify-content-between align-items-center mb-1.5">
+                            <label class="font-weight-bold text-dark small text-uppercase mb-0" style="letter-spacing: 0.5px;">
+                                <i class="fas fa-ruler-combined mr-1 text-primary"></i> Margin Halaman (mm)
+                            </label>
+                            <button type="button" class="btn btn-link btn-sm p-0 small text-primary" id="btn-reset-sticker-margin" style="font-size: 0.75rem;">
+                                Reset Default
+                            </button>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <label for="modal-margin-top" class="small font-weight-bold mb-1">Margin Atas / Bawah (mm):</label>
+                                <input type="number" step="0.5" min="0" max="50" name="margin_top" id="modal-margin-top" class="form-control form-control-sm" value="6" placeholder="0">
+                            </div>
+                            <div class="col-6">
+                                <label for="modal-margin-horizontal" class="small font-weight-bold mb-1">Margin Kiri / Kanan (mm):</label>
+                                <input type="number" step="0.25" min="0" max="50" name="margin_horizontal" id="modal-margin-horizontal" class="form-control form-control-sm" value="3.75" placeholder="0">
+                            </div>
+                        </div>
+                        <small class="text-muted d-block mt-1" style="font-size: 0.72rem;">
+                            Isi <strong>0</strong> untuk mencetak tanpa margin halaman (default otomatis <strong>0 mm</strong> saat memilih Kertas A3/SRA3).
+                        </small>
+                    </div>
+
                     <!-- Hidden fields for Filter Scope -->
                     <input type="hidden" name="peruntukan" id="modal-filter-peruntukan" value="<?= esc($filterPeruntukan); ?>">
                     <input type="hidden" name="kategori" id="modal-filter-kategori" value="<?= esc($filterKategori); ?>">
@@ -2176,6 +2201,44 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (boxRangeInputs) boxRangeInputs.classList.add('d-none');
             }
         });
+    });
+
+    // Sinkronisasi default margin halaman berdasarkan ukuran kertas & orientasi
+    var inputMarginTop = document.getElementById('modal-margin-top');
+    var inputMarginHoriz = document.getElementById('modal-margin-horizontal');
+    var btnResetMargin = document.getElementById('btn-reset-sticker-margin');
+    var marginUserEdited = false;
+
+    function applyDefaultStickerMargin(force) {
+        if (!inputMarginTop || !inputMarginHoriz) return;
+        if (marginUserEdited && !force) return;
+        var paperEl = document.querySelector('input[name="paper"]:checked');
+        var orientEl = document.querySelector('input[name="orientation"]:checked');
+        var pVal = paperEl ? paperEl.value : 'A4';
+        var oVal = orientEl ? orientEl.value : 'portrait';
+        if (pVal === 'A3' || pVal === 'SRA3') {
+            inputMarginTop.value = '0';
+            inputMarginHoriz.value = '0';
+        } else {
+            inputMarginTop.value = '6';
+            inputMarginHoriz.value = (oVal === 'portrait') ? '3.75' : '8';
+        }
+    }
+
+    if (inputMarginTop) {
+        inputMarginTop.addEventListener('input', function() { marginUserEdited = true; });
+    }
+    if (inputMarginHoriz) {
+        inputMarginHoriz.addEventListener('input', function() { marginUserEdited = true; });
+    }
+    if (btnResetMargin) {
+        btnResetMargin.addEventListener('click', function() {
+            marginUserEdited = false;
+            applyDefaultStickerMargin(true);
+        });
+    }
+    document.querySelectorAll('input[name="paper"], input[name="orientation"]').forEach(function(el) {
+        el.addEventListener('change', function() { applyDefaultStickerMargin(false); });
     });
 
     if (formCetakSticker) {
