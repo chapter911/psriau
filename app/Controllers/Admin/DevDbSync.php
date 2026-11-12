@@ -6,7 +6,7 @@ use App\Controllers\BaseController;
 
 /**
  * Controller khusus environment DEVELOPMENT untuk menarik (sync) database
- * dari server production ke database lokal secara penuh atau per tabel tertentu.
+ * dari server production ke database lokal menggunakan Token Sync (tanpa NIP/password).
  */
 class DevDbSync extends BaseController
 {
@@ -38,7 +38,7 @@ class DevDbSync extends BaseController
     }
 
     /**
-     * Menghubungkan ke server production, login, dan mengambil daftar tabel beserta jumlah barisnya.
+     * Menghubungkan ke server production menggunakan Token Sync dan mengambil daftar tabel.
      */
     public function fetchTables()
     {
@@ -46,9 +46,11 @@ class DevDbSync extends BaseController
             return $denied;
         }
 
-        $prodUrl  = rtrim(trim((string) $this->request->getPost('prod_url')), '/');
-        $username = trim((string) $this->request->getPost('username'));
-        $password = (string) $this->request->getPost('password');
+        $prodUrl = rtrim(trim((string) $this->request->getPost('prod_url')), '/');
+        $token   = trim((string) $this->request->getPost('sync_token'));
+        if ($token === '') {
+            $token = trim((string) env('PROD_DB_SYNC_TOKEN', ''));
+        }
 
         if ($prodUrl === '' || ! preg_match('#^https?://#i', $prodUrl)) {
             return $this->response->setStatusCode(400)->setJSON([
@@ -57,66 +59,23 @@ class DevDbSync extends BaseController
             ]);
         }
 
-        if ($username === '' || $password === '') {
+        if ($token === '' || strlen($token) < 16) {
             return $this->response->setStatusCode(400)->setJSON([
                 'status'  => 'error',
-                'message' => 'Username dan Password Admin Production wajib diisi.',
+                'message' => 'Token Sync wajib diisi (minimal 16 karakter) dan harus sama dengan PROD_DB_SYNC_TOKEN di .env server production.',
             ]);
         }
 
-        $cookieDir = WRITEPATH . 'cache';
-        if (! is_dir($cookieDir)) {
-            @mkdir($cookieDir, 0755, true);
-        }
-
-        // Bersihkan cookie lama jika ada
-        $prevSession = session()->get(self::SESSION_KEY);
-        if (is_array($prevSession) && ! empty($prevSession['cookie_file']) && is_file($prevSession['cookie_file'])) {
-            @unlink($prevSession['cookie_file']);
-        }
-
-        $cookieFile = $cookieDir . DIRECTORY_SEPARATOR . 'dev_sync_cookie_' . bin2hex(random_bytes(8)) . '.txt';
-
         try {
-            // 1. Ambil halaman login untuk mendapatkan CSRF cookie
-            $loginPage = $this->curlRequest($prodUrl . '/masuk', 'GET', null, $cookieFile, 20);
-            if ($loginPage['error'] !== '') {
-                @unlink($cookieFile);
+            $tablesRes = $this->curlGetWithToken($prodUrl . '/dev-sync-api/prod-db-tables', $token, 30);
+            if ($tablesRes['error'] !== '') {
                 return $this->response->setStatusCode(502)->setJSON([
                     'status'  => 'error',
-                    'message' => 'Gagal menghubungi server production: ' . $loginPage['error'],
+                    'message' => 'Gagal menghubungi server production: ' . $tablesRes['error'],
                 ]);
             }
 
-            $csrf = $this->extractCsrfFromCookieFile($cookieFile);
-
-            // 2. Login ke production
-            $loginRes = $this->curlRequest($prodUrl . '/masuk', 'POST', http_build_query([
-                'username'       => $username,
-                'password'       => $password,
-                'csrf_test_name' => $csrf,
-            ]), $cookieFile, 25);
-
-            if ($loginRes['error'] !== '') {
-                @unlink($cookieFile);
-                return $this->response->setStatusCode(502)->setJSON([
-                    'status'  => 'error',
-                    'message' => 'Gagal login ke server production: ' . $loginRes['error'],
-                ]);
-            }
-
-            if (stripos($loginRes['body'], 'id="username"') !== false || stripos($loginRes['body'], 'name="username"') !== false) {
-                @unlink($cookieFile);
-                return $this->response->setStatusCode(401)->setJSON([
-                    'status'  => 'error',
-                    'message' => 'Login ke server production gagal. Periksa kembali Username / Password Admin Production.',
-                ]);
-            }
-
-            // 3. Ambil daftar tabel production
-            $tablesRes = $this->curlRequest($prodUrl . '/admin/pengaturan/application/prod-db-tables', 'GET', null, $cookieFile, 30);
             if ($tablesRes['code'] === 404) {
-                @unlink($cookieFile);
                 return $this->response->setStatusCode(404)->setJSON([
                     'status'  => 'error',
                     'message' => 'Endpoint export belum tersedia di server production. Silakan jalankan Git Pull di server production terlebih dahulu.',
@@ -125,18 +84,16 @@ class DevDbSync extends BaseController
 
             $json = json_decode($tablesRes['body'], true);
             if (! is_array($json) || ($json['status'] ?? '') !== 'ok') {
-                @unlink($cookieFile);
                 return $this->response->setStatusCode($tablesRes['code'] >= 400 ? $tablesRes['code'] : 500)->setJSON([
                     'status'  => 'error',
                     'message' => $json['message'] ?? ('Gagal mengambil daftar tabel production (HTTP ' . $tablesRes['code'] . ').'),
                 ]);
             }
 
-            // Simpan sesi koneksi sementara (tanpa menyimpan password)
             session()->set(self::SESSION_KEY, [
-                'prod_url'    => $prodUrl,
-                'cookie_file' => $cookieFile,
-                'connected_at'=> date('Y-m-d H:i:s'),
+                'prod_url'     => $prodUrl,
+                'sync_token'   => $token,
+                'connected_at' => date('Y-m-d H:i:s'),
             ]);
 
             return $this->response->setJSON([
@@ -144,9 +101,6 @@ class DevDbSync extends BaseController
                 'data'   => $json['data'] ?? [],
             ]);
         } catch (\Throwable $e) {
-            if (is_file($cookieFile)) {
-                @unlink($cookieFile);
-            }
             log_message('error', 'DevDbSync fetchTables error: ' . $e->getMessage());
             return $this->response->setStatusCode(500)->setJSON([
                 'status'  => 'error',
@@ -165,10 +119,10 @@ class DevDbSync extends BaseController
         }
 
         $syncSession = session()->get(self::SESSION_KEY);
-        if (! is_array($syncSession) || empty($syncSession['prod_url']) || empty($syncSession['cookie_file']) || ! is_file($syncSession['cookie_file'])) {
+        if (! is_array($syncSession) || empty($syncSession['prod_url']) || empty($syncSession['sync_token'])) {
             return $this->response->setStatusCode(400)->setJSON([
                 'status'  => 'error',
-                'message' => 'Sesi koneksi ke production belum aktif atau sudah kedaluwarsa. Silakan hubungkan ulang.',
+                'message' => 'Sesi koneksi ke production belum aktif. Silakan klik Muat Tabel terlebih dahulu.',
             ]);
         }
 
@@ -195,12 +149,12 @@ class DevDbSync extends BaseController
 
         $includeSchema = ($offset === 0 && $mode === 'replace') ? '1' : '0';
         $dumpUrl = $syncSession['prod_url']
-            . '/admin/pengaturan/application/prod-db-dump?table=' . rawurlencode($table)
+            . '/dev-sync-api/prod-db-dump?table=' . rawurlencode($table)
             . '&offset=' . $offset
             . '&limit=' . $limit
             . '&include_schema=' . $includeSchema;
 
-        $res = $this->curlRequest($dumpUrl, 'GET', null, $syncSession['cookie_file'], 60);
+        $res = $this->curlGetWithToken($dumpUrl, (string) $syncSession['sync_token'], 60);
         if ($res['error'] !== '') {
             return $this->response->setStatusCode(502)->setJSON([
                 'status'  => 'error',
@@ -238,7 +192,6 @@ class DevDbSync extends BaseController
 
             $inserted = 0;
             if (! empty($rows)) {
-                // Insert per 250 baris agar query packet MySQL lokal tidak kepenuhan
                 foreach (array_chunk($rows, 250) as $chunk) {
                     $db->table($table)->insertBatch($chunk);
                     $inserted += count($chunk);
@@ -274,7 +227,7 @@ class DevDbSync extends BaseController
     }
 
     /**
-     * Membersihkan cookie dan sesi sinkronisasi sementara.
+     * Membersihkan sesi sinkronisasi sementara.
      */
     public function disconnect()
     {
@@ -282,10 +235,6 @@ class DevDbSync extends BaseController
             return $denied;
         }
 
-        $syncSession = session()->get(self::SESSION_KEY);
-        if (is_array($syncSession) && ! empty($syncSession['cookie_file']) && is_file($syncSession['cookie_file'])) {
-            @unlink($syncSession['cookie_file']);
-        }
         session()->remove(self::SESSION_KEY);
 
         return $this->response->setJSON(['status' => 'ok']);
@@ -293,17 +242,14 @@ class DevDbSync extends BaseController
 
     private function sanitizeSchemaSql(string $sql): string
     {
-        // Normalisasi collation MySQL 8 / MariaDB agar kompatibel lintas versi lokal
-        $sql = str_replace(
+        return str_replace(
             ['utf8mb4_0900_ai_ci', 'utf8mb4_uca1400_ai_ci', 'utf8mb4_unicode_520_ci'],
             'utf8mb4_general_ci',
             $sql
         );
-
-        return $sql;
     }
 
-    private function curlRequest(string $url, string $method, ?string $postFields, string $cookieFile, int $timeout = 30): array
+    private function curlGetWithToken(string $url, string $token, int $timeout = 30): array
     {
         $ch = curl_init();
         curl_setopt_array($ch, [
@@ -312,19 +258,14 @@ class DevDbSync extends BaseController
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_TIMEOUT        => $timeout,
             CURLOPT_CONNECTTIMEOUT => 15,
-            CURLOPT_COOKIEFILE     => $cookieFile,
-            CURLOPT_COOKIEJAR      => $cookieFile,
             CURLOPT_USERAGENT      => 'SatkerPPS-DevDbSync/1.0',
             CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => 0,
+            CURLOPT_HTTPHEADER     => [
+                'X-Sync-Token: ' . $token,
+                'Accept: application/json',
+            ],
         ]);
-
-        if ($method === 'POST') {
-            curl_setopt($ch, CURLOPT_POST, true);
-            if ($postFields !== null) {
-                curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
-            }
-        }
 
         $body  = curl_exec($ch);
         $error = curl_error($ch);
@@ -337,19 +278,4 @@ class DevDbSync extends BaseController
             'error' => $error,
         ];
     }
-
-    private function extractCsrfFromCookieFile(string $cookieFile): string
-    {
-        if (! is_file($cookieFile)) {
-            return '';
-        }
-
-        $content = (string) file_get_contents($cookieFile);
-        if (preg_match('/csrf_cookie_name\s+([^\s]+)/', $content, $m)) {
-            return trim($m[1]);
-        }
-
-        return '';
-    }
 }
-

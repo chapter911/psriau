@@ -788,10 +788,10 @@
                     <strong>Mode Development:</strong> Fitur ini hanya menarik data secara <em>read-only</em> dari server Production dan menuliskannya ke database <strong>Lokal</strong> Anda. Tidak ada data di Production yang diubah.
                 </div>
 
-                <!-- Step 1: Koneksi ke Production -->
+                <!-- Step 1: Koneksi ke Production via Token -->
                 <div class="card card-outline card-warning mb-3">
                     <div class="card-header py-2">
-                        <h6 class="card-title mb-0 font-weight-bold"><i class="fas fa-plug mr-1"></i> 1. Koneksi Akun Super Admin Production</h6>
+                        <h6 class="card-title mb-0 font-weight-bold"><i class="fas fa-key mr-1"></i> 1. Koneksi Production via Token Sync</h6>
                     </div>
                     <div class="card-body py-2">
                         <div class="form-row">
@@ -799,15 +799,14 @@
                                 <label class="small font-weight-bold mb-1">URL Production</label>
                                 <input type="url" id="syncProdUrl" class="form-control form-control-sm" value="https://satkerpps-riau.online" placeholder="https://satkerpps-riau.online" required>
                             </div>
-                            <div class="col-md-3 mb-2">
-                                <label class="small font-weight-bold mb-1">Username Admin</label>
-                                <input type="text" id="syncProdUsername" class="form-control form-control-sm" placeholder="NIP / Username" autocomplete="off">
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <label class="small font-weight-bold mb-1">Password Admin</label>
+                            <div class="col-md-7 mb-2">
+                                <label class="small font-weight-bold mb-1">Token Sync (<code>PROD_DB_SYNC_TOKEN</code> di <code>.env</code>)</label>
                                 <div class="input-group input-group-sm">
-                                    <input type="password" id="syncProdPassword" class="form-control form-control-sm" placeholder="Password Production" autocomplete="new-password">
+                                    <input type="password" id="syncProdToken" class="form-control form-control-sm text-monospace" value="<?= esc((string) env('PROD_DB_SYNC_TOKEN', '')); ?>" placeholder="Masukkan Token Sync Production" autocomplete="off">
                                     <div class="input-group-append">
+                                        <button type="button" class="btn btn-outline-secondary" id="syncProdToggleTokenBtn" title="Tampilkan / Sembunyikan Token">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                         <button type="button" class="btn btn-warning text-dark font-weight-bold" id="syncProdConnectBtn">
                                             <i class="fas fa-sync-alt mr-1"></i> Muat Tabel
                                         </button>
@@ -850,9 +849,15 @@
                                     <th style="width: 36px;" class="text-center">
                                         <input type="checkbox" id="syncProdCheckAllHeader">
                                     </th>
-                                    <th>Nama Tabel</th>
-                                    <th class="text-right" style="width: 110px;">Estimasi Baris</th>
-                                    <th class="text-right" style="width: 95px;">Ukuran</th>
+                                    <th class="sync-prod-sortable" data-sort="name" style="cursor: pointer; user-select: none;">
+                                        Nama Tabel <i class="fas fa-sort-up ml-1 text-warning sync-prod-sort-icon" data-col="name"></i>
+                                    </th>
+                                    <th class="text-right sync-prod-sortable" data-sort="rows" style="width: 135px; cursor: pointer; user-select: none;">
+                                        Estimasi Baris <i class="fas fa-sort ml-1 text-muted sync-prod-sort-icon" data-col="rows"></i>
+                                    </th>
+                                    <th class="text-right sync-prod-sortable" data-sort="bytes" style="width: 110px; cursor: pointer; user-select: none;">
+                                        Ukuran <i class="fas fa-sort ml-1 text-muted sync-prod-sort-icon" data-col="bytes"></i>
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody id="syncProdTablesBody"></tbody>
@@ -891,6 +896,9 @@
     const disconnectUrl = '<?= site_url('/admin/dev/sync-prod-db/disconnect'); ?>';
 
     let prodTables = [];
+    let selectedTableNames = new Set();
+    let sortCol = 'name';
+    let sortDir = 'asc';
     let isSyncing = false;
 
     const escapeHtml = (str) => String(str ?? '')
@@ -923,40 +931,90 @@
     };
 
     const updateSelectedCount = () => {
-        const checked = document.querySelectorAll('.sync-prod-table-cb:checked').length;
+        const count = selectedTableNames.size;
         const badge = document.getElementById('syncProdSelectedCountBadge');
         const startBtn = document.getElementById('syncProdStartBtn');
-        if (badge) badge.textContent = checked + ' tabel dipilih';
-        if (startBtn) startBtn.disabled = isSyncing || checked === 0;
+        if (badge) badge.textContent = count + ' tabel dipilih';
+        if (startBtn) startBtn.disabled = isSyncing || count === 0;
+    };
+
+    const updateSortIcons = () => {
+        document.querySelectorAll('.sync-prod-sort-icon').forEach((icon) => {
+            const col = icon.getAttribute('data-col');
+            if (col === sortCol) {
+                icon.className = 'fas fa-sort-' + (sortDir === 'asc' ? 'up' : 'down') + ' ml-1 text-warning sync-prod-sort-icon';
+            } else {
+                icon.className = 'fas fa-sort ml-1 text-muted sync-prod-sort-icon';
+            }
+        });
+    };
+
+    const getVisibleTables = (filterText = '') => {
+        const q = filterText.trim().toLowerCase();
+        const filtered = q ? prodTables.filter((t) => t.name.toLowerCase().includes(q)) : [...prodTables];
+        filtered.sort((a, b) => {
+            let cmp = 0;
+            if (sortCol === 'rows') {
+                cmp = Number(a.rows || 0) - Number(b.rows || 0);
+            } else if (sortCol === 'bytes') {
+                cmp = Number(a.bytes || 0) - Number(b.bytes || 0);
+            } else {
+                cmp = String(a.name || '').localeCompare(String(b.name || ''));
+            }
+            return sortDir === 'asc' ? cmp : -cmp;
+        });
+        return filtered;
     };
 
     const renderTables = (filterText = '') => {
         const tbody = document.getElementById('syncProdTablesBody');
+        const checkAllHeader = document.getElementById('syncProdCheckAllHeader');
         if (!tbody) return;
-        const q = filterText.trim().toLowerCase();
-        const filtered = q ? prodTables.filter((t) => t.name.toLowerCase().includes(q)) : prodTables;
-        if (!filtered.length) {
+
+        const visible = getVisibleTables(filterText);
+        if (!visible.length) {
             tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada tabel yang cocok.</td></tr>';
+            if (checkAllHeader) checkAllHeader.checked = false;
+            updateSelectedCount();
             return;
         }
-        tbody.innerHTML = filtered.map((t) => `
+
+        tbody.innerHTML = visible.map((t) => `
             <tr>
                 <td class="text-center">
-                    <input type="checkbox" class="sync-prod-table-cb" value="${escapeHtml(t.name)}">
+                    <input type="checkbox" class="sync-prod-table-cb" value="${escapeHtml(t.name)}" ${selectedTableNames.has(t.name) ? 'checked' : ''}>
                 </td>
                 <td class="font-weight-bold text-monospace small">${escapeHtml(t.name)}</td>
                 <td class="text-right small">${Number(t.rows || 0).toLocaleString('id-ID')}</td>
                 <td class="text-right small text-muted">${escapeHtml(t.size_formatted || '0 B')}</td>
             </tr>
         `).join('');
+
         tbody.querySelectorAll('.sync-prod-table-cb').forEach((cb) => {
-            cb.addEventListener('change', updateSelectedCount);
+            cb.addEventListener('change', () => {
+                if (cb.checked) {
+                    selectedTableNames.add(cb.value);
+                } else {
+                    selectedTableNames.delete(cb.value);
+                }
+                if (checkAllHeader) {
+                    checkAllHeader.checked = visible.length > 0 && visible.every((t) => selectedTableNames.has(t.name));
+                }
+                updateSelectedCount();
+            });
         });
+
+        if (checkAllHeader) {
+            checkAllHeader.checked = visible.length > 0 && visible.every((t) => selectedTableNames.has(t.name));
+        }
+        updateSortIcons();
         updateSelectedCount();
     };
 
     document.addEventListener('DOMContentLoaded', () => {
         const connectBtn = document.getElementById('syncProdConnectBtn');
+        const toggleTokenBtn = document.getElementById('syncProdToggleTokenBtn');
+        const tokenInput = document.getElementById('syncProdToken');
         const connAlert = document.getElementById('syncProdConnAlert');
         const tablesSection = document.getElementById('syncProdTablesSection');
         const searchInput = document.getElementById('syncProdSearchTable');
@@ -975,6 +1033,27 @@
 
         if (!connectBtn) return;
 
+        if (toggleTokenBtn && tokenInput) {
+            toggleTokenBtn.addEventListener('click', () => {
+                const isPwd = tokenInput.type === 'password';
+                tokenInput.type = isPwd ? 'text' : 'password';
+                toggleTokenBtn.innerHTML = isPwd ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+            });
+        }
+
+        document.querySelectorAll('.sync-prod-sortable').forEach((th) => {
+            th.addEventListener('click', () => {
+                const col = th.getAttribute('data-sort');
+                if (sortCol === col) {
+                    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortCol = col;
+                    sortDir = (col === 'name') ? 'asc' : 'desc';
+                }
+                renderTables(searchInput ? searchInput.value : '');
+            });
+        });
+
         const showConnAlert = (type, msg) => {
             connAlert.className = 'alert alert-' + type + ' py-2 px-3 small mb-0 mt-1';
             connAlert.textContent = msg;
@@ -982,19 +1061,19 @@
 
         connectBtn.addEventListener('click', async () => {
             const prodUrl = document.getElementById('syncProdUrl').value.trim();
-            const username = document.getElementById('syncProdUsername').value.trim();
-            const password = document.getElementById('syncProdPassword').value;
+            const syncToken = tokenInput ? tokenInput.value.trim() : '';
 
             connectBtn.disabled = true;
             connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Menghubungkan...';
             connAlert.className = 'alert d-none';
 
             try {
-                const res = await postForm(fetchTablesUrl, { prod_url: prodUrl, username, password });
+                const res = await postForm(fetchTablesUrl, { prod_url: prodUrl, sync_token: syncToken });
                 prodTables = Array.isArray(res.data) ? res.data : [];
+                selectedTableNames.clear();
                 renderTables(searchInput ? searchInput.value : '');
                 tablesSection.classList.remove('d-none');
-                showConnAlert('success', 'Terhubung ke Production! Ditemukan ' + prodTables.length + ' tabel.');
+                showConnAlert('success', 'Terhubung ke Production via Token! Ditemukan ' + prodTables.length + ' tabel.');
             } catch (err) {
                 tablesSection.classList.add('d-none');
                 showConnAlert('danger', err.message || 'Gagal menghubungkan ke Production.');
@@ -1010,42 +1089,47 @@
 
         if (checkAllHeader) {
             checkAllHeader.addEventListener('change', () => {
-                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => {
-                    cb.checked = checkAllHeader.checked;
+                const visible = getVisibleTables(searchInput ? searchInput.value : '');
+                visible.forEach((t) => {
+                    if (checkAllHeader.checked) {
+                        selectedTableNames.add(t.name);
+                    } else {
+                        selectedTableNames.delete(t.name);
+                    }
                 });
-                updateSelectedCount();
+                renderTables(searchInput ? searchInput.value : '');
             });
         }
 
         if (selectAllBtn) {
             selectAllBtn.addEventListener('click', () => {
-                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => { cb.checked = true; });
-                if (checkAllHeader) checkAllHeader.checked = true;
-                updateSelectedCount();
+                prodTables.forEach((t) => selectedTableNames.add(t.name));
+                renderTables(searchInput ? searchInput.value : '');
             });
         }
 
         if (selectInvBtn) {
             selectInvBtn.addEventListener('click', () => {
                 const invKeywords = ['inventaris', 'mst_sekolah', 'mst_paket', 'mst_ruangan'];
-                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => {
-                    const name = cb.value.toLowerCase();
-                    cb.checked = invKeywords.some((kw) => name.includes(kw));
+                selectedTableNames.clear();
+                prodTables.forEach((t) => {
+                    if (invKeywords.some((kw) => t.name.toLowerCase().includes(kw))) {
+                        selectedTableNames.add(t.name);
+                    }
                 });
-                updateSelectedCount();
+                renderTables(searchInput ? searchInput.value : '');
             });
         }
 
         if (deselectAllBtn) {
             deselectAllBtn.addEventListener('click', () => {
-                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => { cb.checked = false; });
-                if (checkAllHeader) checkAllHeader.checked = false;
-                updateSelectedCount();
+                selectedTableNames.clear();
+                renderTables(searchInput ? searchInput.value : '');
             });
         }
 
         startBtn.addEventListener('click', async () => {
-            const selected = Array.from(document.querySelectorAll('.sync-prod-table-cb:checked')).map((cb) => cb.value);
+            const selected = Array.from(selectedTableNames);
             if (!selected.length) return;
 
             const mode = document.getElementById('syncProdMode').value;

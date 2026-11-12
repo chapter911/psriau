@@ -1297,9 +1297,9 @@ graph TD
     B --> C{"Login sebagai Super Administrator?"}
     C -- Ya --> D["Tampil Tombol Navbar: Ambil DB Production"]
     C -- Tidak --> E["Hanya Tampil Badge DEV MODE • LOKAL"]
-    D --> F["Klik Ambil DB Production &amp; Isi Kredensial Super Admin Production"]
-    F --> G["Server Lokal Login ke Production &amp; Muat Daftar Tabel Read-Only (/prod-db-tables)"]
-    G --> H{"Pilih Cakupan Tabel"}
+    D --> F["Klik Ambil DB Production &amp; Isi Token Sync (PROD_DB_SYNC_TOKEN)"]
+    F --> G["Server Lokal Verifikasi Token ke Production (/dev-sync-api/prod-db-tables)"]
+    G --> H{"Cari, Sortir &amp; Pilih Cakupan Tabel"}
     H -- "Pilih Semua" --> I["Sinkronisasi Seluruh Tabel Database"]
     H -- "Pilih Tabel Tertentu" --> J["Centang Tabel Spesifik / Khusus Inventaris &amp; Sekolah"]
     I --> K["Proses Tarik Data Bertahap per 500 Baris (/prod-db-dump)"]

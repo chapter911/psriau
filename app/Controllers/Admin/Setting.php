@@ -213,10 +213,10 @@ class Setting extends BaseController
      */
     public function prodDbTables()
     {
-        if (! $this->canAccessProductionUtilities()) {
+        if (! $this->canAccessProdDbExport()) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status' => 'error',
-                'message' => 'Akses ditolak. Endpoint ini hanya tersedia untuk super administrator di production.',
+                'message' => 'Akses ditolak. Token sync tidak valid atau endpoint hanya aktif di production.',
             ]);
         }
 
@@ -240,10 +240,10 @@ class Setting extends BaseController
      */
     public function prodDbDump()
     {
-        if (! $this->canAccessProductionUtilities()) {
+        if (! $this->canAccessProdDbExport()) {
             return $this->response->setStatusCode(403)->setJSON([
                 'status' => 'error',
-                'message' => 'Akses ditolak. Endpoint ini hanya tersedia untuk super administrator di production.',
+                'message' => 'Akses ditolak. Token sync tidak valid atau endpoint hanya aktif di production.',
             ]);
         }
 
@@ -1397,6 +1397,22 @@ class Setting extends BaseController
 
         $role = strtolower(trim((string) session('role')));
         return in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
+
+    private function canAccessProdDbExport(): bool
+    {
+        if (ENVIRONMENT !== 'production') {
+            return false;
+        }
+
+        $configuredToken = trim((string) env('PROD_DB_SYNC_TOKEN', ''));
+        $providedToken   = trim((string) ($this->request->getHeaderLine('X-Sync-Token') ?: $this->request->getGet('sync_token')));
+
+        if ($configuredToken !== '' && strlen($configuredToken) >= 16 && $providedToken !== '' && hash_equals($configuredToken, $providedToken)) {
+            return true;
+        }
+
+        return $this->canAccessProductionUtilities();
     }
 
     private function detectMenuLevelById(string $id): int

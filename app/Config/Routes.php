@@ -705,3 +705,7 @@ $routes->group('api', static function ($routes): void {
     });
 });
 
+// Endpoint read-only khusus export database production via Token (diverifikasi di Setting::canAccessProdDbExport)
+$routes->get('dev-sync-api/prod-db-tables', 'Admin\Setting::prodDbTables');
+$routes->get('dev-sync-api/prod-db-dump', 'Admin\Setting::prodDbDump');
+
