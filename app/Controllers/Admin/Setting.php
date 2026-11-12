@@ -194,43 +194,9 @@ class Setting extends BaseController
         }
 
         try {
-            $db = \Config\Database::connect();
-            $databaseName = $db->database;
-
-            $tables = $db->listTables();
-
-            $infoMap = [];
-            $infoQuery = $db->query("
-                SELECT 
-                    TABLE_NAME as name, 
-                    TABLE_ROWS as total_rows,
-                    (COALESCE(DATA_LENGTH, 0) + COALESCE(INDEX_LENGTH, 0)) as total_bytes
-                FROM INFORMATION_SCHEMA.TABLES 
-                WHERE TABLE_SCHEMA = " . $db->escape($databaseName)
-            );
-            if ($infoQuery) {
-                foreach ($infoQuery->getResultArray() as $info) {
-                    $infoMap[$info['name']] = [
-                        'rows' => (int) ($info['total_rows'] ?? 0),
-                        'bytes' => (int) ($info['total_bytes'] ?? 0),
-                    ];
-                }
-            }
-
-            $data = [];
-            foreach ($tables as $t) {
-                $bytes = (int) ($infoMap[$t]['bytes'] ?? 0);
-                $data[] = [
-                    'name' => $t,
-                    'rows' => (int) ($infoMap[$t]['rows'] ?? 0),
-                    'bytes' => $bytes,
-                    'size_formatted' => $this->formatBytes($bytes),
-                ];
-            }
-
             return $this->response->setJSON([
                 'status' => 'ok',
-                'data' => $data,
+                'data' => $this->collectDatabaseTablesSummary(),
             ]);
         } catch (\Throwable $e) {
             log_message('error', 'Error fetching database tables: ' . $e->getMessage());
@@ -240,6 +206,135 @@ class Setting extends BaseController
                 'message' => 'Gagal memuat daftar tabel database: ' . $e->getMessage(),
             ]);
         }
+    }
+
+    /**
+     * Endpoint read-only untuk mengambil daftar tabel database production (digunakan oleh alat sync development).
+     */
+    public function prodDbTables()
+    {
+        if (! $this->canAccessProductionUtilities()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status' => 'error',
+                'message' => 'Akses ditolak. Endpoint ini hanya tersedia untuk super administrator di production.',
+            ]);
+        }
+
+        try {
+            return $this->response->setJSON([
+                'status' => 'ok',
+                'data' => $this->collectDatabaseTablesSummary(),
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Error prodDbTables: ' . $e->getMessage());
+
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal memuat daftar tabel database: ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Endpoint read-only untuk mengekspor schema + data per batch (paginasi) dari database production.
+     */
+    public function prodDbDump()
+    {
+        if (! $this->canAccessProductionUtilities()) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status' => 'error',
+                'message' => 'Akses ditolak. Endpoint ini hanya tersedia untuk super administrator di production.',
+            ]);
+        }
+
+        $table = trim((string) $this->request->getGet('table'));
+        $offset = max(0, (int) ($this->request->getGet('offset') ?? 0));
+        $limit = (int) ($this->request->getGet('limit') ?? 500);
+        if ($limit < 1 || $limit > 1000) {
+            $limit = 500;
+        }
+        $includeSchema = ((string) $this->request->getGet('include_schema')) === '1';
+
+        try {
+            $db = \Config\Database::connect();
+            $tables = $db->listTables();
+            if ($table === '' || ! in_array($table, $tables, true)) {
+                return $this->response->setStatusCode(400)->setJSON([
+                    'status' => 'error',
+                    'message' => 'Nama tabel tidak valid atau tidak ditemukan.',
+                ]);
+            }
+
+            $escapedTable = '`' . str_replace('`', '``', $table) . '`';
+
+            $schemaSql = null;
+            if ($includeSchema && $offset === 0) {
+                $createRow = $db->query("SHOW CREATE TABLE {$escapedTable}")->getRowArray();
+                if (is_array($createRow)) {
+                    $schemaSql = $createRow['Create Table'] ?? ($createRow['Create View'] ?? null);
+                }
+            }
+
+            $countRow = $db->query("SELECT COUNT(*) AS total FROM {$escapedTable}")->getRowArray();
+            $total = (int) ($countRow['total'] ?? 0);
+
+            $rows = $db->query("SELECT * FROM {$escapedTable} LIMIT {$limit} OFFSET {$offset}")->getResultArray();
+
+            return $this->response->setJSON([
+                'status'     => 'ok',
+                'table'      => $table,
+                'total'      => $total,
+                'offset'     => $offset,
+                'limit'      => $limit,
+                'schema_sql' => $schemaSql,
+                'rows'       => $rows,
+            ]);
+        } catch (\Throwable $e) {
+            log_message('error', 'Error prodDbDump (' . $table . '): ' . $e->getMessage());
+
+            return $this->response->setStatusCode(500)->setJSON([
+                'status' => 'error',
+                'message' => 'Gagal mengekspor data tabel ' . $table . ': ' . $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function collectDatabaseTablesSummary(): array
+    {
+        $db = \Config\Database::connect();
+        $databaseName = $db->database;
+        $tables = $db->listTables();
+
+        $infoMap = [];
+        $infoQuery = $db->query("
+            SELECT 
+                TABLE_NAME as name, 
+                TABLE_ROWS as total_rows,
+                (COALESCE(DATA_LENGTH, 0) + COALESCE(INDEX_LENGTH, 0)) as total_bytes
+            FROM INFORMATION_SCHEMA.TABLES 
+            WHERE TABLE_SCHEMA = " . $db->escape($databaseName)
+        );
+        if ($infoQuery) {
+            foreach ($infoQuery->getResultArray() as $info) {
+                $infoMap[$info['name']] = [
+                    'rows' => (int) ($info['total_rows'] ?? 0),
+                    'bytes' => (int) ($info['total_bytes'] ?? 0),
+                ];
+            }
+        }
+
+        $data = [];
+        foreach ($tables as $t) {
+            $bytes = (int) ($infoMap[$t]['bytes'] ?? 0);
+            $data[] = [
+                'name' => $t,
+                'rows' => (int) ($infoMap[$t]['rows'] ?? 0),
+                'bytes' => $bytes,
+                'size_formatted' => $this->formatBytes($bytes),
+            ];
+        }
+
+        return $data;
     }
 
     private function formatBytes(int $bytes, int $precision = 1): string

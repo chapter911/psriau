@@ -1,14 +1,35 @@
-<nav class="main-header navbar navbar-expand navbar-white navbar-light">
-    <?php
-        $role = strtolower(trim((string) session()->get('role')));
-        $isSuperAdministrator = in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
-        $canUseProductionUtilities = defined('ENVIRONMENT') && ENVIRONMENT === 'production' && $isSuperAdministrator;
-        $commandResult = session()->getFlashdata('command_result');
-    ?>
+<?php
+    $role = strtolower(trim((string) session()->get('role')));
+    $isSuperAdministrator = in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    $isDevelopmentEnv = defined('ENVIRONMENT') && ENVIRONMENT === 'development';
+    $canUseProductionUtilities = defined('ENVIRONMENT') && ENVIRONMENT === 'production' && $isSuperAdministrator;
+    $canUseDevelopmentUtilities = $isDevelopmentEnv && $isSuperAdministrator;
+    $commandResult = session()->getFlashdata('command_result');
+?>
+<nav class="main-header navbar navbar-expand navbar-white navbar-light <?= $isDevelopmentEnv ? 'dev-env-navbar' : ''; ?>">
     <ul class="navbar-nav">
         <li class="nav-item">
             <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
         </li>
+        <?php if ($isDevelopmentEnv): ?>
+            <li class="nav-item d-flex align-items-center mr-2">
+                <span class="badge badge-warning text-dark px-2 py-1 shadow-sm" style="font-size: 0.76rem; letter-spacing: 0.3px;" title="Anda sedang berada di environment Development (Lokal)">
+                    <i class="fas fa-laptop-code mr-1"></i> DEV MODE • LOKAL
+                </span>
+            </li>
+        <?php endif; ?>
+        <?php if ($canUseDevelopmentUtilities): ?>
+            <li class="nav-item d-none d-md-flex align-items-center py-1">
+                <button type="button" class="btn btn-sm btn-warning text-dark font-weight-bold mr-1 mb-0 shadow-sm" data-toggle="modal" data-target="#syncProdDbModalNavbar">
+                    <i class="fas fa-cloud-download-alt mr-1"></i> Ambil DB Production
+                </button>
+            </li>
+            <li class="nav-item d-flex d-md-none align-items-center py-1">
+                <button type="button" class="btn btn-xs btn-warning text-dark font-weight-bold mr-1 mb-0 shadow-sm" data-toggle="modal" data-target="#syncProdDbModalNavbar" title="Ambil DB Production">
+                    <i class="fas fa-cloud-download-alt"></i>
+                </button>
+            </li>
+        <?php endif; ?>
         <?php if ($canUseProductionUtilities): ?>
             <li class="nav-item d-none d-md-flex align-items-center flex-wrap py-1">
                 <span class="nav-link text-dark font-weight-bold pr-2 mb-0" style="cursor: default;">
@@ -748,3 +769,342 @@
 })();
 <?php endif; ?>
 </script>
+
+<?php if ($canUseDevelopmentUtilities): ?>
+<div class="modal fade" id="syncProdDbModalNavbar" tabindex="-1" role="dialog" aria-labelledby="syncProdDbModalLabel" aria-hidden="true" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title font-weight-bold mb-0" id="syncProdDbModalLabel">
+                    <i class="fas fa-cloud-download-alt mr-2"></i> Ambil Database dari Production ke Lokal (Dev Only)
+                </h5>
+                <button type="button" class="close text-dark" data-dismiss="modal" aria-label="Close" id="syncProdCloseBtn">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning py-2 px-3 small mb-3">
+                    <i class="fas fa-shield-alt mr-1"></i>
+                    <strong>Mode Development:</strong> Fitur ini hanya menarik data secara <em>read-only</em> dari server Production dan menuliskannya ke database <strong>Lokal</strong> Anda. Tidak ada data di Production yang diubah.
+                </div>
+
+                <!-- Step 1: Koneksi ke Production -->
+                <div class="card card-outline card-warning mb-3">
+                    <div class="card-header py-2">
+                        <h6 class="card-title mb-0 font-weight-bold"><i class="fas fa-plug mr-1"></i> 1. Koneksi Akun Super Admin Production</h6>
+                    </div>
+                    <div class="card-body py-2">
+                        <div class="form-row">
+                            <div class="col-md-5 mb-2">
+                                <label class="small font-weight-bold mb-1">URL Production</label>
+                                <input type="url" id="syncProdUrl" class="form-control form-control-sm" value="https://satkerpps-riau.online" placeholder="https://satkerpps-riau.online" required>
+                            </div>
+                            <div class="col-md-3 mb-2">
+                                <label class="small font-weight-bold mb-1">Username Admin</label>
+                                <input type="text" id="syncProdUsername" class="form-control form-control-sm" placeholder="NIP / Username" autocomplete="off">
+                            </div>
+                            <div class="col-md-4 mb-2">
+                                <label class="small font-weight-bold mb-1">Password Admin</label>
+                                <div class="input-group input-group-sm">
+                                    <input type="password" id="syncProdPassword" class="form-control form-control-sm" placeholder="Password Production" autocomplete="new-password">
+                                    <div class="input-group-append">
+                                        <button type="button" class="btn btn-warning text-dark font-weight-bold" id="syncProdConnectBtn">
+                                            <i class="fas fa-sync-alt mr-1"></i> Muat Tabel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="syncProdConnAlert" class="alert d-none py-2 px-3 small mb-0 mt-1"></div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Pilih Tabel & Mode -->
+                <div id="syncProdTablesSection" class="d-none">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2" style="gap: 8px;">
+                        <div>
+                            <button type="button" class="btn btn-xs btn-outline-primary" id="syncProdSelectAllBtn">
+                                <i class="fas fa-check-square mr-1"></i> Pilih Semua
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-info" id="syncProdSelectInventarisBtn">
+                                <i class="fas fa-boxes mr-1"></i> Khusus Inventaris &amp; Sekolah
+                            </button>
+                            <button type="button" class="btn btn-xs btn-outline-secondary" id="syncProdDeselectAllBtn">
+                                <i class="fas fa-square mr-1"></i> Kosongkan
+                            </button>
+                            <span class="badge badge-info ml-1" id="syncProdSelectedCountBadge">0 tabel dipilih</span>
+                        </div>
+                        <div class="d-flex align-items-center" style="gap: 6px;">
+                            <select id="syncProdMode" class="form-control form-control-sm" style="width: auto;">
+                                <option value="replace">Replace (Drop &amp; Create + Insert)</option>
+                                <option value="truncate_insert">Truncate &amp; Insert (Pertahankan Struktur Lokal)</option>
+                            </select>
+                            <input type="text" id="syncProdSearchTable" class="form-control form-control-sm" placeholder="Cari tabel..." style="width: 170px;">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive border rounded" style="max-height: 260px; overflow-y: auto;">
+                        <table class="table table-sm table-hover table-striped mb-0" id="syncProdTablesTable">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th style="width: 36px;" class="text-center">
+                                        <input type="checkbox" id="syncProdCheckAllHeader">
+                                    </th>
+                                    <th>Nama Tabel</th>
+                                    <th class="text-right" style="width: 110px;">Estimasi Baris</th>
+                                    <th class="text-right" style="width: 95px;">Ukuran</th>
+                                </tr>
+                            </thead>
+                            <tbody id="syncProdTablesBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Step 3: Progress Sync -->
+                <div id="syncProdProgressSection" class="d-none mt-3">
+                    <div class="d-flex justify-content-between small font-weight-bold mb-1">
+                        <span id="syncProdProgressLabel">Mempersiapkan sinkronisasi...</span>
+                        <span id="syncProdProgressPct">0%</span>
+                    </div>
+                    <div class="progress" style="height: 18px; border-radius: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning text-dark font-weight-bold" id="syncProdProgressBar" role="progressbar" style="width: 0%;"></div>
+                    </div>
+                    <div id="syncProdResultAlert" class="alert d-none py-2 px-3 small mt-2 mb-0"></div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" id="syncProdCancelBtn">Tutup</button>
+                <button type="button" class="btn btn-warning text-dark font-weight-bold btn-sm" id="syncProdStartBtn" disabled>
+                    <i class="fas fa-download mr-1"></i> Mulai Ambil Data dari Production
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+(function () {
+    const csrfName = '<?= esc(csrf_token()); ?>';
+    let csrfHash = '<?= esc(csrf_hash()); ?>';
+    const fetchTablesUrl = '<?= site_url('/admin/dev/sync-prod-db/tables'); ?>';
+    const pullBatchUrl = '<?= site_url('/admin/dev/sync-prod-db/pull-batch'); ?>';
+    const disconnectUrl = '<?= site_url('/admin/dev/sync-prod-db/disconnect'); ?>';
+
+    let prodTables = [];
+    let isSyncing = false;
+
+    const escapeHtml = (str) => String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const postForm = async (url, dataObj) => {
+        const body = new URLSearchParams();
+        body.append(csrfName, csrfHash);
+        Object.keys(dataObj || {}).forEach((k) => {
+            body.append(k, dataObj[k]);
+        });
+        const resp = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            body: body.toString(),
+        });
+        const newCsrf = resp.headers.get('X-CSRF-TOKEN');
+        if (newCsrf) csrfHash = newCsrf;
+        const json = await resp.json().catch(() => ({}));
+        if (!resp.ok || json.status !== 'ok') {
+            throw new Error(json.message || ('HTTP Error ' + resp.status));
+        }
+        return json;
+    };
+
+    const updateSelectedCount = () => {
+        const checked = document.querySelectorAll('.sync-prod-table-cb:checked').length;
+        const badge = document.getElementById('syncProdSelectedCountBadge');
+        const startBtn = document.getElementById('syncProdStartBtn');
+        if (badge) badge.textContent = checked + ' tabel dipilih';
+        if (startBtn) startBtn.disabled = isSyncing || checked === 0;
+    };
+
+    const renderTables = (filterText = '') => {
+        const tbody = document.getElementById('syncProdTablesBody');
+        if (!tbody) return;
+        const q = filterText.trim().toLowerCase();
+        const filtered = q ? prodTables.filter((t) => t.name.toLowerCase().includes(q)) : prodTables;
+        if (!filtered.length) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">Tidak ada tabel yang cocok.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = filtered.map((t) => `
+            <tr>
+                <td class="text-center">
+                    <input type="checkbox" class="sync-prod-table-cb" value="${escapeHtml(t.name)}">
+                </td>
+                <td class="font-weight-bold text-monospace small">${escapeHtml(t.name)}</td>
+                <td class="text-right small">${Number(t.rows || 0).toLocaleString('id-ID')}</td>
+                <td class="text-right small text-muted">${escapeHtml(t.size_formatted || '0 B')}</td>
+            </tr>
+        `).join('');
+        tbody.querySelectorAll('.sync-prod-table-cb').forEach((cb) => {
+            cb.addEventListener('change', updateSelectedCount);
+        });
+        updateSelectedCount();
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const connectBtn = document.getElementById('syncProdConnectBtn');
+        const connAlert = document.getElementById('syncProdConnAlert');
+        const tablesSection = document.getElementById('syncProdTablesSection');
+        const searchInput = document.getElementById('syncProdSearchTable');
+        const checkAllHeader = document.getElementById('syncProdCheckAllHeader');
+        const selectAllBtn = document.getElementById('syncProdSelectAllBtn');
+        const selectInvBtn = document.getElementById('syncProdSelectInventarisBtn');
+        const deselectAllBtn = document.getElementById('syncProdDeselectAllBtn');
+        const startBtn = document.getElementById('syncProdStartBtn');
+        const cancelBtn = document.getElementById('syncProdCancelBtn');
+        const closeBtn = document.getElementById('syncProdCloseBtn');
+        const progressSection = document.getElementById('syncProdProgressSection');
+        const progressLabel = document.getElementById('syncProdProgressLabel');
+        const progressPct = document.getElementById('syncProdProgressPct');
+        const progressBar = document.getElementById('syncProdProgressBar');
+        const resultAlert = document.getElementById('syncProdResultAlert');
+
+        if (!connectBtn) return;
+
+        const showConnAlert = (type, msg) => {
+            connAlert.className = 'alert alert-' + type + ' py-2 px-3 small mb-0 mt-1';
+            connAlert.textContent = msg;
+        };
+
+        connectBtn.addEventListener('click', async () => {
+            const prodUrl = document.getElementById('syncProdUrl').value.trim();
+            const username = document.getElementById('syncProdUsername').value.trim();
+            const password = document.getElementById('syncProdPassword').value;
+
+            connectBtn.disabled = true;
+            connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Menghubungkan...';
+            connAlert.className = 'alert d-none';
+
+            try {
+                const res = await postForm(fetchTablesUrl, { prod_url: prodUrl, username, password });
+                prodTables = Array.isArray(res.data) ? res.data : [];
+                renderTables(searchInput ? searchInput.value : '');
+                tablesSection.classList.remove('d-none');
+                showConnAlert('success', 'Terhubung ke Production! Ditemukan ' + prodTables.length + ' tabel.');
+            } catch (err) {
+                tablesSection.classList.add('d-none');
+                showConnAlert('danger', err.message || 'Gagal menghubungkan ke Production.');
+            } finally {
+                connectBtn.disabled = false;
+                connectBtn.innerHTML = '<i class="fas fa-sync-alt mr-1"></i> Muat Tabel';
+            }
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => renderTables(searchInput.value));
+        }
+
+        if (checkAllHeader) {
+            checkAllHeader.addEventListener('change', () => {
+                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => {
+                    cb.checked = checkAllHeader.checked;
+                });
+                updateSelectedCount();
+            });
+        }
+
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('click', () => {
+                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => { cb.checked = true; });
+                if (checkAllHeader) checkAllHeader.checked = true;
+                updateSelectedCount();
+            });
+        }
+
+        if (selectInvBtn) {
+            selectInvBtn.addEventListener('click', () => {
+                const invKeywords = ['inventaris', 'mst_sekolah', 'mst_paket', 'mst_ruangan'];
+                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => {
+                    const name = cb.value.toLowerCase();
+                    cb.checked = invKeywords.some((kw) => name.includes(kw));
+                });
+                updateSelectedCount();
+            });
+        }
+
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('click', () => {
+                document.querySelectorAll('.sync-prod-table-cb').forEach((cb) => { cb.checked = false; });
+                if (checkAllHeader) checkAllHeader.checked = false;
+                updateSelectedCount();
+            });
+        }
+
+        startBtn.addEventListener('click', async () => {
+            const selected = Array.from(document.querySelectorAll('.sync-prod-table-cb:checked')).map((cb) => cb.value);
+            if (!selected.length) return;
+
+            const mode = document.getElementById('syncProdMode').value;
+            isSyncing = true;
+            startBtn.disabled = true;
+            connectBtn.disabled = true;
+            cancelBtn.disabled = true;
+            closeBtn.disabled = true;
+            progressSection.classList.remove('d-none');
+            resultAlert.className = 'alert d-none';
+
+            let totalRowsSynced = 0;
+            try {
+                for (let i = 0; i < selected.length; i++) {
+                    const table = selected[i];
+                    let offset = 0;
+                    let done = false;
+
+                    while (!done) {
+                        const overallPct = Math.round(((i) / selected.length) * 100);
+                        progressBar.style.width = Math.max(5, overallPct) + '%';
+                        progressPct.textContent = overallPct + '%';
+                        progressLabel.textContent = `Menarik tabel (${i + 1}/${selected.length}): ${table} (offset ${offset})...`;
+
+                        const res = await postForm(pullBatchUrl, {
+                            table,
+                            offset,
+                            limit: 500,
+                            mode,
+                        });
+                        totalRowsSynced += Number(res.inserted || 0);
+                        offset = Number(res.next_offset || 0);
+                        done = Boolean(res.done);
+                    }
+                }
+
+                progressBar.style.width = '100%';
+                progressBar.classList.remove('bg-warning', 'text-dark', 'progress-bar-animated');
+                progressBar.classList.add('bg-success', 'text-white');
+                progressPct.textContent = '100%';
+                progressLabel.textContent = 'Sinkronisasi selesai!';
+                resultAlert.className = 'alert alert-success py-2 px-3 small mt-2 mb-0';
+                resultAlert.innerHTML = `<i class="fas fa-check-circle mr-1"></i> Berhasil menarik <strong>${selected.length}</strong> tabel (${totalRowsSynced.toLocaleString('id-ID')} baris data) ke database lokal.`;
+                await postForm(disconnectUrl, {}).catch(() => {});
+            } catch (err) {
+                progressBar.classList.remove('bg-warning', 'text-dark', 'progress-bar-animated');
+                progressBar.classList.add('bg-danger', 'text-white');
+                progressLabel.textContent = 'Sinkronisasi terhenti.';
+                resultAlert.className = 'alert alert-danger py-2 px-3 small mt-2 mb-0';
+                resultAlert.textContent = err.message || 'Gagal melakukan sinkronisasi.';
+            } finally {
+                isSyncing = false;
+                connectBtn.disabled = false;
+                cancelBtn.disabled = false;
+                closeBtn.disabled = false;
+                updateSelectedCount();
+            }
+        });
+    });
+})();
+</script>
+<?php endif; ?>

@@ -1279,6 +1279,40 @@ graph TD
         </div>
     </div>
 
+    <!-- FLOWCHART 16: MODE DEVELOPMENT & SINKRONISASI DATABASE PRODUCTION KE LOKAL -->
+    <div class="card flowchart-card mb-4 role-section" data-roles="super_administrator,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 font-weight-bold text-dark">
+                <i class="fas fa-laptop-code text-warning mr-2"></i>Flowchart: Mode Development &amp; Tarik Database Production ke Lokal
+            </h5>
+            <div>
+                <span class="badge badge-warning text-dark">DEV ONLY • SUPER ADMIN</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Aplikasi Berjalan di CI_ENVIRONMENT = development"] --> B["Tampil Penanda Visual: Prefix [DEV] di Tab, Garis Kuning Navbar, Badge DEV MODE • LOKAL"]
+    B --> C{"Login sebagai Super Administrator?"}
+    C -- Ya --> D["Tampil Tombol Navbar: Ambil DB Production"]
+    C -- Tidak --> E["Hanya Tampil Badge DEV MODE • LOKAL"]
+    D --> F["Klik Ambil DB Production &amp; Isi Kredensial Super Admin Production"]
+    F --> G["Server Lokal Login ke Production &amp; Muat Daftar Tabel Read-Only (/prod-db-tables)"]
+    G --> H{"Pilih Cakupan Tabel"}
+    H -- "Pilih Semua" --> I["Sinkronisasi Seluruh Tabel Database"]
+    H -- "Pilih Tabel Tertentu" --> J["Centang Tabel Spesifik / Khusus Inventaris &amp; Sekolah"]
+    I --> K["Proses Tarik Data Bertahap per 500 Baris (/prod-db-dump)"]
+    J --> K
+    K --> L["Simpan ke Database Lokal (Replace / Truncate + Insert) + Tampil Ringkasan Hasil"]
+                </pre>
+            </div>
+            <div class="alert alert-light border small mb-0">
+                <strong>Catatan Keamanan:</strong> Fitur tarik database ini <strong>hanya aktif di <code>ENVIRONMENT = development</code></strong> (diblokir 403 di server production). Data di server production hanya dibaca secara <em>read-only</em> tanpa mengubah data production sama sekali.
+            </div>
+        </div>
+    </div>
+
     <!-- PANDUAN PENGGUNAAN SISTEM (ACCORDION STYLE) -->
     <div class="mt-4">
         <!-- MODUL KEUANGAN & SURAT TUGAS -->

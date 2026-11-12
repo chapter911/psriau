@@ -85,6 +85,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('pengaturan/application/merge-database', 'Admin\\Setting::mergeDatabase');
 	$routes->post('pengaturan/application/extract-database', 'Admin\Setting::extractDatabase');
 	$routes->get('pengaturan/application/database-tables', 'Admin\Setting::databaseTables');
+	$routes->get('pengaturan/application/prod-db-tables', 'Admin\Setting::prodDbTables');
+	$routes->get('pengaturan/application/prod-db-dump', 'Admin\Setting::prodDbDump');
+	$routes->post('dev/sync-prod-db/tables', 'Admin\DevDbSync::fetchTables');
+	$routes->post('dev/sync-prod-db/pull-batch', 'Admin\DevDbSync::pullBatch');
+	$routes->post('dev/sync-prod-db/disconnect', 'Admin\DevDbSync::disconnect');
 	$routes->get('pengaturan/application/error-log-dates', 'Admin\\Setting::errorLogDates');
 	$routes->get('pengaturan/application/error-logs', 'Admin\\Setting::errorLogsByDate');
 	$routes->get('pengaturan/menus', 'Admin\\Setting::menus');

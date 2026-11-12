@@ -12,6 +12,9 @@
         }
         $pageDocTitle = trim((string) ($title ?? $pageTitle ?? ''));
         $docTitle = $pageDocTitle !== '' ? $pageDocTitle . ' | ' . $appName : $appName;
+        if (defined('ENVIRONMENT') && ENVIRONMENT === 'development') {
+            $docTitle = '[DEV] ' . $docTitle;
+        }
     ?>
     <title><?= esc($docTitle); ?></title>
     <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
@@ -73,6 +76,13 @@
         .inline-form {
             display: inline-block;
         }
+
+        <?php if (defined('ENVIRONMENT') && ENVIRONMENT === 'development'): ?>
+        .main-header.navbar.dev-env-navbar {
+            border-top: 3px solid #f59e0b !important;
+            background: linear-gradient(90deg, #fffbeb 0%, #ffffff 38%) !important;
+        }
+        <?php endif; ?>
 
         .btn-primary,
         .bg-primary,
