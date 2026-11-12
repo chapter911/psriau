@@ -80,6 +80,10 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->match(['get', 'post'], 'pengaturan-home', 'Admin\\HomeSetting::index');
 	$routes->match(['get', 'post'], 'pengaturan/application', 'Admin\\Setting::application');
 	$routes->post('pengaturan/application/reset-sidebar', 'Admin\\Setting::resetSidebarDefaults');
+	$routes->post('pengaturan/application/clear-cache', 'Admin\\Setting::clearCache');
+	$routes->post('pengaturan/application/clean-old-logs', 'Admin\\Setting::cleanOldLogs');
+	$routes->get('pengaturan/application/backup/download/(:segment)', 'Admin\\Setting::downloadBackup/$1');
+	$routes->post('pengaturan/application/backup/delete/(:segment)', 'Admin\\Setting::deleteBackup/$1');
 	$routes->post('pengaturan/application/test-email', 'Admin\\Setting::testEmail');
 	$routes->post('pengaturan/application/git-pull', 'Admin\\Setting::gitPull');
 	$routes->post('pengaturan/application/merge-database', 'Admin\\Setting::mergeDatabase');

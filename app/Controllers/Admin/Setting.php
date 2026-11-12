@@ -91,7 +91,16 @@ class Setting extends BaseController
         }
 
         $logFiles = glob(WRITEPATH . 'logs/log-*.log') ?: [];
+        rsort($logFiles);
         $errorLogCount = count($logFiles);
+        $latestLogName = $errorLogCount > 0 ? basename($logFiles[0]) : null;
+        $latestLogPreview = '';
+        if ($errorLogCount > 0 && is_readable($logFiles[0])) {
+            $lines = @file($logFiles[0], FILE_IGNORE_NEW_LINES);
+            if (is_array($lines)) {
+                $latestLogPreview = implode("\n", array_slice($lines, -45));
+            }
+        }
 
         $db = \Config\Database::connect();
         $dbInfo = [
@@ -101,8 +110,40 @@ class Setting extends BaseController
             'port'     => $db->port ?? 3306,
         ];
 
+        $topTables = [];
+        $totalDbBytes = 0;
+        try {
+            $tablesSummary = $this->collectDatabaseTablesSummary();
+            foreach ($tablesSummary as $tbl) {
+                $totalDbBytes += (int) ($tbl['bytes'] ?? 0);
+            }
+            usort($tablesSummary, static fn($a, $b) => ((int) ($b['bytes'] ?? 0)) <=> ((int) ($a['bytes'] ?? 0)));
+            $topTables = array_slice($tablesSummary, 0, 5);
+        } catch (\Throwable $ignored) {
+        }
+
+        $diskUsage = [
+            'uploads' => $this->formatBytes($this->getDirectorySize(WRITEPATH . 'uploads')),
+            'backups' => $this->formatBytes($this->getDirectorySize(WRITEPATH . 'backups')),
+            'logs'    => $this->formatBytes($this->getDirectorySize(WRITEPATH . 'logs')),
+            'cache'   => $this->formatBytes($this->getDirectorySize(WRITEPATH . 'cache')),
+        ];
+
+        $backupFiles = [];
+        $rawBackups = glob(WRITEPATH . 'backups/*.{sql,zip,gz}', GLOB_BRACE) ?: [];
+        usort($rawBackups, static fn($a, $b) => (@filemtime($b) ?: 0) <=> (@filemtime($a) ?: 0));
+        foreach (array_slice($rawBackups, 0, 10) as $bf) {
+            $backupFiles[] = [
+                'name'     => basename($bf),
+                'size'     => $this->formatBytes((int) (@filesize($bf) ?: 0)),
+                'modified' => date('d M Y H:i', (int) (@filemtime($bf) ?: time())),
+            ];
+        }
+
         $gitBranch = '-';
         $gitCommit = '-';
+        $gitRecentCommits = [];
+        $gitStatusShort = '';
         if (function_exists('shell_exec')) {
             [$okB, $outB] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && git rev-parse --abbrev-ref HEAD 2>/dev/null');
             if ($okB && trim($outB) !== '') {
@@ -112,14 +153,30 @@ class Setting extends BaseController
             if ($okC && trim($outC) !== '') {
                 $gitCommit = trim($outC);
             }
+            [$okR, $outR] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && git log -5 --format="%h | %an | %cr | %s" 2>/dev/null');
+            if ($okR && trim($outR) !== '') {
+                $gitRecentCommits = array_values(array_filter(explode("\n", trim($outR))));
+            }
+            [$okS, $outS] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && git status --short 2>/dev/null');
+            if ($okS) {
+                $gitStatusShort = trim($outS);
+            }
         }
 
         return view('admin/settings/application', [
-            'setting'       => $setting,
-            'errorLogCount' => $errorLogCount,
-            'dbInfo'        => $dbInfo,
-            'gitBranch'     => $gitBranch,
-            'gitCommit'     => $gitCommit,
+            'setting'          => $setting,
+            'errorLogCount'    => $errorLogCount,
+            'latestLogName'    => $latestLogName,
+            'latestLogPreview' => $latestLogPreview,
+            'dbInfo'           => $dbInfo,
+            'totalDbSize'      => $this->formatBytes($totalDbBytes),
+            'topTables'        => $topTables,
+            'backupFiles'      => $backupFiles,
+            'diskUsage'        => $diskUsage,
+            'gitBranch'        => $gitBranch,
+            'gitCommit'        => $gitCommit,
+            'gitRecentCommits' => $gitRecentCommits,
+            'gitStatusShort'   => $gitStatusShort,
         ]);
     }
 
@@ -1415,6 +1472,98 @@ class Setting extends BaseController
         $role = strtolower(trim((string) session('role')));
 
         return in_array($role, ['admin', 'super administrator', 'super_administrator', 'super-admin', 'superadmin'], true);
+    }
+
+    private function getDirectorySize(string $dir): int
+    {
+        if (! is_dir($dir)) {
+            return 0;
+        }
+
+        $size = 0;
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS)
+        );
+        foreach ($iterator as $file) {
+            if ($file->isFile()) {
+                $size += $file->getSize();
+            }
+        }
+        return $size;
+    }
+
+    public function clearCache()
+    {
+        $role = strtolower(trim((string) session('role')));
+        if (! in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
+            return redirect()->to('/admin/pengaturan/application')->with('error', 'Akses ditolak.');
+        }
+
+        $cacheDir = WRITEPATH . 'cache';
+        $deleted = 0;
+        if (is_dir($cacheDir)) {
+            foreach (glob($cacheDir . '/*') ?: [] as $item) {
+                $base = basename($item);
+                if ($base === 'index.html' || $base === '.htaccess') {
+                    continue;
+                }
+                if (is_file($item) && @unlink($item)) {
+                    $deleted++;
+                }
+            }
+        }
+
+        return redirect()->to('/admin/pengaturan/application#tab-storage')->with('message', "Berhasil membersihkan {$deleted} file cache.");
+    }
+
+    public function cleanOldLogs()
+    {
+        $role = strtolower(trim((string) session('role')));
+        if (! in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
+            return redirect()->to('/admin/pengaturan/application')->with('error', 'Akses ditolak.');
+        }
+
+        $cutoff = time() - (30 * 86400);
+        $deleted = 0;
+        foreach (glob(WRITEPATH . 'logs/log-*.log') ?: [] as $file) {
+            if ((@filemtime($file) ?: time()) < $cutoff && @unlink($file)) {
+                $deleted++;
+            }
+        }
+
+        return redirect()->to('/admin/pengaturan/application#tab-logs')->with('message', "Berhasil menghapus {$deleted} file log lama (> 30 hari).");
+    }
+
+    public function downloadBackup(string $filename)
+    {
+        $role = strtolower(trim((string) session('role')));
+        if (! in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
+            return redirect()->to('/admin/pengaturan/application')->with('error', 'Akses ditolak.');
+        }
+
+        $safeName = basename($filename);
+        $path = WRITEPATH . 'backups/' . $safeName;
+        if ($safeName === '' || ! is_file($path)) {
+            return redirect()->to('/admin/pengaturan/application#tab-database')->with('error', 'File backup tidak ditemukan.');
+        }
+
+        return $this->response->download($path, null);
+    }
+
+    public function deleteBackup(string $filename)
+    {
+        $role = strtolower(trim((string) session('role')));
+        if (! in_array($role, ['super administrator', 'super_administrator', 'super-admin', 'superadmin'], true)) {
+            return redirect()->to('/admin/pengaturan/application')->with('error', 'Akses ditolak.');
+        }
+
+        $safeName = basename($filename);
+        $path = WRITEPATH . 'backups/' . $safeName;
+        if ($safeName === '' || ! is_file($path) || ! @unlink($path)) {
+            return redirect()->to('/admin/pengaturan/application#tab-database')->with('error', 'Gagal menghapus file backup.');
+        }
+
+        return redirect()->to('/admin/pengaturan/application#tab-database')->with('message', "File backup {$safeName} berhasil dihapus.");
     }
 
     private function canAccessProductionUtilities(): bool

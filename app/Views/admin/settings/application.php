@@ -14,6 +14,9 @@
     $smtpCrypto = (string) env('EMAIL_SMTP_CRYPTO', '-');
     $smtpUser = (string) env('EMAIL_SMTP_USER', '-');
     $gdriveFolderId = (string) env('GOOGLE_DRIVE_UPLOAD_FOLDER_ID', '');
+    $hasGdriveCreds = is_file(ROOTPATH . 'google-service-account.json');
+    $hasSyncToken = strlen(trim((string) env('PROD_DB_SYNC_TOKEN', ''))) >= 16;
+    $isWritableOk = is_writable(WRITEPATH . 'logs') && is_writable(WRITEPATH . 'uploads') && is_writable(WRITEPATH . 'cache');
     $errCount = (int) ($errorLogCount ?? 0);
 ?>
 
@@ -378,7 +381,36 @@
                                         </div>
                                     </div>
 
-                                    <div class="mt-2">
+                                    <div class="mt-3">
+                                        <div class="small font-weight-bold text-muted mb-1">Preset Tema Cepat:</div>
+                                        <div class="d-flex flex-wrap mb-3" style="gap: 6px;">
+                                            <button type="button" class="btn btn-xs btn-outline-primary js-theme-preset" data-primary="#0A66C2" data-sbg="#2F3A45" data-stext="#C2CBD5" data-sactbg="#0A66C2" data-sacttext="#FFFFFF">
+                                                <i class="fas fa-swatchbook mr-1"></i> Satker PU (Biru)
+                                            </button>
+                                            <button type="button" class="btn btn-xs btn-outline-secondary js-theme-preset" data-primary="#007BFF" data-sbg="#343A40" data-stext="#C2C7D0" data-sactbg="#007BFF" data-sacttext="#FFFFFF">
+                                                AdminLTE Default
+                                            </button>
+                                            <button type="button" class="btn btn-xs btn-outline-dark js-theme-preset" data-primary="#0F766E" data-sbg="#1E293B" data-stext="#CBD5E1" data-sactbg="#0F766E" data-sacttext="#FFFFFF">
+                                                Slate Teal Modern
+                                            </button>
+                                        </div>
+
+                                        <div class="small font-weight-bold text-muted mb-1">Live Mini-Preview:</div>
+                                        <div class="border rounded overflow-hidden d-flex mb-3" style="height: 86px; background: #f4f6f9;">
+                                            <div id="themePreviewSidebar" style="width: 115px; padding: 8px; background: <?= esc($setting['sidebar_bg_color'] ?? '#2F3A45'); ?>; color: <?= esc($setting['sidebar_text_color'] ?? '#C2CBD5'); ?>; font-size: 0.72rem;">
+                                                <div class="font-weight-bold mb-1" style="opacity: 0.85;">MENU</div>
+                                                <div id="themePreviewActiveItem" class="px-2 py-1 rounded mb-1" style="background: <?= esc($setting['sidebar_active_bg_color'] ?? '#0A66C2'); ?>; color: <?= esc($setting['sidebar_active_text_color'] ?? '#FFFFFF'); ?>;">Dashboard</div>
+                                                <div class="px-2 py-0" style="opacity: 0.85;">Inventaris</div>
+                                            </div>
+                                            <div class="flex-fill d-flex flex-column">
+                                                <div class="bg-white border-bottom px-2 py-1 d-flex justify-content-between align-items-center" style="font-size: 0.72rem;">
+                                                    <span class="font-weight-bold text-dark">Preview Header</span>
+                                                    <span id="themePreviewBtn" class="badge text-white" style="background: <?= esc($setting['primary_color'] ?? '#0A66C2'); ?>;">Tombol</span>
+                                                </div>
+                                                <div class="p-2 small text-muted" style="font-size: 0.72rem;">Konten halaman &amp; warna utama aplikasi.</div>
+                                            </div>
+                                        </div>
+
                                         <button
                                             type="submit"
                                             class="btn btn-outline-secondary btn-sm"
@@ -543,7 +575,7 @@
                         <div class="col-lg-5">
                             <div class="settings-subcard">
                                 <div class="settings-subcard-header">
-                                    <i class="fab fa-google-drive text-primary"></i> Integrasi Penyimpanan Cloud
+                                    <i class="fab fa-google-drive text-primary"></i> Penyimpanan Cloud &amp; Pemakaian Disk
                                 </div>
                                 <div class="settings-subcard-body">
                                     <div class="env-summary-row">
@@ -551,13 +583,38 @@
                                         <span class="font-weight-bold text-monospace small"><?= esc($gdriveFolderId !== '' ? $gdriveFolderId : 'Belum diatur'); ?></span>
                                     </div>
                                     <div class="env-summary-row">
-                                        <span class="text-muted">PHP Upload Max Filesize:</span>
-                                        <span class="font-weight-bold"><?= esc(ini_get('upload_max_filesize')); ?></span>
+                                        <span class="text-muted">Service Account JSON:</span>
+                                        <span class="badge <?= $hasGdriveCreds ? 'badge-success' : 'badge-warning text-dark'; ?>"><?= $hasGdriveCreds ? 'Tersedia' : 'Tidak Ada'; ?></span>
                                     </div>
                                     <div class="env-summary-row">
-                                        <span class="text-muted">PHP Post Max Size:</span>
-                                        <span class="font-weight-bold"><?= esc(ini_get('post_max_size')); ?></span>
+                                        <span class="text-muted">Limit PHP Upload / Post:</span>
+                                        <span class="font-weight-bold"><?= esc(ini_get('upload_max_filesize') . ' / ' . ini_get('post_max_size')); ?></span>
                                     </div>
+                                    <div class="env-summary-row">
+                                        <span class="text-muted">Disk <code>writable/uploads</code>:</span>
+                                        <span class="font-weight-bold"><?= esc($diskUsage['uploads'] ?? '0 B'); ?></span>
+                                    </div>
+                                    <div class="env-summary-row">
+                                        <span class="text-muted">Disk <code>writable/backups</code>:</span>
+                                        <span class="font-weight-bold"><?= esc($diskUsage['backups'] ?? '0 B'); ?></span>
+                                    </div>
+                                    <div class="env-summary-row">
+                                        <span class="text-muted">Disk <code>writable/logs</code> / <code>cache</code>:</span>
+                                        <span class="font-weight-bold"><?= esc(($diskUsage['logs'] ?? '0 B') . ' / ' . ($diskUsage['cache'] ?? '0 B')); ?></span>
+                                    </div>
+                                    <?php if ($isSuperAdmin): ?>
+                                        <div class="mt-3">
+                                            <button
+                                                type="submit"
+                                                class="btn btn-outline-warning text-dark btn-sm"
+                                                formaction="<?= site_url('/admin/pengaturan/application/clear-cache'); ?>"
+                                                formmethod="post"
+                                                formnovalidate
+                                            >
+                                                <i class="fas fa-broom mr-1"></i> Bersihkan Cache Aplikasi
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -647,6 +704,8 @@
                                     <div class="env-summary-row"><span class="text-muted">DB Driver:</span> <span class="font-weight-bold"><?= esc($dbInfo['driver'] ?? '-'); ?></span></div>
                                     <div class="env-summary-row"><span class="text-muted">Database:</span> <span class="font-weight-bold text-monospace small"><?= esc($dbInfo['database'] ?? '-'); ?></span></div>
                                     <div class="env-summary-row"><span class="text-muted">Host / Port:</span> <span class="font-weight-bold text-monospace small"><?= esc(($dbInfo['hostname'] ?? '-') . ':' . ($dbInfo['port'] ?? 3306)); ?></span></div>
+                                    <div class="env-summary-row"><span class="text-muted">Folder <code>writable/</code>:</span> <span class="badge <?= $isWritableOk ? 'badge-success' : 'badge-danger'; ?>"><?= $isWritableOk ? 'Writable OK' : 'Perlu Izin Tulis'; ?></span></div>
+                                    <div class="env-summary-row"><span class="text-muted">Token Sync DB (<code>.env</code>):</span> <span class="badge <?= $hasSyncToken ? 'badge-success' : 'badge-warning text-dark'; ?>"><?= $hasSyncToken ? 'Terpasang' : 'Belum Diatur'; ?></span></div>
                                     <div class="env-summary-row">
                                         <span class="text-muted">Ekstensi Wajib:</span>
                                         <span>
@@ -673,6 +732,24 @@
                         <div class="settings-subcard-body">
                             <div class="env-summary-row"><span class="text-muted">Branch Aktif:</span> <span class="badge badge-info"><?= esc($gitBranch ?? '-'); ?></span></div>
                             <div class="env-summary-row"><span class="text-muted">Commit Terakhir:</span> <span class="font-weight-bold text-monospace small"><?= esc($gitCommit ?? '-'); ?></span></div>
+                            <div class="env-summary-row">
+                                <span class="text-muted">Working Tree:</span>
+                                <?php if (($gitStatusShort ?? '') === ''): ?>
+                                    <span class="badge badge-success">Bersih (Tidak ada perubahan lokal)</span>
+                                <?php else: ?>
+                                    <span class="badge badge-warning text-dark">Ada file termodifikasi</span>
+                                <?php endif; ?>
+                            </div>
+                            <?php if (! empty($gitRecentCommits)): ?>
+                                <div class="mt-3">
+                                    <div class="small font-weight-bold text-muted mb-1">5 Commit Terakhir:</div>
+                                    <ul class="list-group list-group-flush border rounded small">
+                                        <?php foreach ($gitRecentCommits as $cLine): ?>
+                                            <li class="list-group-item py-1 px-2 text-monospace" style="font-size: 0.78rem;"><?= esc($cLine); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                            <?php endif; ?>
                             <div class="mt-3">
                                 <?php if ($isProdEnv && $isSuperAdmin): ?>
                                     <button type="button" class="btn btn-primary btn-sm" onclick="document.querySelector('form[action*=\'git-pull\']')?.submit();">
@@ -691,29 +768,116 @@
                     <div class="settings-section-title">
                         <i class="fas fa-database text-primary"></i> Database &amp; Merge Sync
                     </div>
-                    <div class="settings-subcard">
-                        <div class="settings-subcard-header">
-                            <i class="fas fa-sync-alt text-primary"></i> Utilitas Sinkronisasi &amp; Ekstrak Database
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="settings-subcard">
+                                <div class="settings-subcard-header">
+                                    <i class="fas fa-sync-alt text-primary"></i> Utilitas Sinkronisasi &amp; Ekstrak Database
+                                </div>
+                                <div class="settings-subcard-body">
+                                    <div class="env-summary-row mb-3">
+                                        <span class="text-muted">Total Ukuran Database:</span>
+                                        <span class="badge badge-primary px-2 py-1"><?= esc($totalDbSize ?? '0 B'); ?></span>
+                                    </div>
+                                    <?php if ($isDevEnv && $isSuperAdmin): ?>
+                                        <p class="small text-muted mb-3">Anda berada di mode <strong>Development (Lokal)</strong>. Anda dapat menarik database atau modul tertentu secara <em>read-only</em> dari server Production menggunakan Token Sync.</p>
+                                        <button type="button" class="btn btn-warning text-dark font-weight-bold btn-sm" data-toggle="modal" data-target="#syncProdDbModalNavbar">
+                                            <i class="fas fa-cloud-download-alt mr-1"></i> Buka Ambil DB Production
+                                        </button>
+                                    <?php elseif ($isProdEnv && $isSuperAdmin): ?>
+                                        <p class="small text-muted mb-3">Anda berada di mode <strong>Production</strong>. Gunakan utilitas berikut untuk merge migrasi atau ekstrak backup database.</p>
+                                        <button type="button" class="btn btn-outline-primary btn-sm mr-2" onclick="document.querySelector('form[action*=\'merge-database\']')?.submit();">
+                                            <i class="fas fa-database mr-1"></i> Merge Database
+                                        </button>
+                                        <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#extractDatabaseModalNavbar">
+                                            <i class="fas fa-file-export mr-1"></i> Ekstrak Database
+                                        </button>
+                                    <?php else: ?>
+                                        <span class="text-muted small">Utilitas database hanya tersedia untuk Super Administrator.</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
                         </div>
-                        <div class="settings-subcard-body">
-                            <?php if ($isDevEnv && $isSuperAdmin): ?>
-                                <p class="small text-muted mb-3">Anda berada di mode <strong>Development (Lokal)</strong>. Anda dapat menarik database atau modul tertentu secara <em>read-only</em> dari server Production menggunakan Token Sync.</p>
-                                <button type="button" class="btn btn-warning text-dark font-weight-bold btn-sm" data-toggle="modal" data-target="#syncProdDbModalNavbar">
-                                    <i class="fas fa-cloud-download-alt mr-1"></i> Buka Ambil DB Production
-                                </button>
-                            <?php elseif ($isProdEnv && $isSuperAdmin): ?>
-                                <p class="small text-muted mb-3">Anda berada di mode <strong>Production</strong>. Gunakan utilitas berikut untuk merge migrasi atau ekstrak backup database.</p>
-                                <button type="button" class="btn btn-outline-primary btn-sm mr-2" onclick="document.querySelector('form[action*=\'merge-database\']')?.submit();">
-                                    <i class="fas fa-database mr-1"></i> Merge Database
-                                </button>
-                                <button type="button" class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#extractDatabaseModalNavbar">
-                                    <i class="fas fa-file-export mr-1"></i> Ekstrak Database
-                                </button>
-                            <?php else: ?>
-                                <span class="text-muted small">Utilitas database hanya tersedia untuk Super Administrator.</span>
-                            <?php endif; ?>
+
+                        <div class="col-lg-6">
+                            <div class="settings-subcard">
+                                <div class="settings-subcard-header">
+                                    <i class="fas fa-chart-bar text-primary"></i> Top 5 Tabel Terbesar
+                                </div>
+                                <div class="settings-subcard-body p-0">
+                                    <table class="table table-sm table-striped mb-0 small">
+                                        <thead>
+                                            <tr>
+                                                <th>Tabel</th>
+                                                <th class="text-right">Baris</th>
+                                                <th class="text-right">Ukuran</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <?php if (! empty($topTables)): ?>
+                                                <?php foreach ($topTables as $tb): ?>
+                                                    <tr>
+                                                        <td class="text-monospace font-weight-bold"><?= esc($tb['name']); ?></td>
+                                                        <td class="text-right"><?= number_format((int) ($tb['rows'] ?? 0)); ?></td>
+                                                        <td class="text-right text-muted"><?= esc($tb['size_formatted'] ?? '0 B'); ?></td>
+                                                    </tr>
+                                                <?php endforeach; ?>
+                                            <?php else: ?>
+                                                <tr><td colspan="3" class="text-center text-muted py-2">Tidak ada data tabel.</td></tr>
+                                            <?php endif; ?>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
+                    <?php if ($isSuperAdmin): ?>
+                        <div class="settings-subcard">
+                            <div class="settings-subcard-header">
+                                <i class="fas fa-archive text-primary"></i> File Backup Tersimpan (<code>writable/backups</code>)
+                            </div>
+                            <div class="settings-subcard-body p-0">
+                                <table class="table table-sm table-hover mb-0 small">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama File</th>
+                                            <th>Ukuran</th>
+                                            <th>Tanggal</th>
+                                            <th class="text-right">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php if (! empty($backupFiles)): ?>
+                                            <?php foreach ($backupFiles as $bf): ?>
+                                                <tr>
+                                                    <td class="text-monospace font-weight-bold"><?= esc($bf['name']); ?></td>
+                                                    <td><?= esc($bf['size']); ?></td>
+                                                    <td><?= esc($bf['modified']); ?></td>
+                                                    <td class="text-right">
+                                                        <a href="<?= site_url('/admin/pengaturan/application/backup/download/' . rawurlencode($bf['name'])); ?>" class="btn btn-xs btn-outline-primary">
+                                                            <i class="fas fa-download"></i>
+                                                        </a>
+                                                        <button
+                                                            type="submit"
+                                                            class="btn btn-xs btn-outline-danger"
+                                                            formaction="<?= site_url('/admin/pengaturan/application/backup/delete/' . rawurlencode($bf['name'])); ?>"
+                                                            formmethod="post"
+                                                            formnovalidate
+                                                        >
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <tr><td colspan="4" class="text-center text-muted py-3">Belum ada file backup di <code>writable/backups</code>.</td></tr>
+                                        <?php endif; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
                 <!-- 9. SYSTEM & ERROR LOGS -->
@@ -730,13 +894,34 @@
                                 <span class="text-muted">Total File Log Tersimpan:</span>
                                 <span class="badge <?= $errCount > 0 ? 'badge-danger' : 'badge-success'; ?>"><?= $errCount; ?> file</span>
                             </div>
-                            <div class="mt-3">
+                            <?php if (! empty($latestLogName)): ?>
+                                <div class="env-summary-row">
+                                    <span class="text-muted">File Log Terbaru:</span>
+                                    <span class="text-monospace small font-weight-bold"><?= esc($latestLogName); ?></span>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (($latestLogPreview ?? '') !== ''): ?>
+                                <div class="mt-3">
+                                    <div class="small font-weight-bold text-muted mb-1">Preview 45 Baris Terakhir:</div>
+                                    <pre class="bg-dark text-light p-2 rounded small mb-0" style="max-height: 240px; overflow: auto; font-size: 0.76rem;"><?= esc($latestLogPreview); ?></pre>
+                                </div>
+                            <?php endif; ?>
+                            <div class="mt-3 d-flex flex-wrap" style="gap: 8px;">
                                 <?php if ($isProdEnv && $isSuperAdmin): ?>
                                     <button type="button" class="btn btn-warning text-dark btn-sm" data-toggle="modal" data-target="#errorLogModalNavbar">
                                         <i class="fas fa-triangle-exclamation mr-1"></i> Buka Viewer Log Error
                                     </button>
-                                <?php else: ?>
-                                    <span class="text-muted small">Di environment lokal, log tersimpan langsung di folder <code>writable/logs/</code>.</span>
+                                <?php endif; ?>
+                                <?php if ($isSuperAdmin && $errCount > 0): ?>
+                                    <button
+                                        type="submit"
+                                        class="btn btn-outline-danger btn-sm"
+                                        formaction="<?= site_url('/admin/pengaturan/application/clean-old-logs'); ?>"
+                                        formmethod="post"
+                                        formnovalidate
+                                    >
+                                        <i class="fas fa-trash-alt mr-1"></i> Bersihkan Log &gt; 30 Hari
+                                    </button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -747,7 +932,10 @@
         </div>
 
         <div class="settings-footer-bar">
-            <span class="text-muted small"><i class="fas fa-info-circle mr-1"></i> Perubahan pada tab General, Appearance, Storage, dan Security disimpan bersamaan.</span>
+            <div>
+                <span class="text-muted small"><i class="fas fa-info-circle mr-1"></i> Perubahan pada tab General, Appearance, Storage, dan Security disimpan bersamaan.</span>
+                <span id="settingsUnsavedBadge" class="badge badge-warning text-dark ml-2 d-none"><i class="fas fa-exclamation-circle mr-1"></i> Ada perubahan belum disimpan</span>
+            </div>
             <button type="submit" class="btn btn-primary px-4 font-weight-bold shadow-sm">
                 <i class="fas fa-save mr-1"></i> Save Settings
             </button>
@@ -759,23 +947,89 @@
 (() => {
     const tabLinks = document.querySelectorAll('#appSettingsTabs .settings-tab-pill');
     const tabPanes = document.querySelectorAll('#appSettingsTabContent .tab-pane');
+    const storageKey = 'satkerpps_app_settings_tab';
+
+    const activateTab = (targetId) => {
+        if (!targetId) return;
+        const targetLink = document.querySelector(`#appSettingsTabs .settings-tab-pill[href="${targetId}"]`);
+        const targetPane = document.querySelector(targetId);
+        if (!targetLink || !targetPane) return;
+
+        tabLinks.forEach((l) => {
+            l.classList.remove('active');
+            l.setAttribute('aria-selected', 'false');
+        });
+        targetLink.classList.add('active');
+        targetLink.setAttribute('aria-selected', 'true');
+        tabPanes.forEach((pane) => {
+            pane.classList.remove('show', 'active');
+        });
+        targetPane.classList.add('show', 'active');
+    };
+
+    const initialTab = window.location.hash || sessionStorage.getItem(storageKey);
+    if (initialTab && initialTab.startsWith('#tab-')) {
+        activateTab(initialTab);
+    }
+
     tabLinks.forEach((link) => {
         link.addEventListener('click', (e) => {
             e.preventDefault();
             const targetId = link.getAttribute('href');
-            tabLinks.forEach((l) => {
-                l.classList.remove('active');
-                l.setAttribute('aria-selected', 'false');
-            });
-            link.classList.add('active');
-            link.setAttribute('aria-selected', 'true');
-            tabPanes.forEach((pane) => {
-                pane.classList.remove('show', 'active');
-            });
-            const targetPane = targetId ? document.querySelector(targetId) : null;
-            if (targetPane) {
-                targetPane.classList.add('show', 'active');
+            activateTab(targetId);
+            if (targetId) {
+                sessionStorage.setItem(storageKey, targetId);
+                history.replaceState(null, '', targetId);
             }
+        });
+    });
+
+    // Live Mini-Preview & Preset Tema
+    const previewSidebar = document.getElementById('themePreviewSidebar');
+    const previewActiveItem = document.getElementById('themePreviewActiveItem');
+    const previewBtn = document.getElementById('themePreviewBtn');
+    const colorInputs = {
+        primary: document.getElementById('primary_color'),
+        sbg: document.getElementById('sidebar_bg_color'),
+        stext: document.getElementById('sidebar_text_color'),
+        sactbg: document.getElementById('sidebar_active_bg_color'),
+        sacttext: document.getElementById('sidebar_active_text_color'),
+    };
+
+    const refreshThemePreview = () => {
+        if (previewBtn && colorInputs.primary) previewBtn.style.background = colorInputs.primary.value;
+        if (previewSidebar && colorInputs.sbg && colorInputs.stext) {
+            previewSidebar.style.background = colorInputs.sbg.value;
+            previewSidebar.style.color = colorInputs.stext.value;
+        }
+        if (previewActiveItem && colorInputs.sactbg && colorInputs.sacttext) {
+            previewActiveItem.style.background = colorInputs.sactbg.value;
+            previewActiveItem.style.color = colorInputs.sacttext.value;
+        }
+    };
+
+    Object.values(colorInputs).forEach((inp) => {
+        if (inp) inp.addEventListener('input', refreshThemePreview);
+    });
+
+    const unsavedBadge = document.getElementById('settingsUnsavedBadge');
+    const mainForm = document.querySelector('form[action*="/admin/pengaturan/application"]');
+    if (mainForm && unsavedBadge) {
+        mainForm.querySelectorAll('input, select, textarea').forEach((el) => {
+            if (el.id && el.id.startsWith('test_email')) return;
+            el.addEventListener('change', () => unsavedBadge.classList.remove('d-none'));
+        });
+    }
+
+    document.querySelectorAll('.js-theme-preset').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            if (colorInputs.primary) colorInputs.primary.value = btn.dataset.primary;
+            if (colorInputs.sbg) colorInputs.sbg.value = btn.dataset.sbg;
+            if (colorInputs.stext) colorInputs.stext.value = btn.dataset.stext;
+            if (colorInputs.sactbg) colorInputs.sactbg.value = btn.dataset.sactbg;
+            if (colorInputs.sacttext) colorInputs.sacttext.value = btn.dataset.sacttext;
+            refreshThemePreview();
+            if (unsavedBadge) unsavedBadge.classList.remove('d-none');
         });
     });
 
