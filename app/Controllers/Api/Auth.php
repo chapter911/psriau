@@ -194,7 +194,7 @@ class Auth extends BaseController
             $fullName = strtolower(trim((string) ($user['full_name'] ?? '')));
 
             $builder = $db->table('mst_pegawai p')
-                ->select('p.id, p.nip, p.nama, p.email, p.jenis_pegawai, p.foto, p.eselon, p.golongan, p.masa_kerja, p.is_active');
+                ->select('p.id, p.nip, p.nama, p.email, p.id_card, p.jenis_pegawai, p.foto, p.foto_id_card, p.eselon, p.golongan, p.masa_kerja, p.is_active');
 
             if ($db->tableExists('mst_jabatan')) {
                 $builder->select('ju.jabatan AS jabatan_utama, jp.jabatan AS jabatan_perbendaharaan')
@@ -230,11 +230,20 @@ class Auth extends BaseController
                     : base_url(ltrim($foto, '/'));
             }
 
+            $fotoIdCard = trim((string) ($pegawai['foto_id_card'] ?? ''));
+            $fotoIdCardUrl = null;
+            if ($fotoIdCard !== '') {
+                $fotoIdCardUrl = preg_match('/^https?:\/\//i', $fotoIdCard)
+                    ? $fotoIdCard
+                    : base_url(ltrim($fotoIdCard, '/'));
+            }
+
             return [
                 'id' => (int) $pegawai['id'],
                 'nip' => $pegawai['nip'] ?? null,
                 'nama' => $pegawai['nama'] ?? null,
                 'email' => $pegawai['email'] ?? null,
+                'id_card' => $pegawai['id_card'] ?? null,
                 'jenis_pegawai' => $pegawai['jenis_pegawai'] ?? null,
                 'jabatan_utama' => $pegawai['jabatan_utama'] ?? null,
                 'jabatan_perbendaharaan' => $pegawai['jabatan_perbendaharaan'] ?? null,
@@ -243,6 +252,8 @@ class Auth extends BaseController
                 'masa_kerja' => $pegawai['masa_kerja'] ?? null,
                 'foto' => $foto !== '' ? $foto : null,
                 'foto_url' => $fotoUrl,
+                'foto_id_card' => $fotoIdCard !== '' ? $fotoIdCard : null,
+                'foto_id_card_url' => $fotoIdCardUrl,
                 'is_active' => (int) ($pegawai['is_active'] ?? 1),
             ];
         } catch (\Throwable $e) {
