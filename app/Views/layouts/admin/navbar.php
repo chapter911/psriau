@@ -826,7 +826,7 @@
                                 <i class="fas fa-check-square mr-1"></i> Pilih Semua
                             </button>
                             <div class="input-group input-group-sm" style="width: auto;">
-                                <select id="syncProdModuleSelect" class="form-control form-control-sm" style="height: 24px; padding: 0 6px; font-size: 0.78rem;">
+                                <select id="syncProdModuleSelect" class="form-control form-control-sm no-select2" style="height: 26px; padding: 0 6px; font-size: 0.78rem;">
                                     <option value="">-- Pilih per Modul --</option>
                                     <option value="inventaris">Inventaris &amp; Sekolah</option>
                                     <option value="atk">ATK &amp; Supplies</option>
@@ -851,7 +851,7 @@
                             <span class="badge badge-info" id="syncProdSelectedCountBadge">0 tabel dipilih</span>
                         </div>
                         <div class="d-flex align-items-center" style="gap: 6px;">
-                            <select id="syncProdMode" class="form-control form-control-sm" style="width: auto;">
+                            <select id="syncProdMode" class="form-control form-control-sm no-select2" style="width: auto;">
                                 <option value="replace">Replace (Drop &amp; Create + Insert)</option>
                                 <option value="truncate_insert">Truncate &amp; Insert (Pertahankan Struktur Lokal)</option>
                             </select>
@@ -863,16 +863,16 @@
                         <table class="table table-sm table-hover table-striped mb-0" id="syncProdTablesTable">
                             <thead class="thead-dark">
                                 <tr>
-                                    <th style="width: 36px;" class="text-center">
+                                    <th style="width: 36px; z-index: 2;" class="text-center">
                                         <input type="checkbox" id="syncProdCheckAllHeader">
                                     </th>
-                                    <th class="sync-prod-sortable" data-sort="name" style="cursor: pointer; user-select: none;">
+                                    <th class="sync-prod-sortable" data-sort="name" style="cursor: pointer; user-select: none; z-index: 2;">
                                         Nama Tabel <i class="fas fa-sort-up ml-1 text-warning sync-prod-sort-icon" data-col="name"></i>
                                     </th>
-                                    <th class="text-right sync-prod-sortable" data-sort="rows" style="width: 135px; cursor: pointer; user-select: none;">
+                                    <th class="text-right sync-prod-sortable" data-sort="rows" style="width: 135px; cursor: pointer; user-select: none; z-index: 2;">
                                         Estimasi Baris <i class="fas fa-sort ml-1 text-muted sync-prod-sort-icon" data-col="rows"></i>
                                     </th>
-                                    <th class="text-right sync-prod-sortable" data-sort="bytes" style="width: 110px; cursor: pointer; user-select: none;">
+                                    <th class="text-right sync-prod-sortable" data-sort="bytes" style="width: 110px; cursor: pointer; user-select: none; z-index: 2;">
                                         Ukuran <i class="fas fa-sort ml-1 text-muted sync-prod-sort-icon" data-col="bytes"></i>
                                     </th>
                                 </tr>
