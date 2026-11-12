@@ -31,24 +31,28 @@ $rowGapMm = 3.0;
 if ($paper === 'A4' && ! $isLandscape) {
     $pageSizeCss   = 'A4 portrait';
     $pageWidthMm   = 210.0;
+    $pageHeightMm  = 297.0;
     $defaultTop    = 6.0;
     $defaultHoriz  = 3.75;
 } elseif ($isA3Group && ! $isLandscape) {
     // SRA3 / A3+ Portrait (320 x 450 mm)
     $pageSizeCss   = '320mm 450mm';
     $pageWidthMm   = 320.0;
+    $pageHeightMm  = 450.0;
     $defaultTop    = 0.0;
     $defaultHoriz  = 0.0;
 } elseif ($isA3Group && $isLandscape) {
     // A3 Landscape (420 x 297 mm)
     $pageSizeCss   = 'A3 landscape';
     $pageWidthMm   = 420.0;
+    $pageHeightMm  = 297.0;
     $defaultTop    = 0.0;
     $defaultHoriz  = 0.0;
 } else {
     // A4 Landscape (297 x 210 mm)
     $pageSizeCss   = 'A4 landscape';
     $pageWidthMm   = 297.0;
+    $pageHeightMm  = 210.0;
     $defaultTop    = 6.0;
     $defaultHoriz  = 8.0;
 }
@@ -62,6 +66,11 @@ $neededWidthMm = ($perRow * 100.0) + (($perRow - 1) * $colGapMm);
 if ($perRow > 1 && $usableWidthMm < $neededWidthMm) {
     $colGapMm = max(0.0, round(($usableWidthMm - ($perRow * 100.0)) / ($perRow - 1), 2));
 }
+
+// Hitung kapasitas baris per halaman berdasarkan tinggi kertas dan margin atas/bawah
+$cardHeightMm   = 40.0;
+$usableHeightMm = max($cardHeightMm, $pageHeightMm - (2.0 * $marginTopMm));
+$rowsPerPage    = max(1, (int) floor(($usableHeightMm + $rowGapMm) / ($cardHeightMm + $rowGapMm)));
 
 $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm ' . $marginHorizMm . 'mm';
 ?>
@@ -89,6 +98,12 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
         }
 
         /* Grid halaman: lebar tiap sel dikunci tepat 100mm (10cm), spacer antar kolom terpisah */
+        .sticker-page {
+            page-break-after: always;
+        }
+        .sticker-page-last {
+            page-break-after: auto;
+        }
         .sticker-page-table {
             border-collapse: collapse;
             margin: 0 auto;
@@ -235,68 +250,74 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
 </head>
 <body>
 
-    <table class="sticker-page-table" cellpadding="0" cellspacing="0">
-        <?php
-        $chunks = array_chunk($stickers ?? [], $perRow);
-        $totalChunks = count($chunks);
-        foreach ($chunks as $rowIdx => $row):
-        ?>
-            <tr>
-                <?php for ($colIdx = 0; $colIdx < $perRow; $colIdx++): ?>
-                    <?php if ($colIdx > 0): ?>
-                        <td class="sticker-col-gap"></td>
-                    <?php endif; ?>
+    <?php
+    $chunks = array_chunk($stickers ?? [], $perRow);
+    $pages = array_chunk($chunks, $rowsPerPage);
+    $totalPages = count($pages);
+    foreach ($pages as $pageIdx => $pageRows):
+        $pageRowCount = count($pageRows);
+    ?>
+        <div class="sticker-page<?= ($pageIdx === $totalPages - 1) ? ' sticker-page-last' : ''; ?>">
+            <table class="sticker-page-table" cellpadding="0" cellspacing="0">
+                <?php foreach ($pageRows as $rowIdx => $row): ?>
+                    <tr>
+                        <?php for ($colIdx = 0; $colIdx < $perRow; $colIdx++): ?>
+                            <?php if ($colIdx > 0): ?>
+                                <td class="sticker-col-gap"></td>
+                            <?php endif; ?>
 
-                    <?php if (isset($row[$colIdx])):
-                        $stk = $row[$colIdx];
-                        $thn = ! empty($stk['tahun_perolehan']) ? $stk['tahun_perolehan'] : date('Y');
-                        $headerCode = ($kodeUakpb ?? '145060900691285000KP') . '.' . $thn;
-                    ?>
-                        <td class="sticker-cell">
-                            <div class="sticker-card">
-                                <!-- Kotak Atas: 1.5 cm -->
-                                <div class="sticker-top">
-                                    <?php if (! empty($logoBase64)): ?>
-                                        <img src="<?= $logoBase64; ?>" class="pu-logo" alt="Logo PU">
-                                    <?php endif; ?>
-                                    <div class="header-text-wrap">
-                                        <div class="instansi-title">Kementerian Pekerjaan Umum</div>
-                                        <div class="instansi-code"><?= esc($headerCode); ?></div>
-                                    </div>
-                                </div>
-
-                                <!-- Kotak Bawah: 2.5 cm -->
-                                <div class="sticker-bottom">
-                                    <div class="info-top-area">
-                                        <div class="info-row-1">
-                                            <span class="kode-barang-text"><?= esc($stk['kode_barang']); ?></span>
-                                            <span class="nup-text">NUP: <?= esc($stk['nup']); ?></span>
+                            <?php if (isset($row[$colIdx])):
+                                $stk = $row[$colIdx];
+                                $thn = ! empty($stk['tahun_perolehan']) ? $stk['tahun_perolehan'] : date('Y');
+                                $headerCode = ($kodeUakpb ?? '145060900691285000KP') . '.' . $thn;
+                            ?>
+                                <td class="sticker-cell">
+                                    <div class="sticker-card">
+                                        <!-- Kotak Atas: 1.5 cm -->
+                                        <div class="sticker-top">
+                                            <?php if (! empty($logoBase64)): ?>
+                                                <img src="<?= $logoBase64; ?>" class="pu-logo" alt="Logo PU">
+                                            <?php endif; ?>
+                                            <div class="header-text-wrap">
+                                                <div class="instansi-title">Kementerian Pekerjaan Umum</div>
+                                                <div class="instansi-code"><?= esc($headerCode); ?></div>
+                                            </div>
                                         </div>
-                                        <div class="nama-barang-text"><?= esc($stk['nama_barang']); ?></div>
+
+                                        <!-- Kotak Bawah: 2.5 cm -->
+                                        <div class="sticker-bottom">
+                                            <div class="info-top-area">
+                                                <div class="info-row-1">
+                                                    <span class="kode-barang-text"><?= esc($stk['kode_barang']); ?></span>
+                                                    <span class="nup-text">NUP: <?= esc($stk['nup']); ?></span>
+                                                </div>
+                                                <div class="nama-barang-text"><?= esc($stk['nama_barang']); ?></div>
+                                            </div>
+
+                                            <div class="merk-tipe-text"><?= esc($stk['merk_tipe']); ?></div>
+
+                                            <?php if (! empty($stk['qr_base64'])): ?>
+                                                <img src="<?= $stk['qr_base64']; ?>" class="qr-image" alt="QR Code">
+                                            <?php else: ?>
+                                                <div class="qr-placeholder"></div>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-
-                                    <div class="merk-tipe-text"><?= esc($stk['merk_tipe']); ?></div>
-
-                                    <?php if (! empty($stk['qr_base64'])): ?>
-                                        <img src="<?= $stk['qr_base64']; ?>" class="qr-image" alt="QR Code">
-                                    <?php else: ?>
-                                        <div class="qr-placeholder"></div>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </td>
-                    <?php else: ?>
-                        <td class="sticker-cell"></td>
+                                </td>
+                            <?php else: ?>
+                                <td class="sticker-cell"></td>
+                            <?php endif; ?>
+                        <?php endfor; ?>
+                    </tr>
+                    <?php if ($rowIdx < $pageRowCount - 1): ?>
+                        <tr class="sticker-row-gap">
+                            <td colspan="<?= ($perRow * 2) - 1; ?>"></td>
+                        </tr>
                     <?php endif; ?>
-                <?php endfor; ?>
-            </tr>
-            <?php if ($rowIdx < $totalChunks - 1): ?>
-                <tr class="sticker-row-gap">
-                    <td colspan="<?= ($perRow * 2) - 1; ?>"></td>
-                </tr>
-            <?php endif; ?>
-        <?php endforeach; ?>
-    </table>
+                <?php endforeach; ?>
+            </table>
+        </div>
+    <?php endforeach; ?>
 
 </body>
 </html>
