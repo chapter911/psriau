@@ -1301,7 +1301,7 @@ graph TD
     F --> G["Server Lokal Verifikasi Token ke Production (/dev-sync-api/prod-db-tables)"]
     G --> H{"Cari, Sortir &amp; Pilih Cakupan Tabel"}
     H -- "Pilih Semua" --> I["Sinkronisasi Seluruh Tabel Database"]
-    H -- "Pilih Tabel Tertentu" --> J["Centang Tabel Spesifik / Khusus Inventaris &amp; Sekolah"]
+    H -- "Pilih per Modul / Tabel Tertentu" --> J["Pilih Modul (Inventaris, ATK, Kontrak, Perjadin, dll) atau Centang Manual"]
     I --> K["Proses Tarik Data Bertahap per 500 Baris (/prod-db-dump)"]
     J --> K
     K --> L["Simpan ke Database Lokal (Replace / Truncate + Insert) + Tampil Ringkasan Hasil"]

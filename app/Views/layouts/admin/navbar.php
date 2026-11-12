@@ -821,17 +821,34 @@
                 <!-- Step 2: Pilih Tabel & Mode -->
                 <div id="syncProdTablesSection" class="d-none">
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-2" style="gap: 8px;">
-                        <div>
+                        <div class="d-flex flex-wrap align-items-center" style="gap: 6px;">
                             <button type="button" class="btn btn-xs btn-outline-primary" id="syncProdSelectAllBtn">
                                 <i class="fas fa-check-square mr-1"></i> Pilih Semua
                             </button>
-                            <button type="button" class="btn btn-xs btn-outline-info" id="syncProdSelectInventarisBtn">
-                                <i class="fas fa-boxes mr-1"></i> Khusus Inventaris &amp; Sekolah
-                            </button>
+                            <div class="input-group input-group-sm" style="width: auto;">
+                                <select id="syncProdModuleSelect" class="form-control form-control-sm" style="height: 24px; padding: 0 6px; font-size: 0.78rem;">
+                                    <option value="">-- Pilih per Modul --</option>
+                                    <option value="inventaris">Inventaris &amp; Sekolah</option>
+                                    <option value="atk">ATK &amp; Supplies</option>
+                                    <option value="kontrak">Kontrak, SIMAK &amp; Konsultan</option>
+                                    <option value="perjadin">Perjalanan Dinas, Cuti &amp; Absen</option>
+                                    <option value="laporan">Laporan Lapangan &amp; Proyek</option>
+                                    <option value="swakelola">Swakelola</option>
+                                    <option value="kompu">Kompu &amp; Dokumentasi</option>
+                                    <option value="wilayah">Master Wilayah &amp; Referensi</option>
+                                    <option value="sistem">Sistem, User &amp; Menu Akses</option>
+                                    <option value="publik">Publik, Konten &amp; Gateball</option>
+                                </select>
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-xs btn-info" id="syncProdSelectModuleBtn" title="Centang semua tabel milik modul ini">
+                                        <i class="fas fa-layer-group mr-1"></i> Pilih Modul
+                                    </button>
+                                </div>
+                            </div>
                             <button type="button" class="btn btn-xs btn-outline-secondary" id="syncProdDeselectAllBtn">
                                 <i class="fas fa-square mr-1"></i> Kosongkan
                             </button>
-                            <span class="badge badge-info ml-1" id="syncProdSelectedCountBadge">0 tabel dipilih</span>
+                            <span class="badge badge-info" id="syncProdSelectedCountBadge">0 tabel dipilih</span>
                         </div>
                         <div class="d-flex align-items-center" style="gap: 6px;">
                             <select id="syncProdMode" class="form-control form-control-sm" style="width: auto;">
@@ -1020,7 +1037,8 @@
         const searchInput = document.getElementById('syncProdSearchTable');
         const checkAllHeader = document.getElementById('syncProdCheckAllHeader');
         const selectAllBtn = document.getElementById('syncProdSelectAllBtn');
-        const selectInvBtn = document.getElementById('syncProdSelectInventarisBtn');
+        const moduleSelect = document.getElementById('syncProdModuleSelect');
+        const selectModuleBtn = document.getElementById('syncProdSelectModuleBtn');
         const deselectAllBtn = document.getElementById('syncProdDeselectAllBtn');
         const startBtn = document.getElementById('syncProdStartBtn');
         const cancelBtn = document.getElementById('syncProdCancelBtn');
@@ -1108,12 +1126,27 @@
             });
         }
 
-        if (selectInvBtn) {
-            selectInvBtn.addEventListener('click', () => {
-                const invKeywords = ['inventaris', 'mst_sekolah', 'mst_paket', 'mst_ruangan'];
-                selectedTableNames.clear();
+        const moduleTableMatchers = {
+            inventaris: ['inventaris', 'mst_sekolah', 'mst_paket', 'mst_ruangan'],
+            atk: ['mst_atk_', 'trn_atk_'],
+            kontrak: ['trn_kontrak_', 'mst_simak_', 'trn_bast', 'trn_surket_', 'trn_konsultan_', 'trn_syarat_', 'trn_rab_', 'mst_paket'],
+            perjadin: ['disposisi_perjalanan_dinas', 'nota_dinas_perjalanan_dinas', 'laporan_perjalanan_dinas', 'surat_cuti', 'lupa_absen', 'kop_surat', 'mst_biaya_', 'mst_dasar_spt', 'mst_mata_anggaran', 'mst_transportasi', 'mst_pegawai', 'mst_tanggal_merah'],
+            laporan: ['laporan_harian_', 'laporan_lapangan_', 'laporan_mingguan_', 'laporan_rekapitulasi_', 'laporan_sekolah', 'trn_survey_sekolah', 'kegiatan_lapangan'],
+            swakelola: ['trn_swakelola_'],
+            kompu: ['trn_kompu_', 'cfg_kompu_', 'kegiatan_lapangan'],
+            wilayah: ['mst_provinsi', 'mst_kabupaten', 'mst_kecamatan', 'mst_kelurahan', 'mst_kontur_geojson', 'mst_map_type', 'mst_jabatan', 'tb_struktur_organisasi'],
+            sistem: ['users', 'auth_accounts', 'user_tokens', 'access_roles', 'menu_lv', 'menu_akses', 'app_settings', 'migrations', 'audit_histories', 'login_histories'],
+            publik: ['home_', 'articles', 'events', 'gateball_matches'],
+        };
+
+        if (selectModuleBtn && moduleSelect) {
+            selectModuleBtn.addEventListener('click', () => {
+                const modKey = moduleSelect.value;
+                if (!modKey || !moduleTableMatchers[modKey]) return;
+                const patterns = moduleTableMatchers[modKey];
                 prodTables.forEach((t) => {
-                    if (invKeywords.some((kw) => t.name.toLowerCase().includes(kw))) {
+                    const name = t.name.toLowerCase();
+                    if (patterns.some((p) => name.includes(p))) {
                         selectedTableNames.add(t.name);
                     }
                 });

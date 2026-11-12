@@ -178,7 +178,7 @@ class DevDbSync extends BaseController
         $escapedTable = '`' . str_replace('`', '``', $table) . '`';
 
         try {
-            $db->query("SET SESSION sql_mode = ''");
+            $db->query("SET SESSION sql_mode = 'ALLOW_INVALID_DATES'");
             $db->query('SET FOREIGN_KEY_CHECKS = 0');
 
             if ($offset === 0) {
@@ -243,11 +243,25 @@ class DevDbSync extends BaseController
 
     private function sanitizeSchemaSql(string $sql): string
     {
-        return str_replace(
+        $sql = str_replace(
             ['utf8mb4_0900_ai_ci', 'utf8mb4_uca1400_ai_ci', 'utf8mb4_unicode_520_ci'],
             'utf8mb4_general_ci',
             $sql
         );
+
+        // Bersihkan zero-date default agar aman di MySQL 8/9 strict mode
+        $sql = preg_replace(
+            "/\bNOT\s+NULL\s+DEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i",
+            'NULL DEFAULT NULL',
+            $sql
+        );
+        $sql = preg_replace(
+            "/\bDEFAULT\s+'0000-00-00(?:\s+00:00:00)?'/i",
+            'DEFAULT NULL',
+            $sql
+        );
+
+        return $sql;
     }
 
     private function curlGetWithToken(string $url, string $token, int $timeout = 30): array
