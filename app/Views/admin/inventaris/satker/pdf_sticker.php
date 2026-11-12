@@ -33,13 +33,13 @@ if ($paper === 'A4' && ! $isLandscape) {
     $pageSizeCss = 'A4 portrait';
     $pageMargin  = '6mm 3.75mm 6mm 3.75mm';
 } elseif ($isA3Group && ! $isLandscape) {
-    // SRA3 / A3+ Portrait (320 x 450 mm): tanpa margin halaman (@page margin: 0)
+    // SRA3 / A3+ Portrait (320 x 450 mm): 7 + 100 + 3 + 100 + 3 + 100 + 7 = 320.0mm
     $pageSizeCss = '320mm 450mm';
-    $pageMargin  = '0mm';
+    $pageMargin  = '10mm 7mm 10mm 7mm';
 } elseif ($isA3Group && $isLandscape) {
-    // A3 Landscape (420 x 297 mm): tanpa margin halaman (@page margin: 0)
+    // A3 Landscape (420 x 297 mm): 5.5 + 4*100 + 3*3.0 + 5.5 = 420.0mm
     $pageSizeCss = 'A3 landscape';
-    $pageMargin  = '0mm';
+    $pageMargin  = '6mm 5.5mm 6mm 5.5mm';
 } else {
     // A4 Landscape (297 x 210 mm)
     $pageSizeCss = 'A4 landscape';

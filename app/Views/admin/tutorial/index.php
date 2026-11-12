@@ -1627,10 +1627,10 @@ graph TD
                                                     <li><strong>Landscape (Mendatar):</strong> 2 sticker per baris (8 sticker per halaman A4 dengan menjaga ukuran asli stiker tetap tepat 10 &times; 4 cm).</li>
                                                 </ul>
                                             </li>
-                                            <li><strong>Kertas A3 / A3+ (SRA3 - Format Besar, Tanpa Margin Halaman):</strong>
+                                            <li><strong>Kertas A3 / A3+ (SRA3 - Format Besar):</strong>
                                                 <ul class="pl-3">
-                                                    <li><strong>Portrait (Tegak - SRA3 320 &times; 450 mm):</strong> 3 sticker per baris (30 sticker per lembar A3+/SRA3, margin halaman <code>0 mm</code>), ukuran tiap stiker tetap tepat 10 &times; 4 cm tanpa terpotong untuk kertas stiker lebih lebar dari A3 standar.</li>
-                                                    <li><strong>Landscape (Mendatar - A3 420 &times; 297 mm):</strong> 4 sticker per baris (24 sticker per lembar A3, margin halaman <code>0 mm</code>), sangat efisien untuk pencetakan massal dalam volume besar.</li>
+                                                    <li><strong>Portrait (Tegak - SRA3 320 &times; 450 mm):</strong> 3 sticker per baris (30 sticker per lembar A3+/SRA3), ukuran tiap stiker tetap tepat 10 &times; 4 cm tanpa terpotong dengan margin kiri/kanan aman untuk kertas stiker lebih lebar dari A3 standar.</li>
+                                                    <li><strong>Landscape (Mendatar - A3 420 &times; 297 mm):</strong> 4 sticker per baris (24 sticker per lembar A3), sangat efisien untuk pencetakan massal dalam volume besar.</li>
                                                 </ul>
                                             </li>
                                         </ul>
