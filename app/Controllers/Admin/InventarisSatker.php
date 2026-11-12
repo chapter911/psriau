@@ -1703,7 +1703,7 @@ class InventarisSatker extends BaseController
     }
 
     /**
-     * Cetak Sticker Barcode / QR BMN (Layout 2 Kolom / 2 Sticker Per Baris)
+     * Cetak Sticker Barcode / QR BMN (Ukuran presisi 10cm x 4cm: atas 1.5cm, bawah 2.5cm, QR 2cm x 2cm)
      * Format sesuai stiker resmi Kementerian Pekerjaan Umum.
      */
     public function cetakSticker()
@@ -1882,7 +1882,7 @@ class InventarisSatker extends BaseController
                 'kode_register'   => $reg,
                 'nama_barang'     => $namaBaku,
                 'merk_tipe'       => $merkTipeDisplay ?: '-',
-                'tahun_perolehan' => ! empty($item['tahun_perolehan']) ? $item['tahun_perolehan'] : '2025',
+                'tahun_perolehan' => ! empty($item['tahun_perolehan']) ? $item['tahun_perolehan'] : date('Y'),
                 'qr_base64'       => $qrBase64,
             ];
         }

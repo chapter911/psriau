@@ -1123,7 +1123,7 @@
 </div>
 <?php endif; ?>
 
-<!-- Modal Cetak Sticker BMN (1 Baris Terdiri Atas 2 Sticker) -->
+<!-- Modal Cetak Sticker BMN (Ukuran Presisi 10cm x 4cm) -->
 <?php if (! empty($can_export)): ?>
 <div class="modal fade" id="modal-cetak-sticker" tabindex="-1" role="dialog" aria-labelledby="modalCetakStickerLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
@@ -1140,7 +1140,7 @@
                 <div class="modal-body p-4">
                     <div class="alert alert-light border small text-muted mb-3" style="border-radius: 8px;">
                         <i class="fas fa-info-circle text-primary mr-1"></i>
-                        Sticker dicetak dengan format standar resmi Kementerian Pekerjaan Umum. Anda dapat memilih ukuran kertas <strong>A4</strong> atau <strong>A3</strong> serta orientasi <strong>Portrait</strong> maupun <strong>Landscape</strong> sesuai spesifikasi kertas label dan printer Anda.
+                        Sticker dicetak dengan ukuran presisi <strong>10 &times; 4 cm</strong> (bagian atas 1,5 cm, bagian bawah 2,5 cm, QR Code 2 &times; 2 cm) sesuai format resmi Kementerian Pekerjaan Umum. Anda dapat memilih ukuran kertas <strong>A4</strong> atau <strong>A3</strong> serta orientasi <strong>Portrait</strong> maupun <strong>Landscape</strong>.
                     </div>
 
                     <label class="font-weight-bold text-dark small text-uppercase mb-2" style="letter-spacing: 0.5px;">Pilih Cakupan Cetak:</label>
@@ -1212,14 +1212,14 @@
                                 <input type="radio" id="orientation-portrait" name="orientation" class="custom-control-input" value="portrait" checked>
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-portrait" style="cursor: pointer;">
                                     <i class="fas fa-file-alt mr-1 text-primary"></i> Portrait (Tegak)
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (~14 stiker) | A3: 3 kolom (~30 stiker).</small>
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (12 stiker/hal) | A3: 2 kolom (18 stiker/hal).</small>
                                 </label>
                             </div>
                             <div class="custom-control custom-radio p-2.5 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">
                                 <input type="radio" id="orientation-landscape" name="orientation" class="custom-control-input" value="landscape">
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-landscape" style="cursor: pointer;">
                                     <i class="fas fa-file-alt fa-rotate-270 mr-1 text-success"></i> Landscape (Mendatar)
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 3 kolom (~15 stiker) | A3: 4 kolom (~28 stiker).</small>
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (8 stiker/hal) | A3: 4 kolom (24 stiker/hal).</small>
                                 </label>
                             </div>
                         </div>
