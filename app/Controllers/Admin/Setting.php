@@ -90,8 +90,36 @@ class Setting extends BaseController
             return redirect()->to('/admin/pengaturan/application')->with('message', 'Pengaturan aplikasi berhasil diperbarui.');
         }
 
+        $logFiles = glob(WRITEPATH . 'logs/log-*.log') ?: [];
+        $errorLogCount = count($logFiles);
+
+        $db = \Config\Database::connect();
+        $dbInfo = [
+            'driver'   => $db->DBDriver ?? 'MySQLi',
+            'database' => $db->database ?? '-',
+            'hostname' => $db->hostname ?? '-',
+            'port'     => $db->port ?? 3306,
+        ];
+
+        $gitBranch = '-';
+        $gitCommit = '-';
+        if (function_exists('shell_exec')) {
+            [$okB, $outB] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && git rev-parse --abbrev-ref HEAD 2>/dev/null');
+            if ($okB && trim($outB) !== '') {
+                $gitBranch = trim($outB);
+            }
+            [$okC, $outC] = $this->runShellCommand('cd ' . escapeshellarg(ROOTPATH) . ' && git log -1 --format="%h - %s (%cr)" 2>/dev/null');
+            if ($okC && trim($outC) !== '') {
+                $gitCommit = trim($outC);
+            }
+        }
+
         return view('admin/settings/application', [
-            'setting'        => $setting,
+            'setting'       => $setting,
+            'errorLogCount' => $errorLogCount,
+            'dbInfo'        => $dbInfo,
+            'gitBranch'     => $gitBranch,
+            'gitCommit'     => $gitCommit,
         ]);
     }
 
