@@ -30,7 +30,7 @@ $tanggal_pemeriksaan_base = (!empty($data->tanggal_akhir) && $data->tanggal_akhi
     : ((!empty($data->tanggal_surat_penawaran) && $data->tanggal_surat_penawaran !== '0000-00-00')
         ? $data->tanggal_surat_penawaran
         : ((!empty($data->tanggal_kontrak) && $data->tanggal_kontrak !== '0000-00-00') ? $data->tanggal_kontrak : date('Y-m-d')));
-$tanggal_pemeriksaan_raw = date('Y-m-d', strtotime($tanggal_pemeriksaan_base . ' -1 day'));
+$tanggal_pemeriksaan_raw = date('Y-m-d', strtotime($tanggal_pemeriksaan_base));
 $nomor_baphp = !empty(trim((string) ($data->nomor_baphp ?? '')))
     ? trim((string) $data->nomor_baphp)
     : 'BAPHP/TL-PTSR/01/PPK/PPS-RIAU/' . date('m', strtotime($tanggal_pemeriksaan_raw)) . '/' . date('Y', strtotime($tanggal_pemeriksaan_raw));

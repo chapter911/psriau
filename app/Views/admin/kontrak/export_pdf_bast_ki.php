@@ -38,7 +38,7 @@ $tanggal_bast_base = (!empty($data->tanggal_akhir) && $data->tanggal_akhir !== '
     : ((!empty($data->tanggal_surat_penawaran) && $data->tanggal_surat_penawaran !== '0000-00-00')
         ? $data->tanggal_surat_penawaran
         : ((!empty($data->tanggal_kontrak) && $data->tanggal_kontrak !== '0000-00-00') ? $data->tanggal_kontrak : date('Y-m-d')));
-$tanggal_bast_raw = date('Y-m-d', strtotime($tanggal_bast_base . ' -1 day'));
+$tanggal_bast_raw = date('Y-m-d', strtotime($tanggal_bast_base));
 $tanggal_bast_terbilang = sprintf(
     '%s, tanggal %s bulan %s tahun %s (%s)',
     hari_indonesia($tanggal_bast_raw),
