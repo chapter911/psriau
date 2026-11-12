@@ -16,8 +16,8 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "Masukkan Access Token yang Anda dapatkan setelah melakukan login."
+        "bearerFormat": "Opaque Bearer Token",
+        "description": "Masukkan Access Token (64-karakter hex) yang Anda dapatkan setelah melakukan login."
       }
     },
     "schemas": {
@@ -170,7 +170,7 @@
             }
           },
           "403": {
-            "description": "Akun dinonaktifkan",
+            "description": "Akun dinonaktifkan atau tidak memiliki akses platform Mobile",
             "content": {
               "application/json": {
                 "schema": {
@@ -178,7 +178,39 @@
                 },
                 "example": {
                   "status": "error",
-                  "message": "Akun Anda nonaktif. Hubungi administrator untuk aktivasi."
+                  "message": "Akun Anda tidak memiliki akses ke platform Mobile."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Terlalu banyak percobaan login gagal (maks 5 kali per 15 menit per IP)",
+            "headers": {
+              "Retry-After": {
+                "description": "Jumlah detik sebelum dapat mencoba login kembali",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Terlalu banyak percobaan login gagal dari IP Anda (127.0.0.1). Silakan coba lagi dalam 15 menit (900 detik)."
+                    },
+                    "retry_after": {
+                      "type": "integer",
+                      "example": 900
+                    }
+                  }
                 }
               }
             }
@@ -1111,6 +1143,266 @@
           },
           "401": {
             "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/laporan-harian/proyek": {
+      "post": {
+        "summary": "Simpan / Perbarui Laporan Harian Proyek",
+        "description": "Menyimpan atau memperbarui (upsert berdasarkan sekolah_npsn dan tanggal) laporan kondisi proyek harian dari aplikasi mobile.",
+        "tags": [
+          "Laporan Harian (Mobile)"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "paket_id",
+                  "sekolah_npsn",
+                  "tanggal",
+                  "jam_mulai",
+                  "jam_selesai",
+                  "cuaca_json",
+                  "nama_pelapor"
+                ],
+                "properties": {
+                  "paket_id": {
+                    "type": "string",
+                    "example": "1"
+                  },
+                  "sekolah_npsn": {
+                    "type": "string",
+                    "example": "10404001"
+                  },
+                  "tanggal": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-11-12"
+                  },
+                  "jam_mulai": {
+                    "type": "string",
+                    "example": "08:00"
+                  },
+                  "jam_selesai": {
+                    "type": "string",
+                    "example": "17:00"
+                  },
+                  "cuaca_json": {
+                    "type": "string",
+                    "description": "JSON string kondisi cuaca",
+                    "example": "{\"pagi\":\"Cerah\",\"siang\":\"Berawan\"}"
+                  },
+                  "pengawas": {
+                    "type": "integer",
+                    "default": 0,
+                    "example": 1
+                  },
+                  "pelaksana": {
+                    "type": "integer",
+                    "default": 0,
+                    "example": 1
+                  },
+                  "mandor": {
+                    "type": "integer",
+                    "default": 0,
+                    "example": 2
+                  },
+                  "tukang": {
+                    "type": "integer",
+                    "default": 0,
+                    "example": 8
+                  },
+                  "pekerja": {
+                    "type": "integer",
+                    "default": 0,
+                    "example": 12
+                  },
+                  "nama_pelapor": {
+                    "type": "string",
+                    "example": "Agung Kesuma"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Laporan proyek berhasil disimpan atau diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Laporan proyek berhasil disimpan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Akun nonaktif atau tidak memiliki akses mobile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/laporan-harian/pekerjaan": {
+      "post": {
+        "summary": "Simpan / Perbarui Laporan Harian Pekerjaan",
+        "description": "Menyimpan atau memperbarui (upsert berdasarkan rab_detail_id dan tanggal) laporan progres item pekerjaan beserta upload foto lapangan.",
+        "tags": [
+          "Laporan Harian (Mobile)"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rab_detail_id",
+                  "tanggal",
+                  "status_selesai",
+                  "progres_persen"
+                ],
+                "properties": {
+                  "rab_detail_id": {
+                    "type": "integer",
+                    "example": 105
+                  },
+                  "tanggal": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2026-11-12"
+                  },
+                  "status_selesai": {
+                    "type": "integer",
+                    "enum": [0, 1],
+                    "description": "0 = belum selesai, 1 = selesai",
+                    "example": 0
+                  },
+                  "progres_persen": {
+                    "type": "number",
+                    "format": "float",
+                    "example": 45.5
+                  },
+                  "keterangan_progres": {
+                    "type": "string",
+                    "example": "Pemasangan bata dinding ruang kelas selesai 45%"
+                  },
+                  "kendala": {
+                    "type": "string",
+                    "example": "Hujan lebat pada sore hari"
+                  },
+                  "foto[]": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Satu atau lebih file foto dokumentasi lapangan"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Laporan pekerjaan berhasil disimpan atau diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StandardResponse"
+                },
+                "example": {
+                  "status": "success",
+                  "message": "Laporan pekerjaan berhasil disimpan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Token tidak valid atau tidak disediakan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Akun nonaktif atau tidak memiliki akses mobile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Gagal membuat folder upload di server",
             "content": {
               "application/json": {
                 "schema": {

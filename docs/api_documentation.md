@@ -84,11 +84,22 @@ Mengautentikasi pengguna menggunakan kredensial username dan password, serta men
 }
 ```
 
-#### Respon Error (403 Forbidden - Akun Nonaktif)
+#### Respon Error (403 Forbidden - Akun Nonaktif / Tanpa Akses Mobile)
 ```json
 {
   "status": "error",
   "message": "Akun Anda nonaktif. Hubungi administrator untuk aktivasi."
+}
+```
+> **Catatan:** Jika `akses_mobile` user bernilai `0`, server juga mengembalikan `403` dengan pesan `"Akun Anda tidak memiliki akses ke platform Mobile."`.
+
+#### Respon Error (429 Too Many Requests - Rate Limit)
+Maksimal 5 kali percobaan login gagal per 15 menit per IP. Server juga menyertakan header `Retry-After`.
+```json
+{
+  "status": "error",
+  "message": "Terlalu banyak percobaan login gagal dari IP Anda (127.0.0.1). Silakan coba lagi dalam 15 menit (900 detik).",
+  "retry_after": 900
 }
 ```
 
@@ -220,6 +231,104 @@ async function getUserProfile() {
     }
   } catch (error) {
     console.error('Gagal memuat profil:', error);
+  }
+}
+```
+
+### C. Menggunakan Flutter (Dio + Flutter Secure Storage)
+
+Tambahkan dependency di `pubspec.yaml`:
+```yaml
+dependencies:
+  dio: ^5.7.0
+  flutter_secure_storage: ^9.2.2
+```
+
+> **Catatan Base URL saat development:**
+> * **Android Emulator:** `http://10.0.2.2:8080/api`
+> * **iOS Simulator:** `http://localhost:8080/api`
+> * **Perangkat Fisik / Production:** Gunakan IP LAN atau domain **HTTPS** (misal `https://domain-anda.go.id/api`).
+
+**Service Autentikasi (`auth_api_service.dart`):**
+```dart
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+class AuthApiService {
+  static const _tokenKey = 'psriau_api_token';
+  final _storage = const FlutterSecureStorage();
+  late final Dio _dio;
+
+  AuthApiService({String baseUrl = 'http://10.0.2.2:8080/api'}) {
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+        headers: {'Accept': 'application/json'},
+      ),
+    );
+
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await _storage.read(key: _tokenKey);
+          if (token != null && token.isNotEmpty) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+        onError: (error, handler) async {
+          final code = error.response?.statusCode;
+          // Jika token dicabut/tidak valid (401) atau akses mobile dicabut (403)
+          if (code == 401 || code == 403) {
+            await _storage.delete(key: _tokenKey);
+            // TODO: Arahkan user kembali ke halaman Login
+          }
+          handler.next(error);
+        },
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>> login({
+    required String username,
+    required String password,
+    String deviceName = 'Flutter Mobile',
+  }) async {
+    final response = await _dio.post(
+      '/auth/login',
+      data: {
+        'username': username,
+        'password': password,
+        'device_name': deviceName,
+      },
+    );
+
+    final data = response.data as Map<String, dynamic>;
+    final token = data['data']?['token'] as String?;
+    if (token != null && token.isNotEmpty) {
+      await _storage.write(key: _tokenKey, value: token);
+    }
+    return data;
+  }
+
+  Future<Map<String, dynamic>> getProfile() async {
+    final response = await _dio.get('/auth/profile');
+    return response.data as Map<String, dynamic>;
+  }
+
+  Future<void> logout() async {
+    try {
+      await _dio.post('/auth/logout');
+    } finally {
+      await _storage.delete(key: _tokenKey);
+    }
+  }
+
+  Future<bool> hasToken() async {
+    final token = await _storage.read(key: _tokenKey);
+    return token != null && token.isNotEmpty;
   }
 }
 ```
