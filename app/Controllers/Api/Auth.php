@@ -127,6 +127,8 @@ class Auth extends BaseController
             // Ignore throttler cache reset error
         }
 
+        $pegawai = $this->resolvePegawaiData($user);
+
         return $this->response->setJSON([
             'status' => 'success',
             'message' => 'Login berhasil.',
@@ -137,6 +139,7 @@ class Auth extends BaseController
                     'username' => $user['username'],
                     'full_name' => $user['full_name'],
                     'role' => $user['role'] ?? 'editor',
+                    'pegawai' => $pegawai,
                 ]
             ]
         ]);
@@ -160,6 +163,7 @@ class Auth extends BaseController
     public function profile()
     {
         $user = ApiAuth::getUser();
+        $pegawai = $this->resolvePegawaiData($user);
 
         return $this->response->setJSON([
             'status' => 'success',
@@ -172,9 +176,79 @@ class Auth extends BaseController
                     'is_active' => (int) ($user['is_active'] ?? 1),
                     'created_at' => $user['created_at'] ?? null,
                     'updated_at' => $user['updated_at'] ?? null,
+                    'pegawai' => $pegawai,
                 ]
             ]
         ]);
+    }
+
+    private function resolvePegawaiData(array $user): ?array
+    {
+        try {
+            $db = db_connect();
+            if (! $db->tableExists('mst_pegawai')) {
+                return null;
+            }
+
+            $username = strtolower(trim((string) ($user['username'] ?? '')));
+            $fullName = strtolower(trim((string) ($user['full_name'] ?? '')));
+
+            $builder = $db->table('mst_pegawai p')
+                ->select('p.id, p.nip, p.nama, p.email, p.jenis_pegawai, p.foto, p.eselon, p.golongan, p.masa_kerja, p.is_active');
+
+            if ($db->tableExists('mst_jabatan')) {
+                $builder->select('ju.jabatan AS jabatan_utama, jp.jabatan AS jabatan_perbendaharaan')
+                    ->join('mst_jabatan ju', 'ju.id = p.jabatan_utama_id', 'left')
+                    ->join('mst_jabatan jp', 'jp.id = p.jabatan_perbendaharaan_id', 'left');
+            }
+
+            $builder->groupStart();
+            if ($username !== '') {
+                $builder->where('LOWER(p.nip)', $username);
+            }
+            if ($fullName !== '') {
+                $username !== ''
+                    ? $builder->orWhere('LOWER(p.nama)', $fullName)
+                    : $builder->where('LOWER(p.nama)', $fullName);
+            }
+            $builder->groupEnd();
+
+            if ($username === '' && $fullName === '') {
+                return null;
+            }
+
+            $pegawai = $builder->orderBy('p.id', 'ASC')->get()->getRowArray();
+            if (! $pegawai) {
+                return null;
+            }
+
+            $foto = trim((string) ($pegawai['foto'] ?? ''));
+            $fotoUrl = null;
+            if ($foto !== '') {
+                $fotoUrl = preg_match('/^https?:\/\//i', $foto)
+                    ? $foto
+                    : base_url(ltrim($foto, '/'));
+            }
+
+            return [
+                'id' => (int) $pegawai['id'],
+                'nip' => $pegawai['nip'] ?? null,
+                'nama' => $pegawai['nama'] ?? null,
+                'email' => $pegawai['email'] ?? null,
+                'jenis_pegawai' => $pegawai['jenis_pegawai'] ?? null,
+                'jabatan_utama' => $pegawai['jabatan_utama'] ?? null,
+                'jabatan_perbendaharaan' => $pegawai['jabatan_perbendaharaan'] ?? null,
+                'eselon' => $pegawai['eselon'] ?? null,
+                'golongan' => $pegawai['golongan'] ?? null,
+                'masa_kerja' => $pegawai['masa_kerja'] ?? null,
+                'foto' => $foto !== '' ? $foto : null,
+                'foto_url' => $fotoUrl,
+                'is_active' => (int) ($pegawai['is_active'] ?? 1),
+            ];
+        } catch (\Throwable $e) {
+            log_message('error', 'API resolvePegawaiData error: ' . $e->getMessage());
+            return null;
+        }
     }
 
     private function buildLoginContext(string $usernameInput, string $passwordInput): array
