@@ -706,6 +706,17 @@ $routes->group('api', static function ($routes): void {
         // Laporan Harian (Mobile) API
         $routes->post('laporan-harian/proyek', 'Api\LaporanHarian::proyek');
         $routes->post('laporan-harian/pekerjaan', 'Api\LaporanHarian::pekerjaan');
+
+        // Inventarisasi (Mobile) API
+        $routes->group('inventaris', static function ($routes): void {
+            $routes->get('paket', 'Api\Inventaris::paket');
+            $routes->get('sekolah', 'Api\Inventaris::sekolah');
+        });
+
+        // Dokumentasi (Mobile) API
+        $routes->group('dokumentasi', static function ($routes): void {
+            $routes->get('kegiatan', 'Api\Dokumentasi::kegiatan');
+        });
     });
 });
 
