@@ -20,6 +20,64 @@
     <?php if (! empty($globalSetting['logo_url'] ?? '')): ?>
         <link rel="icon" type="image/png" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
         <link rel="apple-touch-icon" href="<?= esc(media_url((string) $globalSetting['logo_url'])); ?>">
+    <?php elseif (defined('ENVIRONMENT') && ENVIRONMENT === 'development'): ?>
+        <link rel="icon" type="image/png" href="">
+    <?php endif; ?>
+    <?php if (defined('ENVIRONMENT') && ENVIRONMENT === 'development'): ?>
+    <script>
+        (function () {
+            const applyDevFavicon = (img) => {
+                try {
+                    const size = 64;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+
+                    if (img) {
+                        ctx.drawImage(img, 0, 0, size, size);
+                    } else {
+                        ctx.fillStyle = '#2F3A45';
+                        ctx.fillRect(0, 0, size, size);
+                    }
+
+                    // Banner DEV di bagian bawah favicon agar langsung terlihat di tab browser
+                    ctx.fillStyle = '#F59E0B';
+                    ctx.fillRect(0, 36, size, 28);
+                    ctx.strokeStyle = '#111827';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(0, 36);
+                    ctx.lineTo(size, 36);
+                    ctx.stroke();
+
+                    ctx.fillStyle = '#111827';
+                    ctx.font = 'bold 22px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('DEV', size / 2, 51);
+
+                    const dataUrl = canvas.toDataURL('image/png');
+                    document.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach((el) => {
+                        el.href = dataUrl;
+                    });
+                } catch (e) {}
+            };
+
+            const iconEl = document.querySelector('link[rel="icon"]');
+            const src = iconEl ? iconEl.getAttribute('href') : '';
+            if (src) {
+                const img = new Image();
+                img.crossOrigin = 'anonymous';
+                img.onload = () => applyDevFavicon(img);
+                img.onerror = () => applyDevFavicon(null);
+                img.src = src;
+            } else {
+                applyDevFavicon(null);
+            }
+        })();
+    </script>
     <?php endif; ?>
     <script>
         window.__appPreloaderStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
