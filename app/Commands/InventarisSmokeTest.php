@@ -632,7 +632,7 @@ class InventarisSmokeTest extends BaseCommand
                 file_put_contents($tempStickerPdfPath, $stickerPdfOutput);
 
                 if (filesize($tempStickerPdfPath) > 1000 && substr($stickerPdfOutput, 0, 4) === '%PDF') {
-                    CLI::write("  [OK] Dokumen PDF Sticker BMN (1 Baris 2 Sticker format resmi PU) berhasil dirender! Ukuran: " . round(filesize($tempStickerPdfPath) / 1024, 2) . " KB", "green");
+                    CLI::write("  [OK] Dokumen PDF Sticker BMN (Format 10cm x 4cm resmi PU) berhasil dirender! Ukuran: " . round(filesize($tempStickerPdfPath) / 1024, 2) . " KB", "green");
                 } else {
                     CLI::error("  [FAIL] Output PDF Sticker BMN tidak valid.");
                 }
@@ -640,6 +640,34 @@ class InventarisSmokeTest extends BaseCommand
                 if (file_exists($tempStickerPdfPath)) {
                     unlink($tempStickerPdfPath);
                     CLI::write("  [CLEANUP] File sementara {$tempStickerPdfPath} telah dihapus sesuai Rule 3.", "yellow");
+                }
+
+                // Pengujian Format 8cm x 8cm
+                $tempStickerPdfPath8x8 = ROOTPATH . 'do_not_upload/temp/smoke_test_sticker_8x8.pdf';
+                $stickerHtml8x8 = view('admin/inventaris/satker/pdf_sticker', [
+                    'stickers'   => $sampleStickers,
+                    'logoBase64' => '',
+                    'kodeUakpb'  => '145060900691285000KP',
+                    'format'     => '8x8',
+                ]);
+
+                $dompdfSticker8x8 = new Dompdf($options);
+                $dompdfSticker8x8->loadHtml($stickerHtml8x8);
+                $dompdfSticker8x8->setPaper('A4', 'portrait');
+                $dompdfSticker8x8->render();
+
+                $stickerPdfOutput8x8 = $dompdfSticker8x8->output();
+                file_put_contents($tempStickerPdfPath8x8, $stickerPdfOutput8x8);
+
+                if (filesize($tempStickerPdfPath8x8) > 1000 && substr($stickerPdfOutput8x8, 0, 4) === '%PDF') {
+                    CLI::write("  [OK] Dokumen PDF Sticker BMN (Format Kotak 8cm x 8cm QR presisi) berhasil dirender! Ukuran: " . round(filesize($tempStickerPdfPath8x8) / 1024, 2) . " KB", "green");
+                } else {
+                    CLI::error("  [FAIL] Output PDF Sticker BMN format 8x8 tidak valid.");
+                }
+
+                if (file_exists($tempStickerPdfPath8x8)) {
+                    unlink($tempStickerPdfPath8x8);
+                    CLI::write("  [CLEANUP] File sementara {$tempStickerPdfPath8x8} telah dihapus sesuai Rule 3.", "yellow");
                 }
             } catch (\Throwable $e) {
                 CLI::error("  [FAIL] Exception saat render PDF Sticker BMN: " . $e->getMessage());

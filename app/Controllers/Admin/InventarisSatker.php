@@ -1703,7 +1703,7 @@ class InventarisSatker extends BaseController
     }
 
     /**
-     * Cetak Sticker Barcode / QR BMN (Ukuran presisi 10cm x 4cm: atas 1.5cm, bawah 2.5cm, QR 2cm x 2cm)
+     * Cetak Sticker Barcode / QR BMN (Pilihan Ukuran 10cm x 4cm atau 8cm x 8cm)
      * Format sesuai stiker resmi Kementerian Pekerjaan Umum.
      */
     public function cetakSticker()
@@ -1720,6 +1720,18 @@ class InventarisSatker extends BaseController
 
         $db = db_connect();
         $builder = $db->table('trn_inventaris_satker');
+
+        // Parameter pilihan format stiker (10x4 atau 8x8)
+        $format = strtolower(trim((string) (
+            $this->request->getPost('format')
+            ?? $this->request->getGet('format')
+            ?? $this->request->getPost('sticker_format')
+            ?? $this->request->getGet('sticker_format')
+            ?? '10x4'
+        )));
+        if (! in_array($format, ['10x4', '8x8'], true)) {
+            $format = '10x4';
+        }
 
         // Parameter pilihan orientasi (portrait atau landscape)
         $orientation = strtolower(trim((string) ($this->request->getPost('orientation') ?? $this->request->getGet('orientation') ?? 'portrait')));
@@ -1918,6 +1930,7 @@ class InventarisSatker extends BaseController
             'kodeUakpb'        => '145060900691285000KP',
             'orientation'      => $orientation,
             'paper'            => $paper,
+            'format'           => $format,
             'marginTop'        => $marginTop,
             'marginHorizontal' => $marginHorizontal,
         ];
@@ -1934,7 +1947,7 @@ class InventarisSatker extends BaseController
         $dompdf->setPaper($dompdfPaper, $orientation);
         $dompdf->render();
 
-        $filename = 'Sticker_BMN_' . date('Ymd_His') . '.pdf';
+        $filename = 'Sticker_BMN_' . $format . '_' . date('Ymd_His') . '.pdf';
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
             ->setHeader('Content-Disposition', 'inline; filename="' . $filename . '"')

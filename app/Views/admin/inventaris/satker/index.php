@@ -1140,7 +1140,7 @@
                 <div class="modal-body p-4">
                     <div class="alert alert-light border small text-muted mb-3" style="border-radius: 8px;">
                         <i class="fas fa-info-circle text-primary mr-1"></i>
-                        Sticker dicetak dengan ukuran presisi <strong>10 &times; 4 cm</strong> (bagian atas 1,5 cm, bagian bawah 2,5 cm, QR Code 2 &times; 2 cm) sesuai format resmi Kementerian Pekerjaan Umum. Anda dapat memilih ukuran kertas <strong>A4</strong> atau <strong>A3</strong> serta orientasi <strong>Portrait</strong> maupun <strong>Landscape</strong>.
+                        Pilih format ukuran stiker: <strong>10 &times; 4 cm</strong> (standar persegi panjang resmi Kementerian PU) atau <strong>8 &times; 8 cm</strong> (format kotak / persegi presisi dengan QR Code besar). Anda juga dapat memilih ukuran kertas <strong>A4</strong> atau <strong>A3</strong> serta orientasi <strong>Portrait</strong> maupun <strong>Landscape</strong>.
                     </div>
 
                     <label class="font-weight-bold text-dark small text-uppercase mb-2" style="letter-spacing: 0.5px;">Pilih Cakupan Cetak:</label>
@@ -1187,6 +1187,31 @@
                         </div>
                     </div>
 
+                    <!-- Pilihan Format Ukuran Stiker -->
+                    <div class="mb-3">
+                        <label class="font-weight-bold text-dark small text-uppercase mb-1.5" style="letter-spacing: 0.5px;">Ukuran Format Stiker:</label>
+                        <div class="row">
+                            <div class="col-12 col-md-6 mb-2 mb-md-0">
+                                <div class="custom-control custom-radio p-2.5 rounded h-100" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                    <input type="radio" id="format-10x4" name="format" class="custom-control-input sticker-format-radio" value="10x4" checked>
+                                    <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="format-10x4" style="cursor: pointer;">
+                                        <i class="fas fa-barcode mr-1 text-primary"></i> 10 cm &times; 4 cm (Persegi Panjang)
+                                        <small class="text-muted d-block font-weight-normal mt-0.5">Standar Kementerian PU (Kop 1,5 cm, Body 2,5 cm, QR 2 &times; 2 cm).</small>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="custom-control custom-radio p-2.5 rounded h-100" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                    <input type="radio" id="format-8x8" name="format" class="custom-control-input sticker-format-radio" value="8x8">
+                                    <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="format-8x8" style="cursor: pointer;">
+                                        <i class="fas fa-qrcode mr-1 text-info"></i> 8 cm &times; 8 cm (Kotak / Persegi)
+                                        <small class="text-muted d-block font-weight-normal mt-0.5">Format kotak presisi 8 &times; 8 cm dengan QR Code besar 3,5 &times; 3,5 cm.</small>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Pilihan Format Kertas & Orientasi Cetak -->
                     <div class="row mb-2">
                         <div class="col-12 col-md-6 mb-2 mb-md-0">
@@ -1202,7 +1227,7 @@
                                 <input type="radio" id="paper-a3" name="paper" class="custom-control-input" value="A3">
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-a3" style="cursor: pointer;">
                                     <i class="fas fa-file-invoice mr-1 text-info"></i> Kertas A3 / A3+ (SRA3)
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">Portrait: SRA3 320 &times; 450 mm (3 kolom) | Landscape: A3 420 &times; 297 mm (4 kolom).</small>
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">Portrait: SRA3 320 &times; 450 mm | Landscape: A3 420 &times; 297 mm.</small>
                                 </label>
                             </div>
                         </div>
@@ -1212,14 +1237,14 @@
                                 <input type="radio" id="orientation-portrait" name="orientation" class="custom-control-input" value="portrait" checked>
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-portrait" style="cursor: pointer;">
                                     <i class="fas fa-file-alt mr-1 text-primary"></i> Portrait (Tegak)
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (12 stiker/hal) | A3+/SRA3: 3 kolom (30 stiker/hal).</small>
+                                    <small class="text-muted d-block font-weight-normal mt-0.5" id="hint-orientation-portrait">A4: 2 kolom (12 stiker/hal) | A3+/SRA3: 3 kolom (30 stiker/hal).</small>
                                 </label>
                             </div>
                             <div class="custom-control custom-radio p-2.5 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">
                                 <input type="radio" id="orientation-landscape" name="orientation" class="custom-control-input" value="landscape">
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="orientation-landscape" style="cursor: pointer;">
                                     <i class="fas fa-file-alt fa-rotate-270 mr-1 text-success"></i> Landscape (Mendatar)
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">A4: 2 kolom (8 stiker/hal) | A3: 4 kolom (24 stiker/hal).</small>
+                                    <small class="text-muted d-block font-weight-normal mt-0.5" id="hint-orientation-landscape">A4: 2 kolom (8 stiker/hal) | A3: 4 kolom (24 stiker/hal).</small>
                                 </label>
                             </div>
                         </div>
@@ -2237,6 +2262,24 @@ document.addEventListener('DOMContentLoaded', function() {
             applyDefaultStickerMargin(true);
         });
     }
+    function updateStickerCapacityHints() {
+        var fmt = document.querySelector('input[name="format"]:checked');
+        var is8x8 = fmt && fmt.value === '8x8';
+        var pEl = document.getElementById('hint-orientation-portrait');
+        var lEl = document.getElementById('hint-orientation-landscape');
+        if (is8x8) {
+            if (pEl) pEl.innerHTML = 'A4: 2 kolom (6 stiker/hal) | A3+/SRA3: 3 kolom (15 stiker/hal).';
+            if (lEl) lEl.innerHTML = 'A4: 3 kolom (6 stiker/hal) | A3: 5 kolom (15 stiker/hal).';
+        } else {
+            if (pEl) pEl.innerHTML = 'A4: 2 kolom (12 stiker/hal) | A3+/SRA3: 3 kolom (30 stiker/hal).';
+            if (lEl) lEl.innerHTML = 'A4: 2 kolom (8 stiker/hal) | A3: 4 kolom (24 stiker/hal).';
+        }
+    }
+
+    document.querySelectorAll('input[name="format"]').forEach(function(el) {
+        el.addEventListener('change', updateStickerCapacityHints);
+    });
+
     document.querySelectorAll('input[name="paper"], input[name="orientation"]').forEach(function(el) {
         el.addEventListener('change', function() { applyDefaultStickerMargin(false); });
     });

@@ -11,22 +11,50 @@ if (! in_array($paper, ['A4', 'A3', 'SRA3'], true)) {
 }
 $isLandscape = ($orientation ?? 'portrait') === 'landscape';
 
-/**
- * Ukuran setiap stiker dikunci tepat 10cm x 4cm (100mm x 40mm):
- * - A4 Portrait  (210mm x 297mm): 2 kolom (2 x 100mm = 200mm)
- * - A4 Landscape (297mm x 210mm): 2 kolom (3 kolom = 300mm tidak muat di 297mm)
- * - A3 / SRA3 Portrait (320mm x 450mm): 3 kolom (3 x 100mm = 300mm + jarak 2x3mm + margin 2x7mm = 320mm)
- * - A3 Landscape (420mm x 297mm): 4 kolom (4 x 100mm = 400mm)
- */
-$isA3Group = in_array($paper, ['A3', 'SRA3'], true);
-if ($isA3Group) {
-    $perRow = $isLandscape ? 4 : 3;
-} else {
-    $perRow = 2;
+$format = strtolower($format ?? '10x4');
+if (! in_array($format, ['10x4', '8x8'], true)) {
+    $format = '10x4';
 }
+$is8x8 = ($format === '8x8');
 
-$colGapMm = ($paper === 'A4' && ! $isLandscape) ? 2.5 : 3.0;
-$rowGapMm = 3.0;
+$isA3Group = in_array($paper, ['A3', 'SRA3'], true);
+
+/**
+ * Pilihan Format Stiker:
+ * 1. 10cm x 4cm (100mm x 40mm) - Standar Resmi Kementerian Pekerjaan Umum
+ *    - A4 Portrait  (210 x 297 mm): 2 kolom (12 stiker/hal)
+ *    - A4 Landscape (297 x 210 mm): 2 kolom (8 stiker/hal)
+ *    - SRA3 Portrait (320 x 450 mm): 3 kolom (30 stiker/hal)
+ *    - A3 Landscape  (420 x 297 mm): 4 kolom (24 stiker/hal)
+ *
+ * 2. 8cm x 8cm (80mm x 80mm) - Format Kotak / Persegi Presisi (QR Code 3.5cm x 3.5cm)
+ *    - A4 Portrait  (210 x 297 mm): 2 kolom x 3 baris (6 stiker/hal)
+ *    - A4 Landscape (297 x 210 mm): 3 kolom x 2 baris (6 stiker/hal)
+ *    - SRA3 Portrait (320 x 450 mm): 3 kolom x 5 baris (15 stiker/hal)
+ *    - A3 Landscape  (420 x 297 mm): 5 kolom x 3 baris (15 stiker/hal)
+ */
+if ($is8x8) {
+    $cardWidthMm  = 80.0;
+    $cardHeightMm = 80.0;
+    $rowGapMm     = 4.0;
+    if ($isA3Group) {
+        $perRow   = $isLandscape ? 5 : 3;
+        $colGapMm = $isLandscape ? 3.0 : 5.0;
+    } else {
+        $perRow   = $isLandscape ? 3 : 2;
+        $colGapMm = 4.0;
+    }
+} else {
+    $cardWidthMm  = 100.0;
+    $cardHeightMm = 40.0;
+    $rowGapMm     = 3.0;
+    if ($isA3Group) {
+        $perRow   = $isLandscape ? 4 : 3;
+    } else {
+        $perRow   = 2;
+    }
+    $colGapMm = ($paper === 'A4' && ! $isLandscape) ? 2.5 : 3.0;
+}
 
 if ($paper === 'A4' && ! $isLandscape) {
     $pageSizeCss   = 'A4 portrait';
@@ -62,13 +90,18 @@ $marginHorizMm = isset($marginHorizontal) && is_numeric($marginHorizontal) ? max
 
 // Jaga agar jarak antar kolom otomatis menyesuaikan jika margin horizontal diperbesar
 $usableWidthMm = $pageWidthMm - (2.0 * $marginHorizMm);
-$neededWidthMm = ($perRow * 100.0) + (($perRow - 1) * $colGapMm);
+$neededWidthMm = ($perRow * $cardWidthMm) + (($perRow - 1) * $colGapMm);
 if ($perRow > 1 && $usableWidthMm < $neededWidthMm) {
-    $colGapMm = max(0.0, round(($usableWidthMm - ($perRow * 100.0)) / ($perRow - 1), 2));
+    if ($is8x8 && $perRow === 5 && $usableWidthMm < 400.0) {
+        $perRow = 4;
+        $neededWidthMm = ($perRow * $cardWidthMm) + (($perRow - 1) * $colGapMm);
+    }
+    if ($usableWidthMm >= ($perRow * $cardWidthMm)) {
+        $colGapMm = max(0.0, round(($usableWidthMm - ($perRow * $cardWidthMm)) / ($perRow - 1), 2));
+    }
 }
 
 // Hitung kapasitas baris per halaman berdasarkan tinggi kertas dan margin atas/bawah
-$cardHeightMm   = 40.0;
 $usableHeightMm = max($cardHeightMm, $pageHeightMm - (2.0 * $marginTopMm));
 $rowsPerPage    = max(1, (int) floor(($usableHeightMm + $rowGapMm) / ($cardHeightMm + $rowGapMm)));
 
@@ -78,7 +111,7 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Cetak Sticker BMN - <?= date('Y-m-d'); ?></title>
+    <title>Cetak Sticker BMN (<?= $format; ?>) - <?= date('Y-m-d'); ?></title>
     <style>
         @page {
             size: <?= $pageSizeCss; ?>;
@@ -97,7 +130,7 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
             line-height: 1.15;
         }
 
-        /* Grid halaman: lebar tiap sel dikunci tepat 100mm (10cm), spacer antar kolom terpisah */
+        /* Grid halaman: lebar tiap sel dikunci sesuai ukuran stiker, spacer antar kolom terpisah */
         .sticker-page {
             page-break-after: always;
         }
@@ -109,7 +142,7 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
             margin: 0 auto;
         }
         .sticker-cell {
-            width: 100mm;
+            width: <?= $cardWidthMm; ?>mm;
             vertical-align: top;
             padding: 0;
         }
@@ -124,7 +157,9 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
             line-height: 1pt;
         }
 
-        /* Kartu Stiker Tunggal: total border-box tepat 10cm x 4cm (100mm x 40mm) */
+        /* ==========================================================================
+           FORMAT 1: 10cm x 4cm (Total border-box tepat 100mm x 40mm)
+           ========================================================================== */
         .sticker-card {
             position: relative;
             width: 99.735mm;
@@ -246,6 +281,126 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
             border: 1px dashed #cccccc;
             display: block;
         }
+
+        /* ==========================================================================
+           FORMAT 2: 8cm x 8cm (Total border-box tepat 80mm x 80mm)
+           ========================================================================== */
+        .sticker-card-8x8 {
+            position: relative;
+            width: 79.735mm;
+            height: 79.735mm;
+            border: 0.75pt solid #111111;
+            background: #ffffff;
+            page-break-inside: avoid;
+            overflow: hidden;
+        }
+
+        /* Kotak Bagian Atas: 1.5cm (15mm) */
+        .sticker-top-8x8 {
+            position: relative;
+            width: 100%;
+            height: 14.735mm;
+            border-bottom: 0.75pt solid #111111;
+        }
+        .pu-logo-8x8 {
+            position: absolute;
+            left: 2.3mm;
+            top: 2.45mm;
+            width: 9.5mm;
+            height: 9.5mm;
+            display: block;
+        }
+        .header-text-wrap-8x8 {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 2.25mm;
+            text-align: center;
+        }
+        .instansi-title-8x8 {
+            font-size: 10.5pt;
+            font-weight: normal;
+            color: #000000;
+            line-height: 1.1;
+            white-space: nowrap;
+        }
+        .instansi-code-8x8 {
+            font-size: 8.5pt;
+            font-weight: normal;
+            color: #000000;
+            line-height: 1.15;
+            margin-top: 0.25mm;
+            white-space: nowrap;
+        }
+
+        /* Kotak Bagian Bawah: 6.5cm (65mm) */
+        .sticker-bottom-8x8 {
+            position: relative;
+            width: 100%;
+            height: 64.735mm;
+        }
+        .info-area-8x8 {
+            padding: 2.2mm 3.0mm 0 3.0mm;
+            max-height: 25.5mm;
+            overflow: hidden;
+        }
+        .table-info-row-8x8 {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0.6mm;
+        }
+        .kode-barang-text-8x8 {
+            font-size: 9.3pt;
+            font-weight: normal;
+            color: #000000;
+            text-align: left;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .nup-text-8x8 {
+            font-size: 9.3pt;
+            font-weight: normal;
+            color: #000000;
+            text-align: right;
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+        .nama-barang-text-8x8 {
+            font-size: 9.3pt;
+            font-weight: normal;
+            color: #000000;
+            line-height: 1.2;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        .merk-tipe-text-8x8 {
+            font-size: 8.8pt;
+            font-weight: normal;
+            color: #000000;
+            line-height: 1.15;
+            margin-top: 0.8mm;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* QR Code besar presisi 3.5cm x 3.5cm (35mm x 35mm) centered di bawah */
+        .qr-image-8x8 {
+            position: absolute;
+            left: 22.367mm;
+            bottom: 2.8mm;
+            width: 35.0mm;
+            height: 35.0mm;
+            display: block;
+        }
+        .qr-placeholder-8x8 {
+            position: absolute;
+            left: 22.367mm;
+            bottom: 2.8mm;
+            width: 35.0mm;
+            height: 35.0mm;
+            border: 1px dashed #cccccc;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -272,37 +427,72 @@ $pageMargin = $marginTopMm . 'mm ' . $marginHorizMm . 'mm ' . $marginTopMm . 'mm
                                 $headerCode = ($kodeUakpb ?? '145060900691285000KP') . '.' . $thn;
                             ?>
                                 <td class="sticker-cell">
-                                    <div class="sticker-card">
-                                        <!-- Kotak Atas: 1.5 cm -->
-                                        <div class="sticker-top">
-                                            <?php if (! empty($logoBase64)): ?>
-                                                <img src="<?= $logoBase64; ?>" class="pu-logo" alt="Logo PU">
-                                            <?php endif; ?>
-                                            <div class="header-text-wrap">
-                                                <div class="instansi-title">Kementerian Pekerjaan Umum</div>
-                                                <div class="instansi-code"><?= esc($headerCode); ?></div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Kotak Bawah: 2.5 cm -->
-                                        <div class="sticker-bottom">
-                                            <div class="info-top-area">
-                                                <div class="info-row-1">
-                                                    <span class="kode-barang-text"><?= esc($stk['kode_barang']); ?></span>
-                                                    <span class="nup-text">NUP: <?= esc($stk['nup']); ?></span>
+                                    <?php if ($is8x8): ?>
+                                        <div class="sticker-card-8x8">
+                                            <!-- Kotak Bagian Atas: 1.5 cm -->
+                                            <div class="sticker-top-8x8">
+                                                <?php if (! empty($logoBase64)): ?>
+                                                    <img src="<?= $logoBase64; ?>" class="pu-logo-8x8" alt="Logo PU">
+                                                <?php endif; ?>
+                                                <div class="header-text-wrap-8x8">
+                                                    <div class="instansi-title-8x8">Kementerian Pekerjaan Umum</div>
+                                                    <div class="instansi-code-8x8"><?= esc($headerCode); ?></div>
                                                 </div>
-                                                <div class="nama-barang-text"><?= esc($stk['nama_barang']); ?></div>
                                             </div>
 
-                                            <div class="merk-tipe-text"><?= esc($stk['merk_tipe']); ?></div>
+                                            <!-- Kotak Bagian Bawah: 6.5 cm -->
+                                            <div class="sticker-bottom-8x8">
+                                                <div class="info-area-8x8">
+                                                    <table class="table-info-row-8x8" cellpadding="0" cellspacing="0">
+                                                        <tr>
+                                                            <td class="kode-barang-text-8x8"><?= esc($stk['kode_barang']); ?></td>
+                                                            <td class="nup-text-8x8">NUP: <?= esc($stk['nup']); ?></td>
+                                                        </tr>
+                                                    </table>
+                                                    <div class="nama-barang-text-8x8"><?= esc($stk['nama_barang']); ?></div>
+                                                    <div class="merk-tipe-text-8x8"><?= esc($stk['merk_tipe']); ?></div>
+                                                </div>
 
-                                            <?php if (! empty($stk['qr_base64'])): ?>
-                                                <img src="<?= $stk['qr_base64']; ?>" class="qr-image" alt="QR Code">
-                                            <?php else: ?>
-                                                <div class="qr-placeholder"></div>
-                                            <?php endif; ?>
+                                                <?php if (! empty($stk['qr_base64'])): ?>
+                                                    <img src="<?= $stk['qr_base64']; ?>" class="qr-image-8x8" alt="QR Code">
+                                                <?php else: ?>
+                                                    <div class="qr-placeholder-8x8"></div>
+                                                <?php endif; ?>
+                                            </div>
                                         </div>
-                                    </div>
+                                    <?php else: ?>
+                                        <div class="sticker-card">
+                                            <!-- Kotak Atas: 1.5 cm -->
+                                            <div class="sticker-top">
+                                                <?php if (! empty($logoBase64)): ?>
+                                                    <img src="<?= $logoBase64; ?>" class="pu-logo" alt="Logo PU">
+                                                <?php endif; ?>
+                                                <div class="header-text-wrap">
+                                                    <div class="instansi-title">Kementerian Pekerjaan Umum</div>
+                                                    <div class="instansi-code"><?= esc($headerCode); ?></div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Kotak Bawah: 2.5 cm -->
+                                            <div class="sticker-bottom">
+                                                <div class="info-top-area">
+                                                    <div class="info-row-1">
+                                                        <span class="kode-barang-text"><?= esc($stk['kode_barang']); ?></span>
+                                                        <span class="nup-text">NUP: <?= esc($stk['nup']); ?></span>
+                                                    </div>
+                                                    <div class="nama-barang-text"><?= esc($stk['nama_barang']); ?></div>
+                                                </div>
+
+                                                <div class="merk-tipe-text"><?= esc($stk['merk_tipe']); ?></div>
+
+                                                <?php if (! empty($stk['qr_base64'])): ?>
+                                                    <img src="<?= $stk['qr_base64']; ?>" class="qr-image" alt="QR Code">
+                                                <?php else: ?>
+                                                    <div class="qr-placeholder"></div>
+                                                <?php endif; ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                             <?php else: ?>
                                 <td class="sticker-cell"></td>
