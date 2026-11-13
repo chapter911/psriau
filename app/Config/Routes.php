@@ -607,6 +607,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/pemeliharaan/ajax-search-barang', 'Admin\InventarisPemeliharaan::ajaxSearchBarang');
 	$routes->post('inventaris/pemeliharaan/apply-watermark', 'Admin\InventarisPemeliharaan::applyWatermark');
 
+	// Modul Inventarisasi - Penempatan Aset BMN
+	$routes->get('inventaris/penempatan', 'Admin\InventarisPenempatan::index');
+	$routes->post('inventaris/penempatan/gedung/tambah', 'Admin\InventarisPenempatan::createGedung');
+	$routes->post('inventaris/penempatan/ruangan/tambah', 'Admin\InventarisPenempatan::createRuangan');
+
 	// Modul KOMPU (Komunikasi Publik)
 	$routes->get('kompu', static fn() => redirect()->to('/admin/kompu/sosmed'));
 	$routes->get('kompu/sosmed', 'Admin\Kompu::sosmedIndex');
@@ -711,6 +716,16 @@ $routes->group('api', static function ($routes): void {
         $routes->group('inventaris', static function ($routes): void {
             $routes->get('paket', 'Api\Inventaris::paket');
             $routes->get('sekolah', 'Api\Inventaris::sekolah');
+        });
+
+        // BMN (Mobile) API
+        $routes->group('bmn', static function ($routes): void {
+            $routes->get('aset', 'Api\Bmn::aset');
+            $routes->get('gedung', 'Api\Bmn::gedung');
+            $routes->post('gedung', 'Api\Bmn::createGedung');
+            $routes->get('ruangan', 'Api\Bmn::ruangan');
+            $routes->post('ruangan', 'Api\Bmn::createRuangan');
+            $routes->post('penempatan', 'Api\Bmn::penempatan');
         });
 
         // Dokumentasi (Mobile) API
