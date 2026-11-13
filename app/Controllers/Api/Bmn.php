@@ -299,19 +299,71 @@ class Bmn extends BaseController
         $sekolahId         = (int) $this->request->getPost('sekolah_id');
         $gedungId          = (int) $this->request->getPost('gedung_id');
         $ruanganId         = (int) $this->request->getPost('ruangan_id');
+        $namaGedungManual  = trim((string) $this->request->getPost('nama_gedung_manual'));
+        $namaRuanganManual = trim((string) $this->request->getPost('nama_ruangan_manual'));
         $kondisi           = trim((string) $this->request->getPost('kondisi')) ?: 'baik';
         $catatan           = trim((string) $this->request->getPost('catatan'));
         $tanggalPenempatan = trim((string) $this->request->getPost('tanggal_penempatan')) ?: date('Y-m-d H:i:s');
         $petugas           = trim((string) $this->request->getPost('petugas_penempatan')) ?: 'Petugas Lapangan Mobile';
 
-        if ($bmnId <= 0 || $sekolahId <= 0 || $gedungId <= 0 || $ruanganId <= 0) {
+        if ($bmnId <= 0 || $sekolahId <= 0) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
                 'status'  => 'error',
-                'message' => 'Harap lengkapi Aset BMN, Sekolah, Gedung, dan Ruangan.',
+                'message' => 'Harap lengkapi Aset BMN dan Sekolah sasaran penempatan.',
             ]);
         }
 
         $db = db_connect();
+
+        // Dukung pembuatan/resolusi gedung jika dimasukkan secara manual
+        if ($gedungId <= 0 && $namaGedungManual !== '') {
+            $existingGedung = $db->table('mst_gedung')
+                ->where('sekolah_id', $sekolahId)
+                ->where('LOWER(nama_gedung)', strtolower($namaGedungManual))
+                ->get()->getRowArray();
+            if ($existingGedung) {
+                $gedungId = (int) $existingGedung['id'];
+            } else {
+                $nowG = date('Y-m-d H:i:s');
+                $db->table('mst_gedung')->insert([
+                    'sekolah_id'  => $sekolahId,
+                    'nama_gedung' => $namaGedungManual,
+                    'created_at'  => $nowG,
+                    'updated_at'  => $nowG,
+                ]);
+                $gedungId = (int) $db->insertID();
+            }
+        }
+
+        // Dukung pembuatan/resolusi ruangan jika dimasukkan secara manual
+        if ($ruanganId <= 0 && $namaRuanganManual !== '') {
+            $builderRuangan = $db->table('mst_ruangan')
+                ->where('LOWER(nama_ruangan)', strtolower($namaRuanganManual));
+            if ($gedungId > 0) {
+                $builderRuangan->where('gedung_id', $gedungId);
+            } else {
+                $builderRuangan->where('sekolah_id', $sekolahId);
+            }
+            $existingRuangan = $builderRuangan->get()->getRowArray();
+            if ($existingRuangan) {
+                $ruanganId = (int) $existingRuangan['id'];
+            } else {
+                $nowR = date('Y-m-d H:i:s');
+                $db->table('mst_ruangan')->insert([
+                    'kode_ruangan' => 'R-' . time(),
+                    'nama_ruangan' => $namaRuanganManual,
+                    'gedung_id'    => $gedungId > 0 ? $gedungId : null,
+                    'sekolah_id'   => $sekolahId,
+                    'created_at'   => $nowR,
+                    'updated_at'   => $nowR,
+                ]);
+                $ruanganId = (int) $db->insertID();
+            }
+        }
+
+        $gedungIdFinal  = $gedungId > 0 ? $gedungId : null;
+        $ruanganIdFinal = $ruanganId > 0 ? $ruanganId : null;
+
         $aset = $db->table('trn_inventaris_satker')->where('id', $bmnId)->get()->getRowArray();
         if (! $aset) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
@@ -360,8 +412,8 @@ class Bmn extends BaseController
         $penempatanData = [
             'inventaris_id'      => $bmnId,
             'sekolah_id'         => $sekolahId,
-            'gedung_id'          => $gedungId,
-            'ruangan_id'         => $ruanganId,
+            'gedung_id'          => $gedungIdFinal,
+            'ruangan_id'         => $ruanganIdFinal,
             'kondisi'            => strtolower($kondisi),
             'catatan'            => $catatan,
             'petugas_nama'       => $petugas,
@@ -384,8 +436,8 @@ class Bmn extends BaseController
         // Update trn_inventaris_satker
         $db->table('trn_inventaris_satker')->where('id', $bmnId)->update([
             'sekolah_id'         => $sekolahId,
-            'gedung_id'          => $gedungId,
-            'ruangan_id'         => $ruanganId,
+            'gedung_id'          => $gedungIdFinal,
+            'ruangan_id'         => $ruanganIdFinal,
             'kondisi'            => strtolower($kondisi),
             'status_penempatan'  => 'sudah_ditempatkan',
             'tanggal_penempatan' => $tanggalPenempatan,

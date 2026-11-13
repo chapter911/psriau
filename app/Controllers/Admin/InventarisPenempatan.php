@@ -17,6 +17,11 @@ class InventarisPenempatan extends BaseController
         }
 
         $db = db_connect();
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        $canAdd    = (bool) ($menuPermissions['add'] ?? false);
+        $canEdit   = (bool) ($menuPermissions['edit'] ?? false);
+        $canDelete = (bool) ($menuPermissions['delete'] ?? false);
+        $canExport = (bool) ($menuPermissions['export'] ?? false);
 
         $isDataTableAjax = $this->request->getGet('draw') !== null || ($this->request->isAJAX() && $this->request->getGet('length') !== null);
 
@@ -178,6 +183,7 @@ class InventarisPenempatan extends BaseController
                 }
 
                 // 8. Dokumentasi Foto
+                $fotoBtn = '';
                 if (! empty($p)) {
                     $asli1 = ! empty($p['foto_asli_1']) ? base_url($p['foto_asli_1']) : '';
                     $asli2 = ! empty($p['foto_asli_2']) ? base_url($p['foto_asli_2']) : '';
@@ -188,23 +194,57 @@ class InventarisPenempatan extends BaseController
                     $wm3   = ! empty($p['foto_wm_3']) ? base_url($p['foto_wm_3']) : '';
                     $wm4   = ! empty($p['foto_wm_4']) ? base_url($p['foto_wm_4']) : '';
 
-                    $aksiFotoHtml = '<div class="text-center">'
-                                  . '<button type="button" class="btn btn-xs btn-outline-primary btn-view-foto" '
-                                  . 'data-asli-1="' . esc($asli1, 'attr') . '" '
-                                  . 'data-asli-2="' . esc($asli2, 'attr') . '" '
-                                  . 'data-asli-3="' . esc($asli3, 'attr') . '" '
-                                  . 'data-asli-4="' . esc($asli4, 'attr') . '" '
-                                  . 'data-wm-1="' . esc($wm1, 'attr') . '" '
-                                  . 'data-wm-2="' . esc($wm2, 'attr') . '" '
-                                  . 'data-wm-3="' . esc($wm3, 'attr') . '" '
-                                  . 'data-wm-4="' . esc($wm4, 'attr') . '" '
-                                  . 'data-title="' . esc($it['nama_barang'], 'attr') . '" '
-                                  . 'title="Lihat Foto Fisik Lapangan">'
-                                  . '<i class="fas fa-images mr-1"></i> Foto'
-                                  . '</button></div>';
-                } else {
-                    $aksiFotoHtml = '<div class="text-center text-muted text-xs">-</div>';
+                    $fotoBtn = '<button type="button" class="btn btn-xs btn-outline-primary mr-1 btn-view-foto" '
+                             . 'data-asli-1="' . esc($asli1, 'attr') . '" '
+                             . 'data-asli-2="' . esc($asli2, 'attr') . '" '
+                             . 'data-asli-3="' . esc($asli3, 'attr') . '" '
+                             . 'data-asli-4="' . esc($asli4, 'attr') . '" '
+                             . 'data-wm-1="' . esc($wm1, 'attr') . '" '
+                             . 'data-wm-2="' . esc($wm2, 'attr') . '" '
+                             . 'data-wm-3="' . esc($wm3, 'attr') . '" '
+                             . 'data-wm-4="' . esc($wm4, 'attr') . '" '
+                             . 'data-title="' . esc($it['nama_barang'], 'attr') . '" '
+                             . 'title="Lihat Foto Dokumentasi">'
+                             . '<i class="fas fa-images"></i>'
+                             . '</button>';
                 }
+
+                // Tombol Pindah Lokasi (Relokasi)
+                $pindahBtn = '';
+                if ($canEdit) {
+                    $lokasiTxt = (! empty($it['nama_sekolah']) ? $it['nama_sekolah'] : 'Belum Ditempatkan')
+                               . ' / ' . (! empty($it['nama_gedung']) ? $it['nama_gedung'] : '-')
+                               . ' / ' . (! empty($it['nama_ruangan']) ? $it['nama_ruangan'] : '-');
+
+                    $pindahBtn = '<button type="button" class="btn btn-xs btn-outline-info mr-1 btn-pindah-lokasi" '
+                               . 'data-id="' . $invId . '" '
+                               . 'data-nama="' . esc($it['nama_barang'], 'attr') . '" '
+                               . 'data-kode="' . esc($it['kode_barang'], 'attr') . '" '
+                               . 'data-nup="' . esc($it['nup'], 'attr') . '" '
+                               . 'data-sekolah-id="' . esc($it['sekolah_id'] ?? '', 'attr') . '" '
+                               . 'data-gedung-id="' . esc($it['gedung_id'] ?? '', 'attr') . '" '
+                               . 'data-ruangan-id="' . esc($it['ruangan_id'] ?? '', 'attr') . '" '
+                               . 'data-kondisi="' . esc(strtolower($it['kondisi'] ?? 'baik'), 'attr') . '" '
+                               . 'data-lokasi-text="' . esc($lokasiTxt, 'attr') . '" '
+                               . 'data-is-placed="' . ($isPlaced ? '1' : '0') . '" '
+                               . 'title="Pindahkan Lokasi Penempatan">'
+                               . '<i class="fas fa-exchange-alt"></i> Pindah'
+                               . '</button>';
+                }
+
+                // Tombol Hapus Lokasi Penempatan
+                $hapusLokasiBtn = '';
+                if ($canDelete && $isPlaced) {
+                    $hapusLokasiBtn = '<button type="button" class="btn btn-xs btn-outline-danger btn-hapus-lokasi" '
+                                    . 'data-id="' . $invId . '" '
+                                    . 'data-nama="' . esc($it['nama_barang'], 'attr') . '" '
+                                    . 'data-nup="' . esc($it['nup'], 'attr') . '" '
+                                    . 'title="Hapus Lokasi Penempatan (Kembalikan ke status Belum Ditempatkan)">'
+                                    . '<i class="fas fa-map-marker-slash"></i> Hapus'
+                                    . '</button>';
+                }
+
+                $aksiHtml = '<div class="text-nowrap text-center">' . $fotoBtn . $pindahBtn . $hapusLokasiBtn . '</div>';
 
                 $data[] = [
                     'no'           => $noHtml,
@@ -215,7 +255,8 @@ class InventarisPenempatan extends BaseController
                     'status'       => $statusHtml,
                     'lokasi'       => $lokasiHtml,
                     'tanggal'      => $tglHtml,
-                    'aksi_foto'    => $aksiFotoHtml,
+                    'aksi'         => $aksiHtml,
+                    'aksi_foto'    => $aksiHtml,
                 ];
             }
 
@@ -447,6 +488,257 @@ class InventarisPenempatan extends BaseController
             'status'  => 'success',
             'aset'    => $aset,
             'history' => $formattedHistory,
+        ]);
+    }
+
+    /**
+     * AJAX: Ambil daftar gedung berdasarkan sekolah (NPSN / ID).
+     */
+    public function ajaxGedung($sekolahId = null)
+    {
+        $db = db_connect();
+        $builder = $db->table('mst_gedung');
+        if (! empty($sekolahId)) {
+            $builder->where('sekolah_id', $sekolahId);
+        }
+        $gedungList = $builder->orderBy('nama_gedung', 'ASC')->get()->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $gedungList,
+        ]);
+    }
+
+    /**
+     * AJAX: Ambil daftar ruangan berdasarkan gedung_id.
+     */
+    public function ajaxRuangan($gedungId = null)
+    {
+        $db = db_connect();
+        $builder = $db->table('mst_ruangan');
+        if (! empty($gedungId)) {
+            $builder->where('gedung_id', (int) $gedungId);
+        }
+        $ruanganList = $builder->orderBy('nama_ruangan', 'ASC')->get()->getResultArray();
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => $ruanganList,
+        ]);
+    }
+
+    /**
+     * AJAX: Pindah / Relokasi Lokasi Penempatan Aset BMN.
+     */
+    public function pindahLokasi()
+    {
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (empty($menuPermissions['edit'])) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki hak akses (Fitur Edit) untuk memindahkan lokasi aset.',
+            ]);
+        }
+
+        $idInventaris = (int) $this->request->getPost('inventaris_id');
+        $idSekolah    = trim((string) $this->request->getPost('sekolah_id'));
+        $gedungParam  = trim((string) $this->request->getPost('gedung_id'));
+        $ruanganParam = trim((string) $this->request->getPost('ruangan_id'));
+        $namaGedungBaru  = trim((string) $this->request->getPost('nama_gedung_baru'));
+        $namaRuanganBaru = trim((string) $this->request->getPost('nama_ruangan_baru'));
+        $kondisi      = trim((string) $this->request->getPost('kondisi')) ?: 'baik';
+        $catatan      = trim((string) $this->request->getPost('catatan'));
+        $petugasNama  = session()->get('nama') ?? (session()->get('username') ?? 'Admin Web');
+
+        if ($idInventaris <= 0 || $idSekolah === '') {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'  => 'error',
+                'message' => 'Aset BMN dan Sekolah sasaran wajib dipilih.',
+            ]);
+        }
+
+        $db = db_connect();
+        $aset = $db->table('trn_inventaris_satker')->where('id', $idInventaris)->get()->getRowArray();
+        if (! $aset) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status'  => 'error',
+                'message' => 'Data Aset BMN tidak ditemukan.',
+            ]);
+        }
+
+        // Resolusi Gedung
+        $finalGedungId = null;
+        if ($gedungParam === 'baru' && $namaGedungBaru !== '') {
+            $nowG = date('Y-m-d H:i:s');
+            $db->table('mst_gedung')->insert([
+                'sekolah_id'  => $idSekolah,
+                'nama_gedung' => $namaGedungBaru,
+                'created_at'  => $nowG,
+                'updated_at'  => $nowG,
+                'created_by'  => session()->get('id_user') ?? session()->get('user_id'),
+            ]);
+            $finalGedungId = (int) $db->insertID();
+        } elseif ($gedungParam !== '' && $gedungParam !== 'luar_gedung' && $gedungParam !== '0') {
+            $finalGedungId = (int) $gedungParam;
+        }
+
+        // Resolusi Ruangan
+        $finalRuanganId = null;
+        if ($ruanganParam === 'baru' && $namaRuanganBaru !== '') {
+            $nowR = date('Y-m-d H:i:s');
+            $db->table('mst_ruangan')->insert([
+                'kode_ruangan' => 'R-' . time(),
+                'nama_ruangan' => $namaRuanganBaru,
+                'gedung_id'    => $finalGedungId,
+                'sekolah_id'   => $idSekolah,
+                'created_at'   => $nowR,
+                'updated_at'   => $nowR,
+            ]);
+            $finalRuanganId = (int) $db->insertID();
+        } elseif ($ruanganParam !== '' && $ruanganParam !== 'tanpa_ruangan' && $ruanganParam !== '0') {
+            $finalRuanganId = (int) $ruanganParam;
+        }
+
+        // Ambil penempatan aktif terakhir untuk mempertahankan foto lama jika ada
+        $lastPenempatan = $db->table('trn_bmn_penempatan')
+            ->where('inventaris_id', $idInventaris)
+            ->where('status', 'aktif')
+            ->orderBy('id', 'DESC')
+            ->get()
+            ->getRowArray();
+
+        // Tandai penempatan sebelumnya sebagai relokasi
+        $db->table('trn_bmn_penempatan')
+            ->where('inventaris_id', $idInventaris)
+            ->where('status', 'aktif')
+            ->update([
+                'status'     => 'relokasi',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+        // Catat entri riwayat baru di trn_bmn_penempatan
+        $now = date('Y-m-d H:i:s');
+        $db->table('trn_bmn_penempatan')->insert([
+            'inventaris_id'      => $idInventaris,
+            'sekolah_id'         => $idSekolah,
+            'gedung_id'          => $finalGedungId,
+            'ruangan_id'         => $finalRuanganId,
+            'kondisi'            => strtolower($kondisi),
+            'catatan'            => $catatan ?: 'Pemindahan lokasi melalui Web Admin',
+            'petugas_nama'       => $petugasNama,
+            'tanggal_penempatan' => $now,
+            'status'             => 'aktif',
+            'foto_asli_1'        => $lastPenempatan['foto_asli_1'] ?? null,
+            'foto_asli_2'        => $lastPenempatan['foto_asli_2'] ?? null,
+            'foto_asli_3'        => $lastPenempatan['foto_asli_3'] ?? null,
+            'foto_asli_4'        => $lastPenempatan['foto_asli_4'] ?? null,
+            'foto_wm_1'          => $lastPenempatan['foto_wm_1'] ?? null,
+            'foto_wm_2'          => $lastPenempatan['foto_wm_2'] ?? null,
+            'foto_wm_3'          => $lastPenempatan['foto_wm_3'] ?? null,
+            'foto_wm_4'          => $lastPenempatan['foto_wm_4'] ?? null,
+            'created_at'         => $now,
+            'updated_at'         => $now,
+            'created_by'         => session()->get('id_user') ?? session()->get('user_id'),
+        ]);
+
+        // Perbarui trn_inventaris_satker
+        $db->table('trn_inventaris_satker')->where('id', $idInventaris)->update([
+            'sekolah_id'         => $idSekolah,
+            'gedung_id'          => $finalGedungId,
+            'ruangan_id'         => $finalRuanganId,
+            'status_penempatan'  => 'sudah_ditempatkan',
+            'kondisi'            => strtolower($kondisi),
+            'tanggal_penempatan' => $now,
+            'petugas_penempatan' => $petugasNama,
+            'updated_at'         => $now,
+        ]);
+
+        return $this->response->setJSON([
+            'status'    => 'success',
+            'message'   => 'Lokasi aset berhasil dipindahkan ke lokasi baru.',
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
+
+    /**
+     * AJAX: Hapus Lokasi Penempatan Aset BMN (Reset status ke Belum Ditempatkan).
+     */
+    public function hapusLokasi($id = null)
+    {
+        $menuPermissions = $this->resolveMenuPermissions(self::MENU_LINK);
+        if (empty($menuPermissions['delete'])) {
+            return $this->response->setStatusCode(403)->setJSON([
+                'status'    => 'error',
+                'message'   => 'Anda tidak memiliki hak akses (Fitur Delete) untuk menghapus lokasi penempatan.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $id = (int) $id;
+        if ($id <= 0) {
+            return $this->response->setStatusCode(400)->setJSON([
+                'status'    => 'error',
+                'message'   => 'ID aset tidak valid.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $db = db_connect();
+        $aset = $db->table('trn_inventaris_satker')->where('id', $id)->get()->getRowArray();
+        if (! $aset) {
+            return $this->response->setStatusCode(404)->setJSON([
+                'status'    => 'error',
+                'message'   => 'Data Aset BMN tidak ditemukan.',
+                'csrf_hash' => csrf_hash(),
+            ]);
+        }
+
+        $petugas = session()->get('nama') ?? (session()->get('username') ?? 'Admin Web');
+        $now = date('Y-m-d H:i:s');
+
+        // Nonaktifkan record penempatan aktif di trn_bmn_penempatan
+        $db->table('trn_bmn_penempatan')
+            ->where('inventaris_id', $id)
+            ->where('status', 'aktif')
+            ->update([
+                'status'     => 'dihapus',
+                'catatan'    => 'Lokasi penempatan dibatalkan/dihapus oleh ' . $petugas . ' pada ' . date('d/m/Y H:i'),
+                'updated_at' => $now,
+            ]);
+
+        // Reset kolom penempatan di trn_inventaris_satker
+        $db->table('trn_inventaris_satker')->where('id', $id)->update([
+            'sekolah_id'         => null,
+            'gedung_id'          => null,
+            'ruangan_id'         => null,
+            'status_penempatan'  => 'belum_ditempatkan',
+            'tanggal_penempatan' => null,
+            'petugas_penempatan' => null,
+            'updated_at'         => $now,
+        ]);
+
+        return $this->response->setJSON([
+            'status'    => 'success',
+            'message'   => 'Lokasi penempatan aset berhasil dihapus. Status aset kembali menjadi Belum Ditempatkan.',
+            'csrf_hash' => csrf_hash(),
+        ]);
+    }
+
+    /**
+     * AJAX: Hitung ulang ringkasan KPI aset penempatan.
+     */
+    public function ajaxKpi()
+    {
+        $db = db_connect();
+        $totalAset  = (int) $db->table('trn_inventaris_satker')->countAllResults();
+        $totalSudah = (int) $db->table('trn_inventaris_satker')->where('status_penempatan', 'sudah_ditempatkan')->countAllResults();
+        $totalBelum = (int) $db->table('trn_inventaris_satker')->where('status_penempatan !=', 'sudah_ditempatkan')->countAllResults();
+
+        return $this->response->setJSON([
+            'status'     => 'success',
+            'totalAset'  => number_format($totalAset),
+            'totalSudah' => number_format($totalSudah),
+            'totalBelum' => number_format($totalBelum),
         ]);
     }
 

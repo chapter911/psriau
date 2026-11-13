@@ -613,6 +613,11 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/penempatan/detail/(:num)', 'Admin\InventarisPenempatan::detail/$1');
 	$routes->post('inventaris/penempatan/gedung/tambah', 'Admin\InventarisPenempatan::createGedung');
 	$routes->post('inventaris/penempatan/ruangan/tambah', 'Admin\InventarisPenempatan::createRuangan');
+	$routes->get('inventaris/penempatan/ajax-gedung/(:segment)', 'Admin\InventarisPenempatan::ajaxGedung/$1');
+	$routes->get('inventaris/penempatan/ajax-ruangan/(:segment)', 'Admin\InventarisPenempatan::ajaxRuangan/$1');
+	$routes->post('inventaris/penempatan/pindah-lokasi', 'Admin\InventarisPenempatan::pindahLokasi');
+	$routes->post('inventaris/penempatan/hapus-lokasi/(:num)', 'Admin\InventarisPenempatan::hapusLokasi/$1');
+	$routes->get('inventaris/penempatan/ajax-kpi', 'Admin\InventarisPenempatan::ajaxKpi');
 
 	// Modul KOMPU (Komunikasi Publik)
 	$routes->get('kompu', static fn() => redirect()->to('/admin/kompu/sosmed'));
