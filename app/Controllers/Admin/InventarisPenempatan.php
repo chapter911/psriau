@@ -226,42 +226,78 @@ class InventarisPenempatan extends BaseController
         ];
     }
 
-    private function resolveRoleId(string $roleName, $db): ?int
+    private function resolveRoleId(string $role, $db): ?int
     {
-        $roleName = trim($roleName);
-        if ($roleName === '') {
+        $normalized = strtolower(trim($role));
+        if ($normalized === '') {
             return null;
         }
 
         if ($db->tableExists('access_roles')) {
-            $row = $db->table('access_roles')
-                ->select('id')
-                ->where('role_name', $roleName)
-                ->get()
-                ->getRowArray();
-            if ($row) {
+            $variants = [$normalized];
+            if ($normalized === 'super administrator') {
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            } elseif ($normalized === 'super_administrator' || $normalized === 'super-admin' || $normalized === 'superadmin') {
+                $variants[] = 'super administrator';
+                $variants[] = 'super_administrator';
+                $variants[] = 'super-admin';
+                $variants[] = 'superadmin';
+            }
+
+            $builder = $db->table('access_roles')->select('id');
+            if ($db->fieldExists('role_key', 'access_roles')) {
+                $builder->whereIn('role_key', array_values(array_unique($variants)));
+            } elseif ($db->fieldExists('name', 'access_roles')) {
+                $builder->whereIn('name', array_values(array_unique($variants)));
+            }
+
+            if ($db->fieldExists('is_active', 'access_roles')) {
+                $builder->where('is_active', 1);
+            }
+
+            $row = $builder->orderBy('id', 'ASC')->get()->getRowArray();
+            if (is_array($row) && isset($row['id'])) {
                 return (int) $row['id'];
             }
         }
 
-        return in_array(strtolower($roleName), ['admin', 'administrator', 'superadmin'], true) ? 1 : 2;
+        if ($normalized === 'admin' || $normalized === 'superadmin' || $normalized === 'super administrator' || $normalized === 'administrator') {
+            return 1;
+        }
+
+        return 2;
     }
 
     private function resolveMenuIdByLink(string $menuLink, $db): ?string
     {
-        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
-            if (! $db->tableExists($table)) {
-                continue;
-            }
-            $row = $db->table($table)
+        $normalized = trim(strtolower($menuLink), '/');
+
+        if ($db->tableExists('menu_lv2')) {
+            $row = $db->table('menu_lv2')
                 ->select('id')
-                ->where('link', $menuLink)
+                ->where('LOWER(TRIM(link))', $normalized)
                 ->get()
                 ->getRowArray();
-            if ($row) {
+
+            if (is_array($row) && isset($row['id'])) {
                 return (string) $row['id'];
             }
         }
+
+        if ($db->tableExists('menu_lv1')) {
+            $row = $db->table('menu_lv1')
+                ->select('id')
+                ->where('LOWER(TRIM(link))', $normalized)
+                ->get()
+                ->getRowArray();
+
+            if (is_array($row) && isset($row['id'])) {
+                return (string) $row['id'];
+            }
+        }
+
         return null;
     }
 }
