@@ -1739,16 +1739,19 @@ class InventarisSatker extends BaseController
             $orientation = 'portrait';
         }
 
-        // Parameter pilihan ukuran kertas (A4, A3, atau SRA3)
-        $paper = strtoupper(trim((string) ($this->request->getPost('paper') ?? $this->request->getGet('paper') ?? 'A4')));
-        if (! in_array($paper, ['A4', 'A3', 'SRA3'], true)) {
-            $paper = 'A4';
+        // Parameter pilihan ukuran kertas (8X8, A4, A3, atau SRA3)
+        // Jika format 8x8, default ukuran kertas adalah 8X8 (8cm x 8cm per stiker)
+        $defaultPaper = ($format === '8x8') ? '8X8' : 'A4';
+        $paper = strtoupper(trim((string) ($this->request->getPost('paper') ?? $this->request->getGet('paper') ?? $defaultPaper)));
+        if (! in_array($paper, ['8X8', 'A4', 'A3', 'SRA3'], true)) {
+            $paper = $defaultPaper;
         }
 
-        // Parameter margin halaman opsional (dalam mm): default A3/SRA3 = 0mm (tanpa margin)
-        $isA3Group = in_array($paper, ['A3', 'SRA3'], true);
-        $defaultMarginTop = $isA3Group ? 0.0 : 6.0;
-        $defaultMarginHorizontal = $isA3Group ? 0.0 : ($orientation === 'portrait' ? 3.75 : 8.0);
+        // Parameter margin halaman opsional (dalam mm): default 8x8 = 0mm, A3/SRA3 = 0mm
+        $is8x8Paper = ($paper === '8X8');
+        $isA3Group  = in_array($paper, ['A3', 'SRA3'], true);
+        $defaultMarginTop = ($is8x8Paper || $isA3Group) ? 0.0 : 6.0;
+        $defaultMarginHorizontal = ($is8x8Paper || $isA3Group) ? 0.0 : ($orientation === 'portrait' ? 3.75 : 8.0);
 
         $rawMarginTop = $this->request->getPost('margin_top') ?? $this->request->getGet('margin_top');
         $rawMarginHorizontal = $this->request->getPost('margin_horizontal') ?? $this->request->getGet('margin_horizontal');
@@ -1941,10 +1944,17 @@ class InventarisSatker extends BaseController
         $dompdfOptions->setIsRemoteEnabled(true);
         $dompdfOptions->setIsHtml5ParserEnabled(true);
 
-        $dompdfPaper = (($paper === 'A3' && $orientation === 'portrait') || $paper === 'SRA3') ? 'sra3' : $paper;
         $dompdf = new Dompdf($dompdfOptions);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper($dompdfPaper, $orientation);
+
+        if ($paper === '8X8') {
+            // Kertas pas 80mm x 80mm (8cm x 8cm): 80 / 25.4 * 72 = 226.77 pt
+            $dompdf->setPaper([0, 0, 226.77, 226.77], 'portrait');
+        } elseif (($paper === 'A3' && $orientation === 'portrait') || $paper === 'SRA3') {
+            $dompdf->setPaper('sra3', $orientation);
+        } else {
+            $dompdf->setPaper($paper, $orientation);
+        }
         $dompdf->render();
 
         $filename = 'Sticker_BMN_' . $format . '_' . date('Ymd_His') . '.pdf';

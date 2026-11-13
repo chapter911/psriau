@@ -1216,6 +1216,13 @@
                     <div class="row mb-2">
                         <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <label class="font-weight-bold text-dark small text-uppercase mb-1.5" style="letter-spacing: 0.5px;">Ukuran Kertas:</label>
+                            <div class="custom-control custom-radio p-2.5 rounded mb-2 d-none" id="box-paper-8x8" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                                <input type="radio" id="paper-8x8" name="paper" class="custom-control-input" value="8X8">
+                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-8x8" style="cursor: pointer;">
+                                    <i class="fas fa-sticky-note mr-1 text-warning"></i> Kertas Stiker 8 &times; 8 cm
+                                    <small class="text-muted d-block font-weight-normal mt-0.5">80 &times; 80 mm (Pas 1 lembar kertas = 1 stiker).</small>
+                                </label>
+                            </div>
                             <div class="custom-control custom-radio p-2.5 rounded mb-2" style="background: #f8fafc; border: 1px solid #cbd5e1;">
                                 <input type="radio" id="paper-a4" name="paper" class="custom-control-input" value="A4" checked>
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-a4" style="cursor: pointer;">
@@ -2241,7 +2248,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var orientEl = document.querySelector('input[name="orientation"]:checked');
         var pVal = paperEl ? paperEl.value : 'A4';
         var oVal = orientEl ? orientEl.value : 'portrait';
-        if (pVal === 'A3' || pVal === 'SRA3') {
+        if (pVal === '8X8' || pVal === 'A3' || pVal === 'SRA3') {
             inputMarginTop.value = '0';
             inputMarginHoriz.value = '0';
         } else {
@@ -2267,22 +2274,45 @@ document.addEventListener('DOMContentLoaded', function() {
         var is8x8 = fmt && fmt.value === '8x8';
         var pEl = document.getElementById('hint-orientation-portrait');
         var lEl = document.getElementById('hint-orientation-landscape');
+        var boxPaper8x8 = document.getElementById('box-paper-8x8');
+        var paper8x8 = document.getElementById('paper-8x8');
+        var paperA4 = document.getElementById('paper-a4');
+
         if (is8x8) {
-            if (pEl) pEl.innerHTML = 'A4: 2 kolom (6 stiker/hal) | A3+/SRA3: 3 kolom (15 stiker/hal).';
-            if (lEl) lEl.innerHTML = 'A4: 3 kolom (6 stiker/hal) | A3: 5 kolom (15 stiker/hal).';
+            if (boxPaper8x8) boxPaper8x8.classList.remove('d-none');
+            if (pEl) pEl.innerHTML = 'Kertas 8x8 cm: 1 lembar = 1 stiker pas | A4: 6 stiker/hal | A3: 15 stiker/hal.';
+            if (lEl) lEl.innerHTML = 'Kertas 8x8 cm: 1 lembar = 1 stiker pas | A4: 6 stiker/hal | A3: 15 stiker/hal.';
         } else {
+            if (boxPaper8x8) boxPaper8x8.classList.add('d-none');
+            if (paper8x8 && paper8x8.checked && paperA4) {
+                paperA4.checked = true;
+            }
             if (pEl) pEl.innerHTML = 'A4: 2 kolom (12 stiker/hal) | A3+/SRA3: 3 kolom (30 stiker/hal).';
             if (lEl) lEl.innerHTML = 'A4: 2 kolom (8 stiker/hal) | A3: 4 kolom (24 stiker/hal).';
         }
+        applyDefaultStickerMargin(false);
     }
 
     document.querySelectorAll('input[name="format"]').forEach(function(el) {
-        el.addEventListener('change', updateStickerCapacityHints);
+        el.addEventListener('change', function() {
+            var fmt = document.querySelector('input[name="format"]:checked');
+            var is8x8 = fmt && fmt.value === '8x8';
+            var paper8x8 = document.getElementById('paper-8x8');
+            var paperA4 = document.getElementById('paper-a4');
+            if (is8x8 && paper8x8) {
+                paper8x8.checked = true;
+            } else if (!is8x8 && paperA4) {
+                paperA4.checked = true;
+            }
+            updateStickerCapacityHints();
+        });
     });
 
     document.querySelectorAll('input[name="paper"], input[name="orientation"]').forEach(function(el) {
         el.addEventListener('change', function() { applyDefaultStickerMargin(false); });
     });
+
+    updateStickerCapacityHints();
 
     if (formCetakSticker) {
         formCetakSticker.addEventListener('submit', function(e) {

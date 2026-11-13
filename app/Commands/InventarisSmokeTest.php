@@ -642,25 +642,30 @@ class InventarisSmokeTest extends BaseCommand
                     CLI::write("  [CLEANUP] File sementara {$tempStickerPdfPath} telah dihapus sesuai Rule 3.", "yellow");
                 }
 
-                // Pengujian Format 8cm x 8cm
+                // Pengujian Format 8cm x 8cm (Kertas Stiker 8x8 cm & A4)
                 $tempStickerPdfPath8x8 = ROOTPATH . 'do_not_upload/temp/smoke_test_sticker_8x8.pdf';
                 $stickerHtml8x8 = view('admin/inventaris/satker/pdf_sticker', [
                     'stickers'   => $sampleStickers,
                     'logoBase64' => '',
                     'kodeUakpb'  => '145060900691285000KP',
                     'format'     => '8x8',
+                    'paper'      => '8X8',
                 ]);
 
+                // Test pada kertas stiker 8x8 cm custom
                 $dompdfSticker8x8 = new Dompdf($options);
                 $dompdfSticker8x8->loadHtml($stickerHtml8x8);
-                $dompdfSticker8x8->setPaper('A4', 'portrait');
+                $dompdfSticker8x8->setPaper([0, 0, 226.77, 226.77], 'portrait');
                 $dompdfSticker8x8->render();
 
                 $stickerPdfOutput8x8 = $dompdfSticker8x8->output();
                 file_put_contents($tempStickerPdfPath8x8, $stickerPdfOutput8x8);
 
-                if (filesize($tempStickerPdfPath8x8) > 1000 && substr($stickerPdfOutput8x8, 0, 4) === '%PDF') {
-                    CLI::write("  [OK] Dokumen PDF Sticker BMN (Format Kotak 8cm x 8cm QR presisi) berhasil dirender! Ukuran: " . round(filesize($tempStickerPdfPath8x8) / 1024, 2) . " KB", "green");
+                $pageCount8x8 = $dompdfSticker8x8->getCanvas()->get_page_count();
+                if (filesize($tempStickerPdfPath8x8) > 1000 && substr($stickerPdfOutput8x8, 0, 4) === '%PDF' && $pageCount8x8 === count($sampleStickers)) {
+                    CLI::write("  [OK] Dokumen PDF Sticker BMN (Format 8cm x 8cm pada Kertas 8x8 cm) berhasil dirender tanpa split page! Total halaman: {$pageCount8x8} (1 sticker per halaman)", "green");
+                } elseif (filesize($tempStickerPdfPath8x8) > 1000 && substr($stickerPdfOutput8x8, 0, 4) === '%PDF') {
+                    CLI::write("  [WARN] PDF 8x8 dirender namun total halaman ({$pageCount8x8}) tidak sama dengan jumlah stiker (" . count($sampleStickers) . ").", "yellow");
                 } else {
                     CLI::error("  [FAIL] Output PDF Sticker BMN format 8x8 tidak valid.");
                 }

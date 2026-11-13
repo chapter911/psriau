@@ -645,7 +645,7 @@ graph TD
     B1 --> C2["Standar BMN: 1 Kode Barang + 1 NUP = Tepat 1 Unit Fisik (Validasi Ketat Form &amp; Import)"]
     B1 --> C3["Update Peruntukan Massal: Opsi Pilih Semua Barang Sekaligus / Per Item, Filter Sumber Belum Berlokasi vs Semua Barang, Pilihan Seluruh / Rentang NUP, serta Opsi Langsung Alokasi ke Ruangan Kantor DBR"]
     B1 --> C4["Import SIMAN / Excel High-Speed XMLReader Streaming Engine &amp; Batch Upsert: Mampu Memproses Berkas Raksasa &gt;13.500 Aset / XML &gt;30MB Hanya dalam 2–3 Detik (RAM &lt;40MB Bebas Libxml OOM), Kode &amp; NUP Sama = Update, Beda = Insert &amp; Export Excel"]
-    B1 --> C5["Cetak Sticker Barcode / QR BMN (Pilihan 2 Format Ukuran Presisi: Standar PU 10&times;4 cm &amp; Kotak 8&times;8 cm dengan QR Code Besar 3,5&times;3,5 cm; Pilihan Kertas A4 &amp; A3+/SRA3, Orientasi Portrait &amp; Landscape, Pengaturan Margin Fleksibel / 0 mm, Cetak Satuan / Terpilih / Filter &amp; Rentang NUP)"]
+    B1 --> C5["Cetak Sticker Barcode / QR BMN (Pilihan 2 Format Ukuran Presisi: Standar PU 10&times;4 cm &amp; Kotak 8&times;8 cm dengan QR Code Besar 3,5&times;3,5 cm; Pilihan Kertas Label 8&times;8 cm Pas, A4 &amp; A3+/SRA3, Orientasi Portrait &amp; Landscape, Pengaturan Margin Fleksibel / 0 mm, Cetak Satuan / Terpilih / Filter &amp; Rentang NUP)"]
     B1 --> C6["Sanitasi Otomatis &amp; Proteksi Anti-Duplikasi Nama Barang / Spesifikasi BMN (Bersih di Seluruh Tabel &amp; Cetakan PDF)"]
     B1 --> C7["⚡ Server-Side DataTables AJAX: Pemuatan Data Instan &amp; Ringan untuk 10.000+ Aset BMN, Multi-Page Checkbox Persistence, Pencarian Cepat &amp; Sorting NUP Numerik"]
 
@@ -1665,8 +1665,9 @@ graph TD
                                                             <li><em>A3 Landscape:</em> 4 kolom &times; 6 baris (24 stiker/halaman).</li>
                                                         </ul>
                                                     </li>
-                                                    <li><strong>Format 8 &times; 8 cm (Format Kotak / Persegi Presisi):</strong> Dimensi tepat 80 &times; 80 mm (kotak atas 1,5 cm dengan logo PU &amp; instansi, kotak bawah 6,5 cm dengan Kode Barang, NUP, Nama Barang, Merk/Tipe, serta <strong>QR Code besar presisi 3,5 &times; 3,5 cm</strong> di tengah bawah untuk kemudahan pemindaian jarak jauh/kamera smartphone). Kapasitas:
+                                                    <li><strong>Format 8 &times; 8 cm (Format Kotak / Persegi Presisi):</strong> Dimensi tepat 80 &times; 80 mm (kotak atas 1,5 cm dengan logo PU &amp; instansi, kotak bawah 6,5 cm dengan Kode Barang, NUP, Nama Baku BMN, Deskripsi/Merk/Tipe, serta <strong>QR Code besar presisi 3,5 &times; 3,5 cm</strong> di tengah bawah untuk kemudahan pemindaian jarak jauh/kamera smartphone). Kapasitas:
                                                         <ul class="pl-3">
+                                                            <li><em>Kertas Stiker 8 &times; 8 cm (Ukuran Pas / Standalone Label):</em> 1 stiker pas per lembar/label (ideal untuk printer label / roll thermal sticker tanpa terpotong).</li>
                                                             <li><em>A4 Portrait:</em> 2 kolom &times; 3 baris (6 stiker/halaman).</li>
                                                             <li><em>A4 Landscape:</em> 3 kolom &times; 2 baris (6 stiker/halaman).</li>
                                                             <li><em>A3+/SRA3 Portrait:</em> 3 kolom &times; 5 baris (15 stiker/halaman).</li>
