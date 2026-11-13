@@ -1216,21 +1216,14 @@
                     <div class="row mb-2">
                         <div class="col-12 col-md-6 mb-2 mb-md-0">
                             <label class="font-weight-bold text-dark small text-uppercase mb-1.5" style="letter-spacing: 0.5px;">Ukuran Kertas:</label>
-                            <div class="custom-control custom-radio p-2.5 rounded mb-2" id="box-paper-8x8" style="background: #f8fafc; border: 1px solid #cbd5e1;">
-                                <input type="radio" id="paper-8x8" name="paper" class="custom-control-input" value="8X8">
-                                <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-8x8" style="cursor: pointer;">
-                                    <i class="fas fa-sticky-note mr-1 text-warning"></i> Kertas Stiker 8 &times; 8 cm
-                                    <small class="text-muted d-block font-weight-normal mt-0.5">80 &times; 80 mm (Pas 1 lembar kertas = 1 stiker).</small>
-                                </label>
-                            </div>
-                            <div class="custom-control custom-radio p-2.5 rounded mb-2" id="box-paper-a4" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                            <div class="custom-control custom-radio p-2.5 rounded mb-2" style="background: #f8fafc; border: 1px solid #cbd5e1;">
                                 <input type="radio" id="paper-a4" name="paper" class="custom-control-input" value="A4" checked>
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-a4" style="cursor: pointer;">
                                     <i class="fas fa-file mr-1 text-primary"></i> Kertas A4
                                     <small class="text-muted d-block font-weight-normal mt-0.5">210 &times; 297 mm (Standar umum printer kantor).</small>
                                 </label>
                             </div>
-                            <div class="custom-control custom-radio p-2.5 rounded" id="box-paper-a3" style="background: #f8fafc; border: 1px solid #cbd5e1;">
+                            <div class="custom-control custom-radio p-2.5 rounded" style="background: #f8fafc; border: 1px solid #cbd5e1;">
                                 <input type="radio" id="paper-a3" name="paper" class="custom-control-input" value="A3">
                                 <label class="custom-control-label font-weight-bold text-dark d-block mb-0" for="paper-a3" style="cursor: pointer;">
                                     <i class="fas fa-file-invoice mr-1 text-info"></i> Kertas A3 / A3+ (SRA3)
@@ -2248,7 +2241,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var orientEl = document.querySelector('input[name="orientation"]:checked');
         var pVal = paperEl ? paperEl.value : 'A4';
         var oVal = orientEl ? orientEl.value : 'portrait';
-        if (pVal === '8X8' || pVal === 'A3' || pVal === 'SRA3') {
+        if (pVal === 'A3' || pVal === 'SRA3') {
             inputMarginTop.value = '0';
             inputMarginHoriz.value = '0';
         } else {
@@ -2274,23 +2267,13 @@ document.addEventListener('DOMContentLoaded', function() {
         var is8x8 = fmt && fmt.value === '8x8';
         var pEl = document.getElementById('hint-orientation-portrait');
         var lEl = document.getElementById('hint-orientation-landscape');
-        var paper8x8 = document.getElementById('paper-8x8');
-        var paperA4 = document.getElementById('paper-a4');
-
         if (is8x8) {
-            if (paper8x8) {
-                paper8x8.checked = true;
-            }
-            if (pEl) pEl.innerHTML = 'Kertas 8x8 cm: 1 lembar = 1 stiker pas (atau A4: 6 stiker/hal).';
-            if (lEl) lEl.innerHTML = 'Kertas 8x8 cm: 1 lembar = 1 stiker pas (atau A4: 6 stiker/hal).';
+            if (pEl) pEl.innerHTML = 'A4: 2 kolom (6 stiker/hal) | A3+/SRA3: 3 kolom (15 stiker/hal).';
+            if (lEl) lEl.innerHTML = 'A4: 3 kolom (6 stiker/hal) | A3: 5 kolom (15 stiker/hal).';
         } else {
-            if (paper8x8 && paper8x8.checked && paperA4) {
-                paperA4.checked = true;
-            }
             if (pEl) pEl.innerHTML = 'A4: 2 kolom (12 stiker/hal) | A3+/SRA3: 3 kolom (30 stiker/hal).';
             if (lEl) lEl.innerHTML = 'A4: 2 kolom (8 stiker/hal) | A3: 4 kolom (24 stiker/hal).';
         }
-        applyDefaultStickerMargin(true);
     }
 
     document.querySelectorAll('input[name="format"]').forEach(function(el) {
