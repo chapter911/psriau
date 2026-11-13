@@ -1088,7 +1088,7 @@ $(document).ready(function () {
                         ? Boolean(d.is_fisik) 
                         : ((d.lingkup_jasa || '').toString().trim().toLowerCase() === 'fisik');
                     $('#preview_sub_judul').text(d.sub_judul_2 || (isFisik ? 'KONSTRUKSI' : 'KONSULTANSI KONSTRUKSI'));
-                    $('#preview_nomor_surat').text('Nomor: ' + (d.nomor_surat || '..........................................'));
+                    $('#preview_nomor_surat').text('Nomor: ' + (d.nomor_surat || ''));
                     $('#preview_ppk_nama').text(d.ppk_nama || '-');
                     $('#preview_ppk_jabatan').text(d.ppk_jabatan || '-');
                     $('#preview_ppk_satker').text(d.ppk_satker || '-');

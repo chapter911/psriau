@@ -134,7 +134,7 @@
         <div class="doc-title">SURAT KETERANGAN / REFERENSI KINERJA</div>
         <div class="doc-subtitle">TENAGA AHLI DAN PENDUKUNG</div>
         <div class="doc-subtitle"><?= $isFisikSurket ? 'KONSTRUKSI' : 'KONSULTANSI KONSTRUKSI'; ?></div>
-        <div class="doc-number">Nomor: <?= esc($row['nomor_surat'] ?: '..........................................'); ?></div>
+        <div class="doc-number">Nomor: <?= esc($row['nomor_surat'] ?? ''); ?></div>
     </div>
 
     <div class="section-intro">Yang bertanda tangan di bawah ini:</div>

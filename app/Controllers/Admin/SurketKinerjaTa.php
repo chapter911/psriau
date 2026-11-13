@@ -518,7 +518,7 @@ class SurketKinerjaTa extends BaseController
         }
 
         $replacements = [
-            'nomor_surat'               => $row['nomor_surat'] ?: '...............',
+            'nomor_surat'               => $row['nomor_surat'] ?: '',
             'ppk_nama'                  => $row['ppk_nama'] ?: 'Nurhidayat Nugroho, S.Ars',
             'ppk_jabatan'               => $ppkJabatan,
             'ppk_satker'                => $row['ppk_satker'] ?: 'Satuan Kerja Pelaksanaan Prasarana Strategis Riau',

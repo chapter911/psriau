@@ -768,7 +768,7 @@ graph TD
     A --> B2["Klik Ikon 'Duplikat' di Tabel atau Modal Pratinjau (Salin Data Eksisting)"]
     B1 --> C["Isi / Sesuaikan Data Tenaga Ahli &amp; Badan Usaha"]
     B2 --> C
-    C --> D["Pilih Kop Surat Resmi (Default: Kop Aktif) &amp; Tentukan Pejabat PPK"]
+    C --> D["Pilih Kop Surat Resmi (Default: Kop Aktif), Nomor Surat (Opsional / Bersih Tanpa Titik-Titik Jika Dikosongkan) &amp; Tentukan Pejabat PPK"]
     D --> E["Isi / Sesuaikan Paket &amp; Kontrak (Dropdown Lingkup, No/Tgl Kontrak, Nilai Rp, Masa Dari s.d. Tgl &amp; Total Hari, Status %)"]
     E --> F["Validasi Form &amp; Simpan Dokumen (Insert Data Baru)"]
     F --> G["Data Tersimpan di Database (Sub-Judul, Teks Pengantar &amp; Penutup Otomatis Sesuai Lingkup Jasa)"]
@@ -2009,7 +2009,7 @@ graph TD
                             <li><strong>Bagian 2 - Nomor Surat, Kop Surat &amp; Pejabat Penandatangan (PPK):</strong>
                                 <ul>
                                     <li><strong>Kop Surat Resmi:</strong> Dapat dipilih dari master Kop Surat instansi, secara default otomatis memilih kop surat yang berstatus aktif. Kop ini akan diterapkan baik pada pratinjau, cetak PDF, maupun unduhan Word (.docx).</li>
-                                    <li>Nomor Surat ter-prefill dan dapat diisi sesuai agenda penomoran resmi kantor.</li>
+                                    <li><strong>Nomor Surat Fleksibel (Opsional):</strong> Nomor Surat bersifat fleksibel dan dapat diisi sesuai agenda penomoran resmi kantor. Bila nomor surat dikosongkan, dokumen cetak PDF maupun unduh Word (.docx) akan tercetak bersih rapi (<code>Nomor: </code>) tanpa deretan titik-titik placeholder sehingga dokumen resmi siap dibubuhi cap basah atau nomor register manual oleh sekretariat TU.</li>
                                     <li>Pihak Penandatangan (PPK) otomatis ter-default atas nama <strong>Nurhidayat Nugroho, S.Ars (NIP. 199012212018021001)</strong> dengan Jabatan resmi <em>"Pejabat Penanda Tangan Kontrak Pelaksanaan Prasarana Strategis, Satuan Kerja Pelaksanaan Prasarana Strategis Riau"</em>, serta pada bagian blok tanda tangan tercetak rapi: <em>"PPK Pelaksanaan Prasarana Strategis"</em> (baris pertama) dan <em>"Satuan Kerja Pelaksanaan Prasarana Strategis Riau"</em> (baris kedua).</li>
                                 </ul>
                             </li>
