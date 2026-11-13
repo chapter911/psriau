@@ -18,72 +18,217 @@ class InventarisPenempatan extends BaseController
 
         $db = db_connect();
 
-        $filterPaketId   = trim((string) $this->request->getGet('paket_id'));
-        $filterSekolahId = trim((string) $this->request->getGet('sekolah_id'));
-        $filterStatus    = trim((string) $this->request->getGet('status'));
-        $keyword         = trim((string) $this->request->getGet('keyword'));
+        $isDataTableAjax = $this->request->getGet('draw') !== null || ($this->request->isAJAX() && $this->request->getGet('length') !== null);
 
-        $builder = $db->table('trn_inventaris_satker i')
-            ->select('i.id, i.kode_register, i.kode_barang, i.nup, i.nama_barang, i.merk_tipe, i.tahun_perolehan, i.kondisi,
-                      COALESCE(i.status_penempatan, "belum_ditempatkan") AS status_penempatan,
-                      i.sekolah_id, s.nama AS nama_sekolah, s.paket_id, mp.nama_paket,
-                      i.gedung_id, g.nama_gedung,
-                      i.ruangan_id, r.nama_ruangan,
-                      i.tanggal_penempatan, i.petugas_penempatan')
-            ->join('mst_sekolah s', 's.npsn = i.sekolah_id', 'left')
-            ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
-            ->join('mst_gedung g', 'g.id = i.gedung_id', 'left')
-            ->join('mst_ruangan r', 'r.id = i.ruangan_id', 'left');
+        if ($isDataTableAjax) {
+            $draw   = max(0, (int) ($this->request->getGet('draw') ?? 1));
+            $start  = max(0, (int) ($this->request->getGet('start') ?? 0));
+            $length = (int) ($this->request->getGet('length') ?? 10);
+            if ($length < 1 || $length > 250) {
+                $length = 10;
+            }
 
-        if ($filterPaketId !== '' && $filterPaketId !== '*') {
-            $builder->where('s.paket_id', (int) $filterPaketId);
-        }
-        if ($filterSekolahId !== '' && $filterSekolahId !== '*') {
-            $builder->where('i.sekolah_id', (int) $filterSekolahId);
-        }
-        if ($filterStatus !== '' && $filterStatus !== '*') {
-            $builder->where('i.status_penempatan', $filterStatus);
-        }
-        if ($keyword !== '') {
-            $builder->groupStart()
-                ->like('i.nama_barang', $keyword)
-                ->orLike('i.kode_barang', $keyword)
-                ->orLike('i.nup', $keyword)
-                ->orLike('i.kode_register', $keyword)
-                ->orLike('i.merk_tipe', $keyword)
-                ->orLike('s.nama', $keyword)
-                ->orLike('g.nama_gedung', $keyword)
-                ->orLike('r.nama_ruangan', $keyword)
-                ->groupEnd();
-        }
+            $searchParam = $this->request->getGet('search');
+            $globalSearch = trim((string) (is_array($searchParam) ? ($searchParam['value'] ?? '') : $searchParam));
 
-        $items = $builder->orderBy('i.id', 'DESC')->get()->getResultArray();
+            $filterPaketId   = trim((string) $this->request->getGet('paket_id'));
+            $filterSekolahId = trim((string) $this->request->getGet('sekolah_id'));
+            $filterStatus    = trim((string) $this->request->getGet('status'));
+            $keyword         = trim((string) $this->request->getGet('keyword'));
 
-        // Ambil foto aktif untuk setiap item
-        $itemIds = array_filter(array_column($items, 'id'));
-        $fotoMap = [];
-        if (! empty($itemIds)) {
-            $penempatanRows = $db->table('trn_bmn_penempatan')
-                ->whereIn('inventaris_id', $itemIds)
-                ->where('status', 'aktif')
-                ->orderBy('id', 'DESC')
-                ->get()
-                ->getResultArray();
+            $searchVal = $globalSearch !== '' ? $globalSearch : $keyword;
 
-            foreach ($penempatanRows as $p) {
-                $invId = (int) $p['inventaris_id'];
-                if (! isset($fotoMap[$invId])) {
-                    $fotoMap[$invId] = $p;
+            $recordsTotal = (int) $db->table('trn_inventaris_satker')->countAllResults();
+
+            $builder = $db->table('trn_inventaris_satker i')
+                ->select('i.id, i.kode_register, i.kode_barang, i.nup, i.nama_barang, i.merk_tipe, i.tahun_perolehan, i.kondisi,
+                          COALESCE(i.status_penempatan, "belum_ditempatkan") AS status_penempatan,
+                          i.sekolah_id, s.nama AS nama_sekolah, s.paket_id, mp.nama_paket,
+                          i.gedung_id, g.nama_gedung,
+                          i.ruangan_id, r.nama_ruangan,
+                          i.tanggal_penempatan, i.petugas_penempatan')
+                ->join('mst_sekolah s', 's.npsn = i.sekolah_id', 'left')
+                ->join('mst_paket mp', 'mp.id = s.paket_id', 'left')
+                ->join('mst_gedung g', 'g.id = i.gedung_id', 'left')
+                ->join('mst_ruangan r', 'r.id = i.ruangan_id', 'left');
+
+            if ($filterPaketId !== '' && $filterPaketId !== '*') {
+                $builder->where('s.paket_id', (int) $filterPaketId);
+            }
+            if ($filterSekolahId !== '' && $filterSekolahId !== '*') {
+                $builder->where('i.sekolah_id', (int) $filterSekolahId);
+            }
+            if ($filterStatus !== '' && $filterStatus !== '*') {
+                $builder->where('i.status_penempatan', $filterStatus);
+            }
+            if ($searchVal !== '') {
+                $builder->groupStart()
+                    ->like('i.nama_barang', $searchVal)
+                    ->orLike('i.kode_barang', $searchVal)
+                    ->orLike('i.nup', $searchVal)
+                    ->orLike('i.kode_register', $searchVal)
+                    ->orLike('i.merk_tipe', $searchVal)
+                    ->orLike('s.nama', $searchVal)
+                    ->orLike('g.nama_gedung', $searchVal)
+                    ->orLike('r.nama_ruangan', $searchVal)
+                    ->groupEnd();
+            }
+
+            // Hitung recordsFiltered
+            $recordsFiltered = (int) $builder->countAllResults(false);
+
+            // Sorting dari DataTables jika ada
+            $orderParam = $this->request->getGet('order');
+            if (is_array($orderParam) && ! empty($orderParam[0]['column'])) {
+                $colIdx = (int) $orderParam[0]['column'];
+                $dir    = strtolower((string) ($orderParam[0]['dir'] ?? 'desc')) === 'asc' ? 'ASC' : 'DESC';
+                $colMap = [
+                    1 => 'i.kode_barang',
+                    2 => 'i.kode_register',
+                    3 => 'i.nama_barang',
+                    4 => 'i.kondisi',
+                    5 => 'i.status_penempatan',
+                    6 => 's.nama',
+                    7 => 'i.tanggal_penempatan',
+                ];
+                $sortCol = $colMap[$colIdx] ?? 'i.id';
+                $builder->orderBy($sortCol, $dir);
+            } else {
+                $builder->orderBy('i.id', 'DESC');
+            }
+
+            $rows = $builder->limit($length, $start)->get()->getResultArray();
+
+            // Fetch foto untuk baris yang ada di halaman ini saja
+            $rowIds = array_filter(array_column($rows, 'id'));
+            $fotoMap = [];
+            if (! empty($rowIds)) {
+                $penempatanRows = $db->table('trn_bmn_penempatan')
+                    ->whereIn('inventaris_id', $rowIds)
+                    ->where('status', 'aktif')
+                    ->orderBy('id', 'DESC')
+                    ->get()
+                    ->getResultArray();
+
+                foreach ($penempatanRows as $p) {
+                    $invId = (int) $p['inventaris_id'];
+                    if (! isset($fotoMap[$invId])) {
+                        $fotoMap[$invId] = $p;
+                    }
                 }
             }
+
+            $data = [];
+            foreach ($rows as $idx => $it) {
+                $invId = (int) $it['id'];
+                $isPlaced = ($it['status_penempatan'] === 'sudah_ditempatkan');
+                $p = $fotoMap[$invId] ?? null;
+
+                // 0. No
+                $noHtml = '<div class="text-center font-weight-bold">' . ($start + $idx + 1) . '</div>';
+
+                // 1. Kode & NUP
+                $kodeNupHtml = '<span class="badge badge-light border">Kd: ' . esc($it['kode_barang']) . '</span><br>'
+                             . '<span class="badge badge-warning">NUP: ' . esc($it['nup']) . '</span>';
+
+                // 2. Kode Register (QR)
+                if (! empty($it['kode_register'])) {
+                    $qrHtml = '<code class="text-dark bg-light px-2 py-1 rounded" style="font-size: 0.82rem;">'
+                            . '<i class="fas fa-qrcode mr-1 text-primary"></i>' . esc($it['kode_register'])
+                            . '</code>';
+                } else {
+                    $qrHtml = '<span class="text-muted">-</span>';
+                }
+
+                // 3. Nama Barang / Merk
+                $namaHtml = '<strong>' . esc($it['nama_barang']) . '</strong>';
+                if (! empty($it['merk_tipe'])) {
+                    $namaHtml .= '<div class="text-muted text-xs">' . esc($it['merk_tipe']) . ' (Thn ' . esc($it['tahun_perolehan'] ?? '-') . ')</div>';
+                }
+
+                // 4. Kondisi
+                $kondisi = strtolower($it['kondisi'] ?? 'baik');
+                $badgeClass = ($kondisi === 'baik') ? 'badge-success' : (($kondisi === 'rusak_ringan') ? 'badge-warning' : 'badge-danger');
+                $kondisiHtml = '<span class="badge ' . $badgeClass . '">' . strtoupper(str_replace('_', ' ', $kondisi)) . '</span>';
+
+                // 5. Status
+                if ($isPlaced) {
+                    $statusHtml = '<span class="badge badge-success"><i class="fas fa-check-circle mr-1"></i> Ditempatkan</span>';
+                } else {
+                    $statusHtml = '<span class="badge badge-secondary">Belum Ditempatkan</span>';
+                }
+
+                // 6. Lokasi Fisik
+                if ($isPlaced && ! empty($it['nama_sekolah'])) {
+                    $lokasiHtml = '<div class="font-weight-bold text-dark"><i class="fas fa-school mr-1 text-info"></i> ' . esc($it['nama_sekolah']) . '</div>'
+                                . '<div class="text-muted text-xs">'
+                                . '<i class="fas fa-building mr-1"></i> ' . esc($it['nama_gedung'] ?? '-') . ' &bull; '
+                                . '<i class="fas fa-door-open mr-1"></i> ' . esc($it['nama_ruangan'] ?? '-')
+                                . '</div>';
+                } else {
+                    $lokasiHtml = '<span class="text-muted font-italic">- Belum Dialokasikan -</span>';
+                }
+
+                // 7. Tanggal Penempatan
+                if (! empty($it['tanggal_penempatan'])) {
+                    $tglHtml = date('d/m/Y H:i', strtotime($it['tanggal_penempatan']))
+                             . '<div class="text-muted text-xs">Oleh: ' . esc($it['petugas_penempatan'] ?? 'Mobile') . '</div>';
+                } else {
+                    $tglHtml = '<span class="text-muted">-</span>';
+                }
+
+                // 8. Dokumentasi Foto
+                if (! empty($p)) {
+                    $asli1 = ! empty($p['foto_asli_1']) ? base_url($p['foto_asli_1']) : '';
+                    $asli2 = ! empty($p['foto_asli_2']) ? base_url($p['foto_asli_2']) : '';
+                    $asli3 = ! empty($p['foto_asli_3']) ? base_url($p['foto_asli_3']) : '';
+                    $asli4 = ! empty($p['foto_asli_4']) ? base_url($p['foto_asli_4']) : '';
+                    $wm1   = ! empty($p['foto_wm_1']) ? base_url($p['foto_wm_1']) : '';
+                    $wm2   = ! empty($p['foto_wm_2']) ? base_url($p['foto_wm_2']) : '';
+                    $wm3   = ! empty($p['foto_wm_3']) ? base_url($p['foto_wm_3']) : '';
+                    $wm4   = ! empty($p['foto_wm_4']) ? base_url($p['foto_wm_4']) : '';
+
+                    $aksiFotoHtml = '<div class="text-center">'
+                                  . '<button type="button" class="btn btn-xs btn-outline-primary btn-view-foto" '
+                                  . 'data-asli-1="' . esc($asli1, 'attr') . '" '
+                                  . 'data-asli-2="' . esc($asli2, 'attr') . '" '
+                                  . 'data-asli-3="' . esc($asli3, 'attr') . '" '
+                                  . 'data-asli-4="' . esc($asli4, 'attr') . '" '
+                                  . 'data-wm-1="' . esc($wm1, 'attr') . '" '
+                                  . 'data-wm-2="' . esc($wm2, 'attr') . '" '
+                                  . 'data-wm-3="' . esc($wm3, 'attr') . '" '
+                                  . 'data-wm-4="' . esc($wm4, 'attr') . '" '
+                                  . 'data-title="' . esc($it['nama_barang'], 'attr') . '" '
+                                  . 'title="Lihat Foto Fisik Lapangan">'
+                                  . '<i class="fas fa-images mr-1"></i> Foto'
+                                  . '</button></div>';
+                } else {
+                    $aksiFotoHtml = '<div class="text-center text-muted text-xs">-</div>';
+                }
+
+                $data[] = [
+                    'no'           => $noHtml,
+                    'kode_nup'     => $kodeNupHtml,
+                    'qr_code'      => $qrHtml,
+                    'nama_barang'  => $namaHtml,
+                    'kondisi'      => $kondisiHtml,
+                    'status'       => $statusHtml,
+                    'lokasi'       => $lokasiHtml,
+                    'tanggal'      => $tglHtml,
+                    'aksi_foto'    => $aksiFotoHtml,
+                ];
+            }
+
+            return $this->response->setJSON([
+                'draw'            => $draw,
+                'recordsTotal'    => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data'            => $data,
+            ]);
         }
 
-        foreach ($items as &$item) {
-            $invId = (int) $item['id'];
-            $item['penempatan'] = $fotoMap[$invId] ?? null;
-        }
-
-        $pakets = $db->table('mst_paket')->where('is_active', 1)->orderBy('nama_paket', 'ASC')->get()->getResultArray();
+        // Request biasa (tampilkan kerangka halaman langsung instan)
+        $pakets   = $db->table('mst_paket')->where('is_active', 1)->orderBy('nama_paket', 'ASC')->get()->getResultArray();
         $sekolahs = $db->table('mst_sekolah')->orderBy('nama', 'ASC')->get()->getResultArray();
 
         $totalAset  = (int) $db->table('trn_inventaris_satker')->countAllResults();
@@ -94,13 +239,8 @@ class InventarisPenempatan extends BaseController
 
         return view('admin/inventaris/penempatan/index', [
             'pageTitle'       => 'Penempatan & Distribusi Aset BMN',
-            'items'           => $items,
             'pakets'          => $pakets,
             'sekolahs'        => $sekolahs,
-            'filterPaketId'   => $filterPaketId,
-            'filterSekolahId' => $filterSekolahId,
-            'filterStatus'    => $filterStatus,
-            'keyword'         => $keyword,
             'totalAset'       => $totalAset,
             'totalSudah'      => $totalSudah,
             'totalBelum'      => $totalBelum,
@@ -156,6 +296,158 @@ class InventarisPenempatan extends BaseController
         }
 
         return redirect()->back();
+    }
+
+    public function simpan()
+    {
+        $menuPermissions = $this->resolveMenuPermissions('admin/inventaris/penempatan');
+        if (empty($menuPermissions['edit']) && empty($menuPermissions['add'])) {
+            session()->setFlashdata('error', 'Anda tidak memiliki hak akses untuk mengubah penempatan.');
+            return redirect()->back();
+        }
+
+        $idInventaris = (int) $this->request->getPost('id_inventaris');
+        $idSekolah    = (int) $this->request->getPost('id_sekolah');
+        $idGedung     = (int) $this->request->getPost('id_gedung') ?: null;
+        $idRuangan    = (int) $this->request->getPost('id_ruangan') ?: null;
+        $kondisi      = trim((string) $this->request->getPost('kondisi')) ?: 'Baik';
+        $petugasNama  = trim((string) $this->request->getPost('petugas_nama')) ?: (session()->get('nama') ?? 'Admin');
+        $keterangan   = trim((string) $this->request->getPost('keterangan'));
+
+        if ($idInventaris <= 0 || $idSekolah <= 0) {
+            session()->setFlashdata('error', 'Aset BMN dan Sekolah Tujuan wajib dipilih.');
+            return redirect()->back();
+        }
+
+        $db = db_connect();
+        $aset = $db->table('trn_inventaris_satker')->where('id', $idInventaris)->get()->getRowArray();
+        if (! $aset) {
+            session()->setFlashdata('error', 'Data Aset BMN tidak ditemukan.');
+            return redirect()->back();
+        }
+
+        // Tandai penempatan sebelumnya sebagai relokasi
+        $db->table('trn_bmn_penempatan')
+            ->where('inventaris_id', $idInventaris)
+            ->where('status', 'aktif')
+            ->update([
+                'status'     => 'relokasi',
+                'updated_at' => date('Y-m-d H:i:s'),
+            ]);
+
+        // Simpan foto jika diunggah via form web
+        $fotoPaths = [];
+        $files = $this->request->getFiles();
+        if (isset($files['foto_inventaris']) && is_array($files['foto_inventaris'])) {
+            $uploadDir = FCPATH . 'uploads/bmn/asli/';
+            if (! is_dir($uploadDir)) {
+                mkdir($uploadDir, 0775, true);
+            }
+            $i = 0;
+            foreach ($files['foto_inventaris'] as $file) {
+                if ($file->isValid() && ! $file->hasMoved() && $i < 4) {
+                    $newName = $file->getRandomName();
+                    $file->move($uploadDir, $newName);
+                    $fotoPaths[] = 'uploads/bmn/asli/' . $newName;
+                    $i++;
+                }
+            }
+        }
+
+        $dataHistory = [
+            'inventaris_id'      => $idInventaris,
+            'sekolah_id'         => $idSekolah,
+            'gedung_id'          => $idGedung,
+            'ruangan_id'         => $idRuangan,
+            'kondisi'            => $kondisi,
+            'catatan'            => $keterangan,
+            'petugas_nama'       => $petugasNama,
+            'tanggal_penempatan' => date('Y-m-d H:i:s'),
+            'status'             => 'aktif',
+            'foto_asli_1'        => $fotoPaths[0] ?? null,
+            'foto_asli_2'        => $fotoPaths[1] ?? null,
+            'foto_asli_3'        => $fotoPaths[2] ?? null,
+            'foto_asli_4'        => $fotoPaths[3] ?? null,
+            'created_at'         => date('Y-m-d H:i:s'),
+            'updated_at'         => date('Y-m-d H:i:s'),
+            'created_by'         => session()->get('id_user') ?? session()->get('user_id'),
+        ];
+        $db->table('trn_bmn_penempatan')->insert($dataHistory);
+
+        // Update di trn_inventaris_satker
+        $db->table('trn_inventaris_satker')->where('id', $idInventaris)->update([
+            'sekolah_id'         => $idSekolah,
+            'gedung_id'          => $idGedung,
+            'ruangan_id'         => $idRuangan,
+            'status_penempatan'  => 'ditempatkan',
+            'tanggal_penempatan' => date('Y-m-d H:i:s'),
+            'petugas_penempatan' => $petugasNama,
+            'kondisi'            => $kondisi,
+            'updated_at'         => date('Y-m-d H:i:s'),
+        ]);
+
+        session()->setFlashdata('success', 'Penempatan aset BMN berhasil diperbarui.');
+        return redirect()->to(base_url('admin/inventaris/penempatan'));
+    }
+
+    public function detail($id = null)
+    {
+        $id = (int) $id;
+        if ($id <= 0) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'ID aset tidak valid.']);
+        }
+
+        $db = db_connect();
+        $aset = $db->table('trn_inventaris_satker i')
+            ->select('i.id as id_inventaris, i.kode_barang, i.nup, i.kode_register, i.nama_barang, i.merk_tipe, i.kondisi, i.tahun_perolehan, s.nama_sekolah, g.nama_gedung, r.nama_ruangan')
+            ->join('mst_sekolah s', 's.id = i.sekolah_id', 'left')
+            ->join('mst_gedung g', 'g.id = i.gedung_id', 'left')
+            ->join('mst_ruangan r', 'r.id = i.ruangan_id', 'left')
+            ->where('i.id', $id)
+            ->get()->getRowArray();
+
+        if (! $aset) {
+            return $this->response->setJSON(['status' => 'error', 'message' => 'Data Aset tidak ditemukan.']);
+        }
+
+        $histories = $db->table('trn_bmn_penempatan p')
+            ->select('p.*, s.nama_sekolah, g.nama_gedung, r.nama_ruangan')
+            ->join('mst_sekolah s', 's.id = p.sekolah_id', 'left')
+            ->join('mst_gedung g', 'g.id = p.gedung_id', 'left')
+            ->join('mst_ruangan r', 'r.id = p.ruangan_id', 'left')
+            ->where('p.inventaris_id', $id)
+            ->orderBy('p.id', 'DESC')
+            ->get()->getResultArray();
+
+        $formattedHistory = [];
+        foreach ($histories as $h) {
+            $fotos = [];
+            for ($k = 1; $k <= 4; $k++) {
+                if (! empty($h['foto_wm_' . $k])) {
+                    $fotos[] = $h['foto_wm_' . $k];
+                } elseif (! empty($h['foto_asli_' . $k])) {
+                    $fotos[] = $h['foto_asli_' . $k];
+                }
+            }
+            $formattedHistory[] = [
+                'id'           => $h['id'],
+                'nama_sekolah' => $h['nama_sekolah'] ?? '-',
+                'nama_gedung'  => $h['nama_gedung'] ?? '-',
+                'nama_ruangan' => $h['nama_ruangan'] ?? '-',
+                'kondisi'      => $h['kondisi'] ?? '-',
+                'keterangan'   => $h['catatan'] ?? '',
+                'petugas_nama' => $h['petugas_nama'] ?? '-',
+                'status'       => $h['status'],
+                'created_at'   => $h['created_at'],
+                'foto_json'    => json_encode($fotos),
+            ];
+        }
+
+        return $this->response->setJSON([
+            'status'  => 'success',
+            'aset'    => $aset,
+            'history' => $formattedHistory,
+        ]);
     }
 
     private function denyIfNoMenuAccess(string $menuLink): ?RedirectResponse

@@ -609,6 +609,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 
 	// Modul Inventarisasi - Penempatan Aset BMN
 	$routes->get('inventaris/penempatan', 'Admin\InventarisPenempatan::index');
+	$routes->post('inventaris/penempatan/simpan', 'Admin\InventarisPenempatan::simpan');
+	$routes->get('inventaris/penempatan/detail/(:num)', 'Admin\InventarisPenempatan::detail/$1');
 	$routes->post('inventaris/penempatan/gedung/tambah', 'Admin\InventarisPenempatan::createGedung');
 	$routes->post('inventaris/penempatan/ruangan/tambah', 'Admin\InventarisPenempatan::createRuangan');
 
