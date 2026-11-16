@@ -221,6 +221,7 @@ class InventarisPemeliharaan extends BaseController
                 'nup'             => $nup,
                 'kondisi'         => trim((string) ($it['kondisi'] ?? 'Baik')),
                 'tahun_perolehan' => trim((string) ($it['tahun_perolehan'] ?? '')),
+                'lokasi_ruangan'  => trim((string) ($it['lokasi_ruangan'] ?? '')) ?: 'Belum berlokasi',
                 'kelompok_key'    => $kKey,
                 'urutan'          => $idx + 1,
             ]);
@@ -410,6 +411,7 @@ class InventarisPemeliharaan extends BaseController
                 'nup'             => $nup,
                 'kondisi'         => trim((string) ($it['kondisi'] ?? 'Baik')),
                 'tahun_perolehan' => trim((string) ($it['tahun_perolehan'] ?? '')),
+                'lokasi_ruangan'  => trim((string) ($it['lokasi_ruangan'] ?? '')) ?: 'Belum berlokasi',
                 'kelompok_key'    => $kKey,
                 'urutan'          => $idx + 1,
             ]);
@@ -609,10 +611,34 @@ class InventarisPemeliharaan extends BaseController
             ? ((int) $tglParts[2]) . ' ' . ($bulanIndo[(int) $tglParts[1]] ?? '') . ' ' . $tglParts[0]
             : (string) $pemeliharaan['tanggal_surat'];
 
+        // Map info lokasi dari item surat untuk lampiran foto
+        $groupLocations = [];
+        foreach ($pemeliharaan['items'] ?? [] as $it) {
+            $gKey = $it['kelompok_key'] ?? '';
+            if ($gKey !== '') {
+                $loc = trim((string) ($it['lokasi_ruangan'] ?? ''));
+                if ($loc === '' || $loc === '-') {
+                    $loc = 'Belum berlokasi';
+                }
+                $groupLocations[$gKey][trim((string) ($it['nup'] ?? ''))] = $loc;
+            }
+        }
+
         // Konversi foto lampiran ke base64 agar aman di Dompdf
         $fotos = $pemeliharaan['fotos'] ?? [];
         foreach ($fotos as &$f) {
             $f['nup_gabungan'] = preg_replace('/\s*[-–—]\s*/', '-', (string) ($f['nup_gabungan'] ?? ''));
+            $kKey = $f['kelompok_key'] ?? '';
+            $groupLocs = $groupLocations[$kKey] ?? [];
+            $uniqueLocs = array_values(array_unique(array_filter($groupLocs)));
+            if (empty($uniqueLocs)) {
+                $f['lokasi_ruangan'] = 'Belum berlokasi';
+            } elseif (count($uniqueLocs) === 1) {
+                $f['lokasi_ruangan'] = $uniqueLocs[0];
+            } else {
+                $f['lokasi_ruangan'] = implode(', ', $uniqueLocs);
+            }
+
             foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
                 $f[$pos . '_base64'] = '';
                 if (! empty($f[$pos])) {
@@ -793,16 +819,25 @@ class InventarisPemeliharaan extends BaseController
         $totalSlots = $totalGroups * 4;
         $filledSlots = 0;
 
-        // Map kategori, kode_barang, merk_tipe dari item surat
+        // Map kategori, kode_barang, merk_tipe, dan lokasi dari item surat
         $itemsByGroup = [];
         foreach ($pemeliharaan['items'] ?? [] as $it) {
             $gKey = $it['kelompok_key'] ?? '';
-            if ($gKey !== '' && ! isset($itemsByGroup[$gKey])) {
-                $itemsByGroup[$gKey] = [
-                    'kategori'    => $it['jenis_barang'] ?? 'MESIN PERALATAN NON TIK',
-                    'kode_barang' => $it['kode_barang'] ?? '',
-                    'merk_tipe'   => $it['merk_tipe'] ?? '-',
-                ];
+            if ($gKey !== '') {
+                if (! isset($itemsByGroup[$gKey])) {
+                    $itemsByGroup[$gKey] = [
+                        'kategori'    => $it['jenis_barang'] ?? 'MESIN PERALATAN NON TIK',
+                        'kode_barang' => $it['kode_barang'] ?? '',
+                        'merk_tipe'   => $it['merk_tipe'] ?? '-',
+                        'locations'   => [],
+                    ];
+                }
+                $loc = trim((string) ($it['lokasi_ruangan'] ?? ''));
+                if ($loc === '' || $loc === '-') {
+                    $loc = 'Belum berlokasi';
+                }
+                $nupStr = trim((string) ($it['nup'] ?? ''));
+                $itemsByGroup[$gKey]['locations'][$nupStr] = $loc;
             }
         }
 
@@ -812,6 +847,24 @@ class InventarisPemeliharaan extends BaseController
             $f['kode_barang'] = $itemsByGroup[$kKey]['kode_barang'] ?? '';
             $f['merk_tipe'] = ! empty($itemsByGroup[$kKey]['merk_tipe']) ? $itemsByGroup[$kKey]['merk_tipe'] : '-';
             $f['nup_gabungan'] = preg_replace('/\s*[-–—]\s*/', '-', (string) ($f['nup_gabungan'] ?? ''));
+
+            // Format Lokasi Barang:
+            $groupLocs = $itemsByGroup[$kKey]['locations'] ?? [];
+            $uniqueLocs = array_values(array_unique(array_filter($groupLocs)));
+            if (empty($uniqueLocs)) {
+                $f['lokasi_ruangan'] = 'Belum berlokasi';
+                $f['lokasi_detail']  = '';
+            } elseif (count($uniqueLocs) === 1) {
+                $f['lokasi_ruangan'] = $uniqueLocs[0];
+                $f['lokasi_detail']  = '';
+            } else {
+                $f['lokasi_ruangan'] = count($uniqueLocs) . ' Lokasi Berbeda';
+                $locParts = [];
+                foreach ($groupLocs as $nupKey => $lVal) {
+                    $locParts[] = 'NUP ' . $nupKey . ': ' . $lVal;
+                }
+                $f['lokasi_detail'] = implode(', ', $locParts);
+            }
 
             $groupFilled = 0;
             foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
@@ -1178,8 +1231,14 @@ class InventarisPemeliharaan extends BaseController
                         'sample_kondisi' => (string) ($r['kondisi'] ?? 'Baik'),
                         'sample_tahun'   => (string) ($r['tahun_perolehan'] ?? date('Y')),
                         'sample_lokasi'  => (string) ($r['lokasi_ruangan'] ?? '-'),
+                        'locations'      => [],
                         'items'          => [],
                     ];
+                }
+
+                $locVal = trim((string) ($r['lokasi_ruangan'] ?? ''));
+                if ($locVal !== '' && $locVal !== '-') {
+                    $groups[$gKey]['locations'][] = $locVal;
                 }
 
                 if ($nup !== '') {
@@ -1206,6 +1265,14 @@ class InventarisPemeliharaan extends BaseController
             foreach ($groups as $g) {
                 $g['rentang_nup'] = format_nup_range_summary($g['nups']);
                 $g['jumlah_barang'] = count($g['items']);
+                $uniqueLocs = array_values(array_unique(array_filter($g['locations'] ?? [])));
+                if (count($uniqueLocs) === 1) {
+                    $g['lokasi_summary'] = $uniqueLocs[0];
+                } elseif (count($uniqueLocs) > 1) {
+                    $g['lokasi_summary'] = count($uniqueLocs) . ' Lokasi (' . implode(', ', $uniqueLocs) . ')';
+                } else {
+                    $g['lokasi_summary'] = ! empty($g['sample_lokasi']) && $g['sample_lokasi'] !== '-' ? $g['sample_lokasi'] : 'Belum berlokasi';
+                }
                 $totalUnitAll += $g['jumlah_barang'];
                 $groupedResults[] = $g;
             }

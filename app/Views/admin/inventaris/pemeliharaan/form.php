@@ -292,6 +292,7 @@
                                     <th class="align-middle text-left">Nama Barang</th>
                                     <th style="width: 140px;" class="align-middle">Kategori</th>
                                     <th style="width: 160px;" class="align-middle text-left">Merek / Tipe / Spesifikasi</th>
+                                    <th style="width: 150px;" class="align-middle text-left">Lokasi / Ruangan</th>
                                     <th style="width: 110px;" class="align-middle">Rentang NUP</th>
                                     <th style="width: 68px;" class="align-middle" title="Tampak Depan">Depan</th>
                                     <th style="width: 68px;" class="align-middle" title="Tampak Atas">Atas</th>
@@ -447,18 +448,19 @@
                         <thead class="thead-light text-center sticky-top">
                             <tr>
                                 <th style="width: 35px;"><input type="checkbox" id="checkAllPicker" title="Pilih / Batalkan Semua Kelompok"></th>
-                                <th style="width: 100px;">Peruntukan</th>
-                                <th style="width: 110px;">Kode Barang</th>
+                                <th style="width: 90px;">Peruntukan</th>
+                                <th style="width: 100px;">Kode Barang</th>
                                 <th>Nama Barang</th>
                                 <th>Merk / Tipe / Spesifikasi</th>
-                                <th style="width: 140px;">Rentang NUP</th>
-                                <th style="width: 95px;">Jumlah Barang</th>
-                                <th style="width: 85px;">Rincian</th>
+                                <th style="width: 130px;">Lokasi / Ruangan</th>
+                                <th style="width: 120px;">Rentang NUP</th>
+                                <th style="width: 85px;">Jumlah</th>
+                                <th style="width: 80px;">Rincian</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyPickerResults">
                             <tr>
-                                <td colspan="8" class="text-center py-4 text-muted">
+                                <td colspan="9" class="text-center py-4 text-muted">
                                     <i class="fas fa-spinner fa-spin mr-1"></i>Memuat kelompok barang inventaris satker...
                                 </td>
                             </tr>
@@ -668,6 +670,10 @@
                     <label class="small font-weight-bold text-dark">Merk / Tipe / Spesifikasi</label>
                     <input type="text" id="manualMerkTipe" class="form-control form-control-sm" placeholder="Contoh: DAIKIN FTKC35 / INVERTER" style="border-radius: 6px;">
                 </div>
+                <div class="form-group mb-2.5">
+                    <label class="small font-weight-bold text-dark">Lokasi / Ruangan</label>
+                    <input type="text" id="manualLokasiRuangan" class="form-control form-control-sm" placeholder="Contoh: Ruang Rapat / Ruang Administrasi" style="border-radius: 6px;">
+                </div>
                 <div class="row mb-2.5">
                     <div class="col-md-6">
                         <label class="small font-weight-bold text-dark">Rentang / Nomor NUP <span class="text-danger">*</span></label>
@@ -719,10 +725,11 @@
                         <thead class="thead-light text-center sticky-top">
                             <tr>
                                 <th style="width: 40px;">No</th>
-                                <th style="width: 90px;">NUP</th>
+                                <th style="width: 80px;">NUP</th>
                                 <th>Kondisi</th>
                                 <th style="width: 80px;">Tahun</th>
-                                <th style="width: 50px;">Aksi</th>
+                                <th style="width: 140px;">Lokasi / Ruangan</th>
+                                <th style="width: 45px;">Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="tbodyGroupItemsDetail">
@@ -775,6 +782,7 @@ var activePos = '';
 var activeLabel = '';
 var activeItemNama = '';
 var activeItemNup = '';
+var activeItemLokasi = '';
 var activeSrc = '';
 var singleModeAngle = null;
 var currentAngleIndex = 0;
@@ -844,6 +852,7 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#manualNamaBarang').val('');
         $('#manualKodeBarang').val('');
         $('#manualMerkTipe').val('');
+        $('#manualLokasiRuangan').val('');
         $('#manualNupInput').val('');
         $('#manualKondisi').val('Baik');
         $('#manualTahun').val(new Date().getFullYear().toString());
@@ -875,6 +884,7 @@ document.addEventListener('DOMContentLoaded', function() {
         var jenis = $('#manualJenisBarang').val();
         var kode = $('#manualKodeBarang').val().trim();
         var merk = $('#manualMerkTipe').val().trim();
+        var lokasi = $('#manualLokasiRuangan').val().trim() || 'Belum berlokasi';
         var kondisi = $('#manualKondisi').val();
         var tahun = $('#manualTahun').val().trim() || new Date().getFullYear().toString();
 
@@ -887,7 +897,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 merk_tipe: merk,
                 nup: n,
                 kondisi: kondisi,
-                tahun_perolehan: tahun
+                tahun_perolehan: tahun,
+                lokasi_ruangan: lokasi
             });
         });
 
@@ -961,19 +972,22 @@ document.addEventListener('DOMContentLoaded', function() {
         activeLabel = btn.data('label') || angleLabels[activePos];
         activeItemNama = btn.data('nama');
         activeItemNup = btn.data('nup');
+        activeItemLokasi = btn.data('lokasi') || '';
         activeSrc = btn.data('src');
         var status = btn.data('status');
+
+        var subText = 'NUP: ' + (activeItemNup || '-') + (activeItemLokasi ? ' &bull; <i class="fas fa-map-marker-alt text-warning mr-1"></i>' + escapeHtml(activeItemLokasi) : '');
 
         if (status === 'filled') {
             // FOTO SUDAH ADA (HIJAU): Buka Modal Pratinjau
             $('#previewModalTitle').text(activeItemNama + ' - ' + activeLabel);
-            $('#previewModalSubtitle').text('NUP: ' + (activeItemNup || '-'));
+            $('#previewModalSubtitle').html(subText);
             $('#previewModalImg').attr('src', activeSrc);
             $('#modalPhotoPreview').modal('show');
         } else {
             // BELUM ADA FOTO (MERAH): Buka Modal Pilihan Ambil Kamera / Unggah
             $('#emptyActionTitle').text(activeItemNama + ' - ' + activeLabel);
-            $('#emptyActionSubtitle').text('NUP: ' + (activeItemNup || '-'));
+            $('#emptyActionSubtitle').html(subText);
             $('#modalEmptyAction').modal('show');
         }
     });
@@ -1039,10 +1053,12 @@ document.addEventListener('DOMContentLoaded', function() {
         activeGroupKey = $(this).data('key');
         activeItemNama = $(this).data('nama');
         activeItemNup = $(this).data('nup');
+        activeItemLokasi = $(this).data('lokasi') || '';
         singleModeAngle = null;
 
         $('#cameraWizardTitle').text('Pemotretan Terpandu 4 Sudut');
-        $('#cameraWizardSubtitle').text(activeItemNama + ' (NUP: ' + (activeItemNup || '-') + ')');
+        var subText = escapeHtml(activeItemNama) + ' (NUP: ' + escapeHtml(activeItemNup || '-') + ')' + (activeItemLokasi ? ' &bull; <i class="fas fa-map-marker-alt text-warning mr-1"></i>' + escapeHtml(activeItemLokasi) : '');
+        $('#cameraWizardSubtitle').html(subText);
         $('.wizard-steps-bar').show();
 
         capturedSessionImages = {};
@@ -1178,7 +1194,7 @@ function renderItemsTable() {
     if (selectedItems.length === 0) {
         tbody.append(
             '<tr>' +
-                '<td colspan="11" class="text-center py-5 text-muted">' +
+                '<td colspan="12" class="text-center py-5 text-muted">' +
                     '<i class="fas fa-boxes fa-3x mb-2 text-secondary" style="opacity: 0.3;"></i>' +
                     '<div class="font-weight-bold">Belum Ada Barang yang Dipilih</div>' +
                     '<small>Silakan klik <strong>Pilih dari Inventaris Satker</strong> atau <strong>Tambah Manual</strong> di atas.</small>' +
@@ -1197,6 +1213,7 @@ function renderItemsTable() {
         var m = (it.merk_tipe || '').trim();
         var kat = (it.jenis_barang || 'MESIN PERALATAN NON TIK').trim();
         var nup = String(it.nup || '').trim();
+        var loc = (it.lokasi_ruangan || '').trim() || 'Belum berlokasi';
 
         var key = md5(k + '::' + n + '::' + m);
         if (!groupsMap[key]) {
@@ -1207,10 +1224,12 @@ function renderItemsTable() {
                 merk_tipe: m,
                 kategori: kat,
                 items: [],
-                nups: []
+                nups: [],
+                locations: []
             };
         }
         groupsMap[key].items.push(it);
+        groupsMap[key].locations.push({ nup: nup, lokasi: loc });
         if (nup) {
             groupsMap[key].nups.push(nup);
         }
@@ -1233,6 +1252,20 @@ function renderItemsTable() {
         var kKey = g.key;
         var nupSummary = formatNupRange(g.nups);
         g.nup_gabungan = nupSummary;
+
+        var locList = (g.locations || []).map(function(l) { return l.lokasi; }).filter(function(v) { return !!v && v !== '-'; });
+        var uniqueLocs = Array.from(new Set(locList));
+        var groupLokasiSummary = '';
+        var groupLokasiDetail = '';
+        if (uniqueLocs.length === 0) {
+            groupLokasiSummary = 'Belum berlokasi';
+        } else if (uniqueLocs.length === 1) {
+            groupLokasiSummary = uniqueLocs[0];
+        } else {
+            groupLokasiSummary = uniqueLocs.length + ' Lokasi Berbeda';
+            groupLokasiDetail = (g.locations || []).map(function(l) { return 'NUP ' + (l.nup || '-') + ': ' + (l.lokasi || 'Belum berlokasi'); }).join(', ');
+        }
+        g.lokasi_summary = groupLokasiSummary;
 
         var tr = $('<tr id="rowGroup_' + kKey + '"></tr>');
 
@@ -1261,6 +1294,20 @@ function renderItemsTable() {
                 escapeHtml(g.merk_tipe || '-') +
             '</td>'
         );
+
+        // 4b. Lokasi / Ruangan
+        var lokasiCellHtml = '<td class="align-middle">' +
+            '<div class="d-flex align-items-center font-weight-bold text-dark" style="font-size: 0.84rem;">' +
+                '<i class="fas fa-map-marker-alt text-danger mr-1.5" style="font-size: 0.88rem;"></i>' +
+                '<span>' + escapeHtml(groupLokasiSummary) + '</span>' +
+            '</div>';
+        if (groupLokasiDetail) {
+            lokasiCellHtml += '<small class="text-muted d-block mt-0.5" style="font-size: 0.73rem;" title="' + escapeHtml(groupLokasiDetail) + '">' +
+                '<i class="fas fa-info-circle text-info mr-1"></i>' + escapeHtml(groupLokasiDetail) +
+            '</small>';
+        }
+        lokasiCellHtml += '</td>';
+        tr.append(lokasiCellHtml);
 
         // 5. Rentang NUP
         tr.append(
@@ -1302,6 +1349,7 @@ function renderItemsTable() {
                     ' data-src="' + photoSrc + '"' +
                     ' data-nama="' + escapeHtml(g.nama_barang) + '"' +
                     ' data-nup="' + escapeHtml(nupSummary) + '"' +
+                    ' data-lokasi="' + escapeHtml(groupLokasiSummary) + '"' +
                     ' data-label="' + escapeHtml(label) + '"' +
                     ' title="' + escapeHtml(label) + ': Foto Tersedia (Klik untuk Pratinjau & Update)"' +
                     ' style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">' +
@@ -1316,6 +1364,7 @@ function renderItemsTable() {
                     ' data-src=""' +
                     ' data-nama="' + escapeHtml(g.nama_barang) + '"' +
                     ' data-nup="' + escapeHtml(nupSummary) + '"' +
+                    ' data-lokasi="' + escapeHtml(groupLokasiSummary) + '"' +
                     ' data-label="' + escapeHtml(label) + '"' +
                     ' title="' + escapeHtml(label) + ': Belum Ada Foto (Klik untuk Ambil / Upload Foto)"' +
                     ' style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">' +
@@ -1344,6 +1393,7 @@ function renderItemsTable() {
                         ' data-key="' + kKey + '"' +
                         ' data-nama="' + escapeHtml(g.nama_barang) + '"' +
                         ' data-nup="' + escapeHtml(nupSummary) + '"' +
+                        ' data-lokasi="' + escapeHtml(groupLokasiSummary) + '"' +
                         ' title="Jepret 4 Sudut Berurutan (Wizard)">' +
                         '<i class="fas fa-camera mr-0.5"></i>4 Sudut' +
                     '</button>' +
@@ -1383,7 +1433,8 @@ function startSingleCameraSnap(groupKey, pos, label, nama, nup) {
     singleModeAngle = pos;
 
     $('#cameraWizardTitle').text('Foto ' + label);
-    $('#cameraWizardSubtitle').text(nama + ' (NUP: ' + (nup || '-') + ')');
+    var subText = escapeHtml(nama) + ' (NUP: ' + escapeHtml(nup || '-') + ')' + (activeItemLokasi ? ' &bull; <i class="fas fa-map-marker-alt text-warning mr-1"></i>' + escapeHtml(activeItemLokasi) : '');
+    $('#cameraWizardSubtitle').html(subText);
     $('.wizard-steps-bar').hide();
 
     capturedSessionImages = {};
@@ -1472,8 +1523,12 @@ function renderGroupItemsDetailModal(gKey) {
     }
 
     var firstItem = groupItems[0].item;
+    var groupLocsModal = groupItems.map(function(e) { return e.item.lokasi_ruangan || 'Belum berlokasi'; });
+    var uniqueLocsModal = Array.from(new Set(groupLocsModal.filter(function(v) { return !!v && v !== '-'; })));
+    var locModalSummary = uniqueLocsModal.length > 0 ? uniqueLocsModal.join(', ') : 'Belum berlokasi';
+
     $('#detailModalTitle').text('Rincian: ' + firstItem.nama_barang);
-    $('#detailModalSubtitle').html((firstItem.merk_tipe ? escapeHtml(firstItem.merk_tipe) + ' &bull; ' : '') + groupItems.length + ' Unit');
+    $('#detailModalSubtitle').html((firstItem.merk_tipe ? escapeHtml(firstItem.merk_tipe) + ' &bull; ' : '') + groupItems.length + ' Unit &bull; <i class="fas fa-map-marker-alt text-warning mr-0.5"></i>' + escapeHtml(locModalSummary));
     $('#detailModalCounter').text(groupItems.length + ' unit dalam kelompok ini');
 
     groupItems.forEach(function(entry, rowIdx) {
@@ -1491,6 +1546,8 @@ function renderGroupItemsDetailModal(gKey) {
         tr.append('<td>' + kondisiSelect + '</td>');
 
         tr.append('<td><input type="text" class="form-control form-control-sm text-center edit-detail-field" data-idx="' + oIdx + '" data-field="tahun_perolehan" value="' + escapeHtml(it.tahun_perolehan || '') + '"></td>');
+
+        tr.append('<td><input type="text" class="form-control form-control-sm edit-detail-field" data-idx="' + oIdx + '" data-field="lokasi_ruangan" value="' + escapeHtml(it.lokasi_ruangan || 'Belum berlokasi') + '" placeholder="Lokasi Ruangan..."></td>');
 
         tr.append('<td class="text-center align-middle"><button type="button" class="btn btn-outline-danger btn-xs btn-delete-single-unit" data-idx="' + oIdx + '" title="Hapus unit NUP ini"><i class="fas fa-times"></i></button></td>');
 
@@ -1546,7 +1603,7 @@ function loadPickerData() {
     var tbody = $('#tbodyPickerResults');
     var badge = $('#badgeTotalLoaded');
 
-    tbody.html('<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Memuat kelompok barang inventaris satker...</td></tr>');
+    tbody.html('<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-spinner fa-spin mr-1"></i>Memuat kelompok barang inventaris satker...</td></tr>');
     badge.html('<i class="fas fa-spinner fa-spin mr-1"></i>Memuat...');
 
     $.ajax({
@@ -1559,7 +1616,7 @@ function loadPickerData() {
             pickerLoadedGroups = (res && res.data) ? res.data : [];
 
             if (!res.success || !pickerLoadedGroups || pickerLoadedGroups.length === 0) {
-                tbody.html('<tr><td colspan="8" class="text-center py-4 text-muted"><i class="fas fa-info-circle mr-1"></i>Tidak ada kelompok barang yang cocok dengan filter atau kata kunci ini.</td></tr>');
+                tbody.html('<tr><td colspan="9" class="text-center py-4 text-muted"><i class="fas fa-info-circle mr-1"></i>Tidak ada kelompok barang yang cocok dengan filter atau kata kunci ini.</td></tr>');
                 badge.removeClass('badge-info badge-danger').addClass('badge-secondary').text('0 Kelompok Ditemukan');
                 updatePickerCounter();
                 return;
@@ -1596,25 +1653,27 @@ function loadPickerData() {
                 // 1. Checkbox Kelompok
                 tr.append('<td class="text-center align-middle" style="width: 35px;"><input type="checkbox" class="picker-group-checkbox" data-group-key="' + g.group_key + '"' + (isAllPreSelected ? ' checked' : '') + '></td>');
                 // 2. Peruntukan
-                tr.append('<td class="text-center align-middle" style="width: 100px;">' + pBadge + '</td>');
+                tr.append('<td class="text-center align-middle" style="width: 90px;">' + pBadge + '</td>');
                 // 3. Kode Barang
-                tr.append('<td class="align-middle font-weight-bold text-muted small" style="width: 110px;">' + escapeHtml(g.kode_barang || '-') + '</td>');
+                tr.append('<td class="align-middle font-weight-bold text-muted small" style="width: 100px;">' + escapeHtml(g.kode_barang || '-') + '</td>');
                 // 4. Nama Barang
                 tr.append('<td class="align-middle font-weight-bold text-dark">' + escapeHtml(g.nama_barang) + '</td>');
                 // 5. Merk / Tipe / Spesifikasi
                 tr.append('<td class="align-middle text-secondary small">' + escapeHtml(g.merk_tipe || '-') + '</td>');
+                // 5b. Lokasi / Ruangan
+                tr.append('<td class="align-middle small font-weight-bold text-dark" style="width: 130px;"><i class="fas fa-map-marker-alt text-danger mr-1"></i>' + escapeHtml(g.lokasi_summary || g.sample_lokasi || 'Belum berlokasi') + '</td>');
                 // 6. Rentang NUP
-                tr.append('<td class="align-middle text-center" style="width: 140px;"><span class="badge badge-light border text-primary font-weight-bold px-2 py-1" style="font-size: 0.78rem;">' + escapeHtml(g.rentang_nup || '-') + '</span></td>');
+                tr.append('<td class="align-middle text-center" style="width: 120px;"><span class="badge badge-light border text-primary font-weight-bold px-2 py-1" style="font-size: 0.78rem;">' + escapeHtml(g.rentang_nup || '-') + '</span></td>');
                 // 7. Jumlah Barang
-                tr.append('<td class="align-middle text-center" style="width: 95px;"><span class="badge badge-info px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;">' + g.jumlah_barang + ' Unit</span></td>');
+                tr.append('<td class="align-middle text-center" style="width: 85px;"><span class="badge badge-info px-2 py-1 font-weight-bold shadow-sm" style="font-size: 0.78rem;">' + g.jumlah_barang + ' Unit</span></td>');
                 // 8. Rincian / Detail NUP Button
-                tr.append('<td class="align-middle text-center" style="width: 85px;"><button type="button" class="btn btn-outline-info btn-xs rounded-pill btn-toggle-detail px-2" data-group-key="' + g.group_key + '" title="Lihat Rincian NUP"><i class="fas fa-list-ol mr-1"></i>NUP <i class="fas fa-chevron-down arrow-icon ml-0.5" style="font-size: 0.65rem;"></i></button></td>');
+                tr.append('<td class="align-middle text-center" style="width: 80px;"><button type="button" class="btn btn-outline-info btn-xs rounded-pill btn-toggle-detail px-2" data-group-key="' + g.group_key + '" title="Lihat Rincian NUP"><i class="fas fa-list-ol mr-1"></i>NUP <i class="fas fa-chevron-down arrow-icon ml-0.5" style="font-size: 0.65rem;"></i></button></td>');
 
                 tbody.append(tr);
 
                 // Baris Sub-Detail Rincian NUP (Accordion)
                 var detailTr = $('<tr id="detailRow_' + g.group_key + '" class="group-detail-row bg-light" style="display: none;"></tr>');
-                var detailTd = $('<td colspan="8" class="p-2.5 border-top-0"></td>');
+                var detailTd = $('<td colspan="9" class="p-2.5 border-top-0"></td>');
 
                 var detailWrapper = $('<div class="card card-body p-2 border shadow-sm mb-0 bg-white" style="border-radius: 8px;"></div>');
                 var detailHeader = $(
@@ -1636,9 +1695,10 @@ function loadPickerData() {
                     var isItemChecked = isAllPreSelected || selectedItems.some(function(s) {
                         return s.inventaris_id && s.inventaris_id === it.id;
                     });
+                    var itemLoc = it.lokasi_ruangan && it.lokasi_ruangan !== '-' ? it.lokasi_ruangan : (g.lokasi_summary || 'Belum berlokasi');
 
                     var chip = $(
-                        '<label class="btn btn-sm btn-outline-secondary mb-0 py-0.5 px-2 d-inline-flex align-items-center picker-nup-chip' + (isItemChecked ? ' active text-primary font-weight-bold' : '') + '" style="font-size: 0.74rem; cursor: pointer; border-radius: 6px;">' +
+                        '<label class="btn btn-sm btn-outline-secondary mb-0 py-0.5 px-2 d-inline-flex align-items-center picker-nup-chip' + (isItemChecked ? ' active text-primary font-weight-bold' : '') + '" style="font-size: 0.74rem; cursor: pointer; border-radius: 6px;" title="Lokasi: ' + escapeHtml(itemLoc) + '">' +
                             '<input type="checkbox" class="picker-item-checkbox mr-1" id="cb_item_' + it.id + '" data-group-key="' + g.group_key + '" data-item-id="' + it.id + '"' + (isItemChecked ? ' checked' : '') + '>' +
                             '<span>NUP <strong>' + escapeHtml(it.nup || '-') + '</strong> <small class="text-muted ml-0.5">(' + escapeHtml(it.kondisi || 'Baik') + ')</small></span>' +
                         '</label>'
@@ -1820,7 +1880,8 @@ $('#btnInsertSelectedToForm').on('click', function() {
                         merk_tipe: it.merk_tipe || '',
                         nup: it.nup || '',
                         kondisi: it.kondisi || 'Baik',
-                        tahun_perolehan: it.tahun_perolehan || new Date().getFullYear().toString()
+                        tahun_perolehan: it.tahun_perolehan || new Date().getFullYear().toString(),
+                        lokasi_ruangan: it.lokasi_ruangan || g.sample_lokasi || 'Belum berlokasi'
                     });
                     addedCount++;
                 }

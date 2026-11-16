@@ -137,10 +137,35 @@ class InventarisPemeliharaanModel extends Model
         $itemModel = new InventarisPemeliharaanItemModel();
         $fotoModel = new InventarisPemeliharaanFotoModel();
 
-        $header['items'] = $itemModel->where('pemeliharaan_id', $id)
+        $items = $itemModel->where('pemeliharaan_id', $id)
             ->orderBy('urutan', 'ASC')
             ->orderBy('id', 'ASC')
             ->findAll();
+
+        if (! empty($items)) {
+            $satkerModel = new InventarisSatkerModel();
+            foreach ($items as &$it) {
+                if (empty($it['lokasi_ruangan']) || $it['lokasi_ruangan'] === '-') {
+                    $satker = null;
+                    if (! empty($it['inventaris_id'])) {
+                        $satker = $satkerModel->find($it['inventaris_id']);
+                    }
+                    if (! $satker && ! empty($it['kode_barang']) && ! empty($it['nup'])) {
+                        $satker = $satkerModel->where('kode_barang', $it['kode_barang'])
+                            ->where('nup', $it['nup'])
+                            ->first();
+                    }
+                    if ($satker && ! empty($satker['lokasi_ruangan'])) {
+                        $it['lokasi_ruangan'] = $satker['lokasi_ruangan'];
+                    } else {
+                        $it['lokasi_ruangan'] = 'Belum berlokasi';
+                    }
+                }
+            }
+            unset($it);
+        }
+
+        $header['items'] = $items;
 
         $header['fotos'] = $fotoModel->where('pemeliharaan_id', $id)
             ->orderBy('urutan', 'ASC')

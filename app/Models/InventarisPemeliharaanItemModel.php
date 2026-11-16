@@ -20,6 +20,7 @@ class InventarisPemeliharaanItemModel extends Model
         'nup',
         'kondisi',
         'tahun_perolehan',
+        'lokasi_ruangan',
         'kelompok_key',
         'urutan',
         'created_at',

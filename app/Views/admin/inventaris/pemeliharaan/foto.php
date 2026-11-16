@@ -120,6 +120,7 @@
                                 <th class="align-middle text-left">Nama Barang</th>
                                 <th style="width: 140px;" class="align-middle">Kategori</th>
                                 <th style="width: 160px;" class="align-middle text-left">Merek / Tipe / Spesifikasi</th>
+                                <th style="width: 150px;" class="align-middle text-left">Lokasi / Ruangan</th>
                                 <th style="width: 110px;" class="align-middle">Rentang NUP</th>
                                 <th style="width: 68px;" class="align-middle" title="Tampak Depan">Depan</th>
                                 <th style="width: 68px;" class="align-middle" title="Tampak Atas">Atas</th>
@@ -131,7 +132,7 @@
                         <tbody>
                             <?php if (empty($fotos)): ?>
                                 <tr>
-                                    <td colspan="10" class="text-center py-5 text-muted">
+                                    <td colspan="11" class="text-center py-5 text-muted">
                                         <i class="fas fa-boxes fa-3x mb-2 text-secondary" style="opacity: 0.3;"></i>
                                         <div class="font-weight-bold">Tidak Ada Barang pada Surat Ini</div>
                                         <small>Pastikan surat sudah memiliki daftar barang di langkah input surat.</small>
@@ -183,6 +184,19 @@
                                             <?= esc($f['merk_tipe'] ?: '-'); ?>
                                         </td>
 
+                                        <!-- 4b. Lokasi / Ruangan -->
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center font-weight-bold text-dark" style="font-size: 0.84rem;">
+                                                <i class="fas fa-map-marker-alt text-danger mr-1.5" style="font-size: 0.9rem;"></i>
+                                                <span><?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?></span>
+                                            </div>
+                                            <?php if (! empty($f['lokasi_detail'])): ?>
+                                                <small class="text-muted d-block mt-0.5" style="font-size: 0.73rem;" title="<?= esc($f['lokasi_detail'], 'attr'); ?>">
+                                                    <i class="fas fa-info-circle text-info mr-1"></i><?= esc($f['lokasi_detail']); ?>
+                                                </small>
+                                            <?php endif; ?>
+                                        </td>
+
                                         <!-- 5. Rentang NUP -->
                                         <td class="text-center align-middle">
                                             <span class="badge badge-light border text-primary font-weight-bold px-2 py-1" style="font-size: 0.76rem;">
@@ -205,6 +219,7 @@
                                                     data-src="<?= base_url($pathDepan); ?>"
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Depan"
                                                     title="Tampak Depan: Foto Tersedia (Klik untuk Pratinjau & Update)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -219,6 +234,7 @@
                                                     data-src=""
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Depan"
                                                     title="Tampak Depan: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -242,6 +258,7 @@
                                                     data-src="<?= base_url($pathAtas); ?>"
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Atas"
                                                     title="Tampak Atas: Foto Tersedia (Klik untuk Pratinjau & Update)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -256,6 +273,7 @@
                                                     data-src=""
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Atas"
                                                     title="Tampak Atas: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -279,6 +297,7 @@
                                                     data-src="<?= base_url($pathBawah); ?>"
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Bawah"
                                                     title="Tampak Bawah: Foto Tersedia (Klik untuk Pratinjau & Update)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -293,6 +312,7 @@
                                                     data-src=""
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Bawah"
                                                     title="Tampak Bawah: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -316,6 +336,7 @@
                                                     data-src="<?= base_url($pathBelakang); ?>"
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Belakang"
                                                     title="Tampak Belakang: Foto Tersedia (Klik untuk Pratinjau & Update)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -330,6 +351,7 @@
                                                     data-src=""
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     data-label="Tampak Belakang"
                                                     title="Tampak Belakang: Belum Ada Foto (Klik untuk Ambil / Upload Foto)"
                                                     style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">
@@ -349,6 +371,7 @@
                                                     data-key="<?= esc($kKey); ?>"
                                                     data-nama="<?= esc($f['nama_barang']); ?>"
                                                     data-nup="<?= esc($f['nup_gabungan']); ?>"
+                                                    data-lokasi="<?= esc($f['lokasi_ruangan'] ?? 'Belum berlokasi'); ?>"
                                                     title="Jepret 4 Sudut Berurutan (Wizard)">
                                                     <i class="fas fa-camera mr-0.5"></i>4 Sudut
                                                 </button>
@@ -552,6 +575,7 @@ $(document).ready(function() {
     var activeLabel = '';
     var activeItemNama = '';
     var activeItemNup = '';
+    var activeItemLokasi = '';
     var activeSrc = '';
     var singleModeAngle = null;
     var currentAngleIndex = 0;
@@ -590,19 +614,22 @@ $(document).ready(function() {
         activeLabel = btn.data('label') || angleLabels[activePos];
         activeItemNama = btn.data('nama');
         activeItemNup = btn.data('nup');
+        activeItemLokasi = btn.data('lokasi') || '';
         activeSrc = btn.data('src');
         var status = btn.data('status');
+
+        var subText = 'NUP: ' + (activeItemNup || '-') + (activeItemLokasi ? ' &bull; <i class="fas fa-map-marker-alt text-warning mr-1"></i>' + escapeHtml(activeItemLokasi) : '');
 
         if (status === 'filled') {
             // FOTO SUDAH ADA (HIJAU): Buka Modal Pratinjau & Tombol Update
             $('#previewModalTitle').text(activeItemNama + ' - ' + activeLabel);
-            $('#previewModalSubtitle').text('NUP: ' + (activeItemNup || '-'));
+            $('#previewModalSubtitle').html(subText);
             $('#previewModalImg').attr('src', activeSrc);
             $('#modalPhotoPreview').modal('show');
         } else {
             // BELUM ADA FOTO (MERAH): Buka Modal Pilihan Ambil Kamera / Unggah
             $('#emptyActionTitle').text(activeItemNama + ' - ' + activeLabel);
-            $('#emptyActionSubtitle').text('NUP: ' + (activeItemNup || '-'));
+            $('#emptyActionSubtitle').html(subText);
             $('#modalEmptyAction').modal('show');
         }
     });
@@ -713,7 +740,8 @@ $(document).ready(function() {
         singleModeAngle = pos;
 
         $('#cameraWizardTitle').text('Foto ' + label);
-        $('#cameraWizardSubtitle').text(nama + ' (NUP: ' + (nup || '-') + ')');
+        var subText = escapeHtml(nama) + ' (NUP: ' + escapeHtml(nup || '-') + ')' + (activeItemLokasi ? ' &bull; <i class="fas fa-map-marker-alt text-warning mr-1"></i>' + escapeHtml(activeItemLokasi) : '');
+        $('#cameraWizardSubtitle').html(subText);
         $('.wizard-steps-bar').hide();
 
         capturedSessionImages = {};
@@ -727,10 +755,12 @@ $(document).ready(function() {
         activeFotoId = $(this).data('foto-id');
         activeItemNama = $(this).data('nama');
         activeItemNup = $(this).data('nup');
+        activeItemLokasi = $(this).data('lokasi') || '';
         singleModeAngle = null;
 
         $('#cameraWizardTitle').text('Pemotretan Terpandu 4 Sudut');
-        $('#cameraWizardSubtitle').text(activeItemNama + ' (NUP: ' + (activeItemNup || '-') + ')');
+        var subText = escapeHtml(activeItemNama) + ' (NUP: ' + escapeHtml(activeItemNup || '-') + ')' + (activeItemLokasi ? ' &bull; <i class="fas fa-map-marker-alt text-warning mr-1"></i>' + escapeHtml(activeItemLokasi) : '');
+        $('#cameraWizardSubtitle').html(subText);
         $('.wizard-steps-bar').show();
 
         capturedSessionImages = {};
@@ -939,6 +969,7 @@ $(document).ready(function() {
                 ' data-src="' + photoUrl + '"' +
                 ' data-nama="' + escapeHtml(nama) + '"' +
                 ' data-nup="' + escapeHtml(nup) + '"' +
+                ' data-lokasi="' + escapeHtml(activeItemLokasi) + '"' +
                 ' data-label="' + escapeHtml(label) + '"' +
                 ' title="' + escapeHtml(label) + ': Foto Tersedia (Klik untuk Pratinjau & Update)"' +
                 ' style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">' +
@@ -960,6 +991,7 @@ $(document).ready(function() {
                 ' data-src=""' +
                 ' data-nama="' + escapeHtml(nama) + '"' +
                 ' data-nup="' + escapeHtml(nup) + '"' +
+                ' data-lokasi="' + escapeHtml(activeItemLokasi) + '"' +
                 ' data-label="' + escapeHtml(label) + '"' +
                 ' title="' + escapeHtml(label) + ': Belum Ada Foto (Klik untuk Ambil / Upload Foto)"' +
                 ' style="width: 36px; height: 36px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">' +

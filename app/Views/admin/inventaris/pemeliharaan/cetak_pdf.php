@@ -491,6 +491,11 @@
                         <td class="text-center"><?= $fIdx + 1; ?></td>
                         <td>
                             <div class="font-bold"><?= esc($f['nama_barang']); ?></div>
+                            <?php if (! empty($f['lokasi_ruangan'])): ?>
+                                <div style="font-size: 7.5pt; color: #555555; margin-top: 2px;">
+                                    Lokasi: <?= esc($f['lokasi_ruangan']); ?>
+                                </div>
+                            <?php endif; ?>
                         </td>
                         <td class="text-center font-bold">
                             <?= esc(preg_replace('/\s*[-–—]\s*/', '-', (string) ($f['nup_gabungan'] ?: '-'))); ?>

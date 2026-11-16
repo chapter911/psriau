@@ -1993,6 +1993,7 @@ class InventarisSmokeTest extends BaseCommand
                 'nup'             => '1',
                 'kondisi'         => 'Baik',
                 'tahun_perolehan' => '2023',
+                'lokasi_ruangan'  => 'Ruang Administrasi',
                 'kelompok_key'    => $kKeyZ,
                 'urutan'          => 1,
             ]);
@@ -2005,6 +2006,7 @@ class InventarisSmokeTest extends BaseCommand
                 'nup'             => '2',
                 'kondisi'         => 'Baik',
                 'tahun_perolehan' => '2024',
+                'lokasi_ruangan'  => 'Ruang Rapat',
                 'kelompok_key'    => $kKey,
                 'urutan'          => 2,
             ]);
@@ -2017,6 +2019,7 @@ class InventarisSmokeTest extends BaseCommand
                 'nup'             => '1',
                 'kondisi'         => 'Baik',
                 'tahun_perolehan' => '2024',
+                'lokasi_ruangan'  => 'Ruang Rapat',
                 'kelompok_key'    => $kKey,
                 'urutan'          => 3,
             ]);
@@ -2049,6 +2052,11 @@ class InventarisSmokeTest extends BaseCommand
             if (! $detail || count($detail['items']) !== 3 || count($detail['fotos']) !== 2) {
                 throw new \Exception("getDetail() pemeliharaan tidak mengembalikan relasi item dan foto secara tepat.");
             }
+
+            if (empty($detail['items'][0]['lokasi_ruangan']) || $detail['items'][0]['lokasi_ruangan'] !== 'Ruang Administrasi') {
+                throw new \Exception("getDetail() pemeliharaan gagal mengembalikan lokasi_ruangan item secara tepat.");
+            }
+            CLI::write("  [OK] Field lokasi_ruangan item pemeliharaan terverifikasi presisi: '{$detail['items'][0]['lokasi_ruangan']}'", "green");
 
             $listRow = $pmlhModel->getList(['q' => 'TEST-001'], 1, 0);
             if (empty($listRow) || empty($listRow[0]['foto_color']) || $listRow[0]['foto_color'] !== 'success') {
@@ -2109,13 +2117,26 @@ class InventarisSmokeTest extends BaseCommand
             $fotoViewPath = APPPATH . 'Views/admin/inventaris/pemeliharaan/foto.php';
             if (is_file($fotoViewPath)) {
                 $fotoFileContent = file_get_contents($fotoViewPath);
-                if (strpos($fotoFileContent, 'Pemotretan Terpandu 4 Sudut') !== false && strpos($fotoFileContent, 'ajax-save-single') !== false) {
-                    CLI::write("  [OK] Halaman khusus kelola foto lampiran bertahap (app/Views/admin/inventaris/pemeliharaan/foto.php) terverifikasi lengkap dengan wizard kamera & auto-save", "green");
+                if (strpos($fotoFileContent, 'Pemotretan Terpandu 4 Sudut') !== false && strpos($fotoFileContent, 'ajax-save-single') !== false && strpos($fotoFileContent, 'Lokasi / Ruangan') !== false) {
+                    CLI::write("  [OK] Halaman khusus kelola foto lampiran bertahap (app/Views/admin/inventaris/pemeliharaan/foto.php) terverifikasi lengkap dengan kolom Lokasi / Ruangan, wizard kamera & auto-save", "green");
                 } else {
-                    throw new \Exception("File view foto.php tidak memiliki komponen wizard atau auto-save yang valid.");
+                    throw new \Exception("File view foto.php tidak memiliki komponen kolom Lokasi / Ruangan, wizard atau auto-save yang valid.");
                 }
             } else {
                 throw new \Exception("File view admin/inventaris/pemeliharaan/foto.php tidak ditemukan.");
+            }
+
+            // 8. Uji Keberadaan Kolom Lokasi / Ruangan pada Form Pemeliharaan
+            $formViewPath = APPPATH . 'Views/admin/inventaris/pemeliharaan/form.php';
+            if (is_file($formViewPath)) {
+                $formFileContent = file_get_contents($formViewPath);
+                if (strpos($formFileContent, 'Lokasi / Ruangan') !== false && strpos($formFileContent, 'manualLokasiRuangan') !== false) {
+                    CLI::write("  [OK] Formulir tambah/ubah surat pemeliharaan (app/Views/admin/inventaris/pemeliharaan/form.php) terverifikasi lengkap dengan kolom Lokasi / Ruangan & modal input lokasi", "green");
+                } else {
+                    throw new \Exception("File view form.php tidak memuat komponen Lokasi / Ruangan.");
+                }
+            } else {
+                throw new \Exception("File view admin/inventaris/pemeliharaan/form.php tidak ditemukan.");
             }
 
             // Cleanup data dummy pemeliharaan cascade
