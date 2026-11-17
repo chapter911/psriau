@@ -754,6 +754,21 @@ $routes->group('api', static function ($routes): void {
             $routes->post('penempatan', 'Api\Bmn::penempatan');
         });
 
+        // BMN Sekolah Rakyat (Mobile) API
+        $routes->group('bmn-sekolah-rakyat', static function ($routes): void {
+            $routes->get('permissions', 'Api\BmnSekolahRakyat::permissions');
+            $routes->get('barang', 'Api\BmnSekolahRakyat::barang');
+            $routes->get('barang/(:num)', 'Api\BmnSekolahRakyat::detailBarang/$1');
+            $routes->post('barang', 'Api\BmnSekolahRakyat::tambahBarang');
+            $routes->post('barang/(:num)/update', 'Api\BmnSekolahRakyat::ubahBarang/$1');
+            $routes->post('barang/(:num)/delete', 'Api\BmnSekolahRakyat::hapusBarang/$1');
+            $routes->post('barang/(:num)/update-nup', 'Api\BmnSekolahRakyat::updateNup/$1');
+            $routes->get('foto', 'Api\BmnSekolahRakyat::foto');
+            $routes->post('foto/(:num)/upload', 'Api\BmnSekolahRakyat::uploadFoto/$1');
+            $routes->post('foto/(:num)/delete', 'Api\BmnSekolahRakyat::hapusFoto/$1');
+            $routes->get('rekapitulasi', 'Api\BmnSekolahRakyat::rekapitulasi');
+        });
+
         // Dokumentasi (Mobile) API
         $routes->group('dokumentasi', static function ($routes): void {
             $routes->get('kegiatan', 'Api\Dokumentasi::kegiatan');
