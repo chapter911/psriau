@@ -938,13 +938,13 @@ class InventarisSekolahRakyat extends BaseController
                 $sheet2->setCellValue('C' . $r2, $d['komponen_rab']);
                 $sheet2->setCellValue('D' . $r2, $d['jumlah']);
                 $sheet2->setCellValue('E' . $r2, $d['satuan']);
-                $sheet2->setCellValue('F' . $r2, $d['nilai_rab_sebelum_ppn']);
-                $sheet2->setCellValue('G' . $r2, $d['alokasi_biaya_umum']);
-                $sheet2->setCellValue('H' . $r2, $d['subtotal']);
-                $sheet2->setCellValue('I' . $r2, $d['ppn_11']);
-                $sheet2->setCellValue('J' . $r2, $d['total_termasuk_ppn']);
-                $sheet2->setCellValue('K' . $r2, $d['nilai_perolehan_per_unit']);
-                $sheet2->setCellValue('L' . $r2, $d['total_nilai_perolehan']);
+                $sheet2->setCellValue('F' . $r2, $d['nilai_rab'] ?? 0);
+                $sheet2->setCellValue('G' . $r2, $d['alokasi_biaya_umum'] ?? 0);
+                $sheet2->setCellValue('H' . $r2, $d['subtotal'] ?? 0);
+                $sheet2->setCellValue('I' . $r2, $d['ppn'] ?? 0);
+                $sheet2->setCellValue('J' . $r2, $d['total_termasuk_ppn'] ?? 0);
+                $sheet2->setCellValue('K' . $r2, $d['nilai_perolehan_unit'] ?? 0);
+                $sheet2->setCellValue('L' . $r2, $d['total_nilai_perolehan'] ?? 0);
 
                 $sheet2->getStyle('A' . $r2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                 $sheet2->getStyle('D' . $r2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
