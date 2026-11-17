@@ -695,9 +695,9 @@ graph TD
     B8 --> J11["Shortcut Terintegrasi 1-Klik dari Menu Daftar Barang (/admin/inventaris/barang)"]
 
     A --> B9["9. BMN Sekolah Rakyat (/admin/inventaris/sekolah-rakyat)"]
-    B9 --> K1["Submenu Lv3.1: Daftar Barang (/admin/inventaris/sekolah-rakyat/barang) - 327 Rincian Aset BMN (Peralatan 3.xx, Gedung 4.xx, Jaringan 5.xx) Nilai Kontrak Rp 239,4 Miliar (Non-NUP)"]
-    B9 --> K2["Submenu Lv3.2: Dokumentasi Foto (/admin/inventaris/sekolah-rakyat/foto) - Filter Hierarkis per Gedung &amp; Material/Jenis BMN, Quick Filter Pills, Grouping Rapi, Watermark TimeMark GPS &amp; Kamera HP"]
-    B9 --> K3["Submenu Lv3.3: Rekapitulasi &amp; Nilai (/admin/inventaris/sekolah-rakyat/rekapitulasi) - Kertas Kerja Dasar Perhitungan 33 Aset, Alokasi Biaya Umum Rp 6,4 Miliar &amp; Cetak PDF Berita Acara"]
+    B9 --> K1["Submenu Lv3.1: Daftar Barang (/admin/inventaris/sekolah-rakyat/barang) - 327 Rincian Aset BMN (Peralatan 3.xx, Gedung 4.xx, Jaringan 5.xx) Nilai Kontrak Rp 239,4 Miliar (Non-NUP) &amp; Unduh Excel Kertas Kerja 13 Kolom + Foto Terlampir"]
+    B9 --> K2["Submenu Lv3.2: Dokumentasi Foto (/admin/inventaris/sekolah-rakyat/foto) - Filter Hierarkis per Gedung &amp; Material/Jenis BMN, Quick Filter Pills, Grouping Rapi, Watermark GPS, Kamera HP &amp; Unduh Excel per Gedung"]
+    B9 --> K3["Submenu Lv3.3: Rekapitulasi &amp; Nilai (/admin/inventaris/sekolah-rakyat/rekapitulasi) - Kertas Kerja Dasar Perhitungan 33 Aset, Alokasi Biaya Umum Rp 6,4 Miliar, Unduh Excel 2-Sheet Resmi &amp; Cetak PDF Berita Acara"]
                 </pre>
             </div>
         </div>
@@ -1891,7 +1891,8 @@ graph TD
                                                 <li>Kelompok II: Gedung &amp; Bangunan (29 item kode 4.xx)</li>
                                                 <li>Kelompok III: Jalan, Irigasi &amp; Jaringan (4 item kode 5.xx)</li>
                                                 <li>Filter berdasarkan 35 Gedung/Zona, Kelompok, &amp; Status Foto</li>
-                                                <li>Pencatatan rincian BMN berbasis volume kontrak &amp; spesifikasi teknis (non-NUP) serta Ekspor Excel Kertas Kerja</li>
+                                                <li>Pencatatan rincian BMN berbasis volume kontrak &amp; spesifikasi teknis (non-NUP)</li>
+                                                <li><strong>Ekspor Excel Kertas Kerja Resmi:</strong> Format 13 kolom identik template Kementerian, foto fisik terlampir di sel kolom K, subtotal kelompok, tanda tangan 3 pihak, dan Sheet 2 Dasar Perhitungan</li>
                                             </ul>
                                         </div>
                                     </div>

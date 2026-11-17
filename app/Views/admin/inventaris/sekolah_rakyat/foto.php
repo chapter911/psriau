@@ -80,13 +80,21 @@
                 $curPersen = $curTotal > 0 ? round(($curFoto / $curTotal) * 100) : 0;
             ?>
             <div class="mt-3 pt-2 border-top">
-                <div class="d-flex justify-content-between align-items-center small font-weight-bold mb-1">
+                <div class="d-flex flex-wrap justify-content-between align-items-center small font-weight-bold mb-1">
                     <span class="text-muted">
                         <i class="fas fa-chart-line text-success mr-1"></i>Progres Kelengkapan Foto di <strong><?= esc($filterLokasi); ?></strong>:
                     </span>
-                    <span class="text-primary font-weight-bold">
-                        <?= $curFoto; ?> / <?= $curTotal; ?> Item Selesai Difoto (<?= $curPersen; ?>%)
-                    </span>
+                    <div class="d-flex align-items-center mt-1 mt-md-0" style="gap: 8px;">
+                        <span class="text-primary font-weight-bold mr-2">
+                            <?= $curFoto; ?> / <?= $curTotal; ?> Item (<?= $curPersen; ?>%)
+                        </span>
+                        <a href="<?= site_url('admin/inventaris/sekolah-rakyat/barang/export-excel?lokasi=' . urlencode($filterLokasi)); ?>" class="btn btn-xs btn-outline-success font-weight-bold shadow-sm" title="Unduh Kertas Kerja Khusus Gedung Ini dengan Foto Terlampir">
+                            <i class="fas fa-file-excel mr-1"></i>Excel Gedung Ini
+                        </a>
+                        <a href="<?= site_url('admin/inventaris/sekolah-rakyat/barang/export-excel'); ?>" class="btn btn-xs btn-success font-weight-bold shadow-sm" title="Unduh Kertas Kerja Seluruh 327 Aset Lengkap dengan Foto Terlampir">
+                            <i class="fas fa-file-excel mr-1"></i>Excel Lengkap (327 Item)
+                        </a>
+                    </div>
                 </div>
                 <div class="progress" style="height: 8px; border-radius: 4px;">
                     <div class="progress-bar <?= $curPersen === 100 ? 'bg-success' : 'bg-primary'; ?> progress-bar-striped progress-bar-animated" role="progressbar" style="width: <?= $curPersen; ?>%;"></div>

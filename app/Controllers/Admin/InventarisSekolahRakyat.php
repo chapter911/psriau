@@ -15,6 +15,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
 class InventarisSekolahRakyat extends BaseController
 {
@@ -536,7 +537,7 @@ class InventarisSekolahRakyat extends BaseController
     }
 
     /**
-     * Export Excel Kertas Kerja Rincian BMN
+     * Export Excel Kertas Kerja Rincian BMN (Lengkap 13 Kolom + Lampiran Foto Barang + Sheet Dasar Perhitungan)
      */
     public function exportExcel()
     {
@@ -545,22 +546,41 @@ class InventarisSekolahRakyat extends BaseController
             return redirect()->back()->with('error', 'Anda tidak memiliki hak akses untuk ekspor data.');
         }
 
+        $filterLokasi = trim((string) $this->request->getGet('lokasi'));
+
         $spreadsheet = new Spreadsheet();
+
+        // -------------------------------------------------------------
+        // SHEET 1: Kertas Kerja BMN
+        // -------------------------------------------------------------
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Kertas Kerja BMN');
 
-        // Header Dokumen
+        // Header Metadata Proyek (Baris 1 - 7)
         $sheet->setCellValue('A1', 'KERTAS KERJA RINCIAN PENDETAILAN BMN HASIL PEKERJAAN KONSTRUKSI DAN PENGADAAN MEBEL/PERALATAN');
-        $sheet->setCellValue('A2', 'Pekerjaan: Pembangunan Sekolah Rakyat Provinsi Riau');
-        $sheet->setCellValue('A3', 'Lokasi: Komplek Sport Center, Kel. Sungai Jering, Kec. Kuantan Tengah, Kab. Kuantan Singingi, Riau');
-        $sheet->setCellValue('A4', 'Satuan Kerja: Pelaksanaan Prasarana Strategis Riau');
-        $sheet->setCellValue('A5', 'Kontrak: HK.02.01/PPS-RIAU/FSK-SR/2025/01 tanggal 24 Desember 2025');
-        $sheet->setCellValue('A6', 'Nilai Kontrak (Addendum V): Rp239.445.195.000,- (termasuk PPN 11%)');
-        $sheet->setCellValue('A7', 'Penyedia Jasa: PT. Duta Rama – PT. Gala Karya, KSO');
+        $sheet->setCellValue('A2', 'Pekerjaan');
+        $sheet->setCellValue('D2', ': Pembangunan Sekolah Rakyat Provinsi Riau');
+        $sheet->setCellValue('A3', 'Lokasi');
+        $sheet->setCellValue('D3', ': Komplek Sport Center, Kel. Sungai Jering, Kec. Kuantan Tengah, Kab. Kuantan Singingi, Riau');
+        $sheet->setCellValue('A4', 'Satuan Kerja');
+        $sheet->setCellValue('D4', ': Pelaksanaan Prasarana Strategis Riau');
+        $sheet->setCellValue('A5', 'Kontrak');
+        $sheet->setCellValue('D5', ': HK.02.01/PPS-RIAU/FSK-SR/2025/01 tanggal 24 Desember 2025 ');
+        $sheet->setCellValue('A6', 'Nilai Kontrak (Addendum V)');
+        $sheet->setCellValue('D6', ': Rp239.445.195.000,- (termasuk PPN 11%)');
+        $sheet->setCellValue('A7', 'Penyedia Jasa');
+        $sheet->setCellValue('D7', ': PT. Duta Rama – PT. Gala Karya, KSO');
+
+        if ($filterLokasi !== '' && $filterLokasi !== '*') {
+            $sheet->setCellValue('A8', 'Filter Lokasi Gedung');
+            $sheet->setCellValue('D8', ': ' . $filterLokasi);
+            $sheet->getStyle('A8:D8')->getFont()->setBold(true)->getColor()->setRGB('C00000');
+        }
 
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(12);
+        $sheet->getStyle('A2:A7')->getFont()->setBold(true);
 
-        // Header Tabel Kolom
+        // Header Tabel Kolom (Baris 9) - 13 Kolom Lengkap
         $headers = [
             'A9' => 'No',
             'B9' => 'Kode BMN',
@@ -572,60 +592,400 @@ class InventarisSekolahRakyat extends BaseController
             'H9' => 'Nilai Perolehan (Rp)',
             'I9' => 'Total Nilai Perolehan (Rp)',
             'J9' => 'Kondisi',
-            'K9' => 'Lokasi',
-            'L9' => 'Keterangan',
+            'K9' => 'Foto Barang',
+            'L9' => 'Lokasi',
+            'M9' => 'Keterangan',
         ];
 
         foreach ($headers as $cell => $val) {
             $sheet->setCellValue($cell, $val);
         }
 
-        $sheet->getStyle('A9:L9')->applyFromArray([
+        $sheet->getStyle('A9:M9')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F497D']],
-            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
         ]);
+        $sheet->getRowDimension(9)->setRowHeight(28);
 
-        $items = $this->bmnModel->orderBy('id', 'ASC')->findAll();
+        // Ambil Data Barang
+        $builder = $this->bmnModel->builder();
+        if ($filterLokasi !== '' && $filterLokasi !== '*') {
+            $builder->where('trn_bmn_sekolah_rakyat.lokasi', $filterLokasi);
+        }
+        $items = $builder->orderBy('trn_bmn_sekolah_rakyat.id', 'ASC')->get()->getResultArray();
+
+        // Ambil Foto-Foto Barang
+        $itemIds = array_column($items, 'id');
+        $fotosByItem = [];
+        if (! empty($itemIds)) {
+            $fotos = $this->fotoModel->whereIn('bmn_id', $itemIds)->orderBy('id', 'ASC')->findAll();
+            foreach ($fotos as $f) {
+                $fotosByItem[$f['bmn_id']][] = $f;
+            }
+        }
+
         $rowIdx = 10;
         $currentKelompok = '';
+        $kelompokStartRow = 10;
+        $kelompokTotal = 0;
+        $grandTotal = 0;
+
+        $thinBorder = [
+            'borders' => [
+                'allBorders' => [
+                    'borderStyle' => Border::BORDER_THIN,
+                    'color' => ['rgb' => 'D0D0D0'],
+                ],
+            ],
+        ];
 
         foreach ($items as $it) {
+            // Deteksi pergantian kelompok
             if ($it['kelompok_bmn'] !== $currentKelompok) {
+                // Tulis Subtotal kelompok sebelumnya jika ada
+                if ($currentKelompok !== '' && ($filterLokasi === '' || $filterLokasi === '*')) {
+                    $sheet->setCellValue('E' . $rowIdx, 'Jumlah ' . $this->getNamaKelompokClean($currentKelompok));
+                    $sheet->setCellValue('I' . $rowIdx, $kelompokTotal);
+                    $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+                        'font' => ['bold' => true],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
+                    ]);
+                    $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+                    $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+                    $rowIdx++;
+                }
+
                 $currentKelompok = $it['kelompok_bmn'];
-                $sheet->setCellValue('A' . $rowIdx, $currentKelompok);
-                $sheet->mergeCells('A' . $rowIdx . ':L' . $rowIdx);
-                $sheet->getStyle('A' . $rowIdx)->applyFromArray([
-                    'font' => ['bold' => true],
+                $kelompokTotal = 0;
+
+                // Header Kelompok
+                $sheet->setCellValue('A' . $rowIdx, $this->getKelompokRomawi($currentKelompok));
+                $sheet->setCellValue('B' . $rowIdx, strtoupper($currentKelompok));
+                $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+                    'font' => ['bold' => true, 'color' => ['rgb' => '000000']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9E1F2']],
                 ]);
+                $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
                 $rowIdx++;
             }
 
+            $kelompokTotal += (float) $it['total_nilai_perolehan'];
+            $grandTotal += (float) $it['total_nilai_perolehan'];
+
+            // Data Cells
             $sheet->setCellValue('A' . $rowIdx, $it['no_urut']);
             $sheet->setCellValue('B' . $rowIdx, $it['kode_bmn']);
-            $sheet->setCellValue('C' . $rowIdx, $it['nup'] ?: '-');
+            $sheet->setCellValue('C' . $rowIdx, $it['nup'] ?: '');
             $sheet->setCellValue('D' . $rowIdx, $it['jenis_bmn']);
             $sheet->setCellValue('E' . $rowIdx, $it['spesifikasi']);
             $sheet->setCellValue('F' . $rowIdx, $it['jumlah']);
             $sheet->setCellValue('G' . $rowIdx, $it['satuan']);
             $sheet->setCellValue('H' . $rowIdx, $it['nilai_perolehan']);
             $sheet->setCellValue('I' . $rowIdx, $it['total_nilai_perolehan']);
-            $sheet->setCellValue('J' . $rowIdx, $it['kondisi']);
-            $sheet->setCellValue('K' . $rowIdx, $it['lokasi']);
-            $sheet->setCellValue('L' . $rowIdx, $it['keterangan'] ?: '');
+            $sheet->setCellValue('J' . $rowIdx, $it['kondisi'] ?: 'Baik');
+            $sheet->setCellValue('L' . $rowIdx, $it['lokasi']);
+            $sheet->setCellValue('M' . $rowIdx, $it['keterangan'] ?: '');
 
+            // Formatting Angka & Perataan
+            $sheet->getStyle('A' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('B' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('C' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('F' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('G' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('J' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('H' . $rowIdx . ':I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+
+            // Baris Kuning untuk item nilai 0 (seperti Gedung UKS dan Gudang sesuai format asli)
+            if ((float) $it['total_nilai_perolehan'] == 0) {
+                $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF2CC']],
+                ]);
+            }
+
+            // SEMATKAN FOTO BARANG DI KOLOM K
+            $hasDrawing = false;
+            if (! empty($fotosByItem[$it['id']])) {
+                $firstFoto = $fotosByItem[$it['id']][0];
+                $imgPath = '';
+                if (! empty($firstFoto['foto_watermark']) && is_file(FCPATH . $firstFoto['foto_watermark'])) {
+                    $imgPath = FCPATH . $firstFoto['foto_watermark'];
+                } elseif (! empty($firstFoto['foto_asli']) && is_file(FCPATH . $firstFoto['foto_asli'])) {
+                    $imgPath = FCPATH . $firstFoto['foto_asli'];
+                }
+
+                if ($imgPath !== '') {
+                    try {
+                        $drawing = new Drawing();
+                        $drawing->setName('Foto_' . $it['id']);
+                        $drawing->setDescription($it['jenis_bmn'] . ' - ' . $it['spesifikasi']);
+                        $drawing->setPath($imgPath);
+                        $drawing->setHeight(65);
+                        $drawing->setCoordinates('K' . $rowIdx);
+                        $drawing->setOffsetX(8);
+                        $drawing->setOffsetY(4);
+                        $drawing->setWorksheet($sheet);
+                        $sheet->getRowDimension($rowIdx)->setRowHeight(58);
+                        $hasDrawing = true;
+                    } catch (\Throwable $e) {
+                        $hasDrawing = false;
+                    }
+                }
+            }
+
+            if (! $hasDrawing) {
+                $sheet->setCellValue('K' . $rowIdx, '-');
+                $sheet->getStyle('K' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->getRowDimension($rowIdx)->setRowHeight(22);
+            }
+
+            $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
             $rowIdx++;
         }
 
-        // Auto width
-        foreach (range('A', 'L') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
+        // Subtotal kelompok terakhir
+        if ($currentKelompok !== '' && ($filterLokasi === '' || $filterLokasi === '*')) {
+            $sheet->setCellValue('E' . $rowIdx, 'Jumlah ' . $this->getNamaKelompokClean($currentKelompok));
+            $sheet->setCellValue('I' . $rowIdx, $kelompokTotal);
+            $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
+            ]);
+            $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+            $rowIdx++;
         }
 
+        // TOTAL, KONTROL & SELISIH
+        $sheet->setCellValue('A' . $rowIdx, 'TOTAL');
+        $sheet->setCellValue('I' . $rowIdx, $grandTotal);
+        $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9E1F2']],
+        ]);
+        $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+        $rowIdx++;
+
+        if ($filterLokasi === '' || $filterLokasi === '*') {
+            $sheet->setCellValue('E' . $rowIdx, 'Kontrol: nilai kontrak Addendum V (dibulatkan)');
+            $sheet->setCellValue('I' . $rowIdx, 239445195000);
+            $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+            $rowIdx++;
+
+            $sheet->setCellValue('E' . $rowIdx, 'Selisih');
+            $sheet->setCellValue('I' . $rowIdx, $grandTotal - 239445195000);
+            $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+            $rowIdx += 2;
+
+            // LEMBAR TANDA TANGAN 3 PIHAK
+            $sheet->setCellValue('J' . $rowIdx, 'Dikeluarkan di : Kuantan Singingi');
+            $rowIdx++;
+            $sheet->setCellValue('J' . $rowIdx, 'pada tanggal  : ……………………… 2026');
+            $rowIdx += 2;
+
+            $sheet->setCellValue('B' . $rowIdx, 'Penyedia Jasa Konstruksi');
+            $sheet->setCellValue('F' . $rowIdx, 'Konsultan Pengawas');
+            $sheet->setCellValue('J' . $rowIdx, 'Pejabat Pembuat Komitmen');
+            $sheet->getStyle('B' . $rowIdx . ':J' . $rowIdx)->getFont()->setBold(true);
+            $rowIdx++;
+
+            $sheet->setCellValue('B' . $rowIdx, 'PT. Duta Rama – PT. Gala Karya, KSO');
+            $sheet->setCellValue('F' . $rowIdx, "PT. Biro Arsitek dan Insinjur Sangkuriang KSO\nPT. Astadipati Duta Harindo");
+            $sheet->setCellValue('J' . $rowIdx, 'Pelaksanaan Prasarana Strategis');
+            $sheet->getStyle('F' . $rowIdx)->getAlignment()->setWrapText(true);
+            $rowIdx += 4;
+
+            $sheet->setCellValue('B' . $rowIdx, 'Zaynudin Agus Pujianto, S.T.');
+            $sheet->setCellValue('F' . $rowIdx, 'Kurniawan Destika, S.T., M.T.');
+            $sheet->setCellValue('J' . $rowIdx, 'Nurhidayat Nugroho, S.Ars.');
+            $sheet->getStyle('B' . $rowIdx . ':J' . $rowIdx)->getFont()->setBold(true)->setUnderline(true);
+            $rowIdx++;
+
+            $sheet->setCellValue('B' . $rowIdx, 'Project Manager');
+            $sheet->setCellValue('F' . $rowIdx, 'Team Leader');
+            $sheet->setCellValue('J' . $rowIdx, 'NIP. 19901221 201802 1 001');
+            $rowIdx += 3;
+
+            // PENJELASAN TAMBAHAN
+            $sheet->setCellValue('A' . $rowIdx, 'Penjelasan Tambahan:');
+            $sheet->getStyle('A' . $rowIdx)->getFont()->setBold(true);
+            $rowIdx++;
+            $sheet->setCellValue('A' . $rowIdx, '- Merk/Type/Spesifikasi Material Teknis untuk kelompok Peralatan dan Mesin diisi sesuai uraian item RAB Addendum V; untuk kelompok Gedung dan Bangunan serta Jalan, Irigasi dan Jaringan diisi peruntukan fungsi bangunan/prasarana.');
+            $rowIdx++;
+            $sheet->setCellValue('A' . $rowIdx, '- Nilai perolehan berupa bilangan bulat (tanpa desimal), sudah termasuk PPN 11% dan alokasi biaya umum (lihat sheet Dasar Perhitungan).');
+            $rowIdx++;
+            $sheet->setCellValue('A' . $rowIdx, '- Peralatan berupa sprinkler, exhaust fan, pompa air, sound system dan utilitas lain yang menempel pada gedung dicatat bersama gedung tempat peralatan tersebut berada.');
+            $rowIdx++;
+            $sheet->setCellValue('A' . $rowIdx, '- Rumah Pompa + GWT, Rumah Genset, Bangunan IPAL, TPS dan Jalan Khusus Kompleks dicatat tersendiri sesuai kodefikasi BMN masing-masing.');
+            $rowIdx++;
+            $sheet->setCellValue('A' . $rowIdx, '- Baris berwarna kuning: aset pada format yang tidak terdapat dalam lingkup RAB Addendum V (nilai 0). Foto Barang terlampir otomatis dari dokumentasi fisik lapangan.');
+            $rowIdx++;
+        }
+
+        // Atur Lebar Kolom Sheet 1
+        $colWidths = [
+            'A' => 6,
+            'B' => 16,
+            'C' => 8,
+            'D' => 28,
+            'E' => 46,
+            'F' => 9,
+            'G' => 8,
+            'H' => 16,
+            'I' => 18,
+            'J' => 10,
+            'K' => 18, // Kolom Foto Barang
+            'L' => 22,
+            'M' => 38,
+        ];
+        foreach ($colWidths as $col => $w) {
+            $sheet->getColumnDimension($col)->setWidth($w);
+        }
+
+        // -------------------------------------------------------------
+        // SHEET 2: Dasar Perhitungan (Jika Ekspor Seluruh Aset)
+        // -------------------------------------------------------------
+        if ($filterLokasi === '' || $filterLokasi === '*') {
+            $sheet2 = $spreadsheet->createSheet();
+            $sheet2->setTitle('Dasar Perhitungan');
+
+            $sheet2->setCellValue('A1', 'DASAR PERHITUNGAN NILAI PEROLEHAN GEDUNG, BANGUNAN, JALAN DAN JARINGAN');
+            $sheet2->setCellValue('A2', 'Sumber: RAB Addendum V (Daftar Kuantitas dan Harga Addendum-5) Pembangunan Sekolah Rakyat Provinsi Riau; nilai sebelum PPN per sub pekerjaan, setelah dikurangi furnitur dan peralatan yang dicatat terpisah pada kelompok Peralatan dan Mesin.');
+            $sheet2->getStyle('A1')->getFont()->setBold(true)->setSize(11);
+
+            $sheet2->setCellValue('A4', 'Biaya umum yang dialokasikan proporsional (sebelum PPN)');
+            $sheet2->getStyle('A4')->getFont()->setBold(true);
+
+            $sheet2->setCellValue('A5', 'Kode');
+            $sheet2->setCellValue('B5', 'Uraian');
+            $sheet2->setCellValue('C5', 'Nilai (Rp)');
+            $sheet2->getStyle('A5:C5')->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F497D']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            ]);
+
+            $biayaUmumRows = [
+                ['A', 'SMKK (di luar APAR)', 529246583],
+                ['B.1', 'Pematangan Lahan', 4724406658],
+                ['B.2', 'Pekerjaan Persiapan', 585650000],
+                ['B.3', 'Mobilisasi/Demobilisasi Alat Berat', 111500000],
+                ['D.17', 'Pekerjaan Pengujian', 209900000],
+                ['E.16', 'Penyambungan Daya PLN & Perijinan', 316202500],
+            ];
+
+            $r2 = 6;
+            foreach ($biayaUmumRows as $bu) {
+                $sheet2->setCellValue('A' . $r2, $bu[0]);
+                $sheet2->setCellValue('B' . $r2, $bu[1]);
+                $sheet2->setCellValue('C' . $r2, $bu[2]);
+                $sheet2->getStyle('C' . $r2)->getNumberFormat()->setFormatCode('#,##0');
+                $sheet2->getStyle('A' . $r2 . ':C' . $r2)->applyFromArray($thinBorder);
+                $r2++;
+            }
+
+            $sheet2->setCellValue('B' . $r2, 'Jumlah biaya umum');
+            $sheet2->setCellValue('C' . $r2, 6476905741);
+            $sheet2->getStyle('B' . $r2 . ':C' . $r2)->applyFromArray([
+                'font' => ['bold' => true],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9E1F2']],
+            ]);
+            $sheet2->getStyle('C' . $r2)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet2->getStyle('A' . $r2 . ':C' . $r2)->applyFromArray($thinBorder);
+            $r2 += 2;
+
+            $sheet2->setCellValue('B' . $r2, 'Nilai kontrak Addendum V (dibulatkan, termasuk PPN)');
+            $sheet2->setCellValue('C' . $r2, 239445195000);
+            $sheet2->getStyle('C' . $r2)->getNumberFormat()->setFormatCode('#,##0');
+            $r2++;
+
+            $sheet2->setCellValue('B' . $r2, 'PPN');
+            $sheet2->setCellValue('C' . $r2, 0.11);
+            $sheet2->getStyle('C' . $r2)->getNumberFormat()->setFormatCode('0%');
+            $r2 += 2;
+
+            // Header Tabel Rincian 33 Aset
+            $headers2 = [
+                'A' . $r2 => 'No',
+                'B' . $r2 => 'Aset (Merk/Type/Spesifikasi)',
+                'C' . $r2 => 'Komponen RAB Addendum V',
+                'D' . $r2 => 'Jml',
+                'E' . $r2 => 'Sat',
+                'F' . $r2 => 'Nilai RAB sebelum PPN (Rp)',
+                'G' . $r2 => 'Alokasi Biaya Umum (Rp)',
+                'H' . $r2 => 'Subtotal (Rp)',
+                'I' . $r2 => 'PPN 11% (Rp)',
+                'J' . $r2 => 'Total termasuk PPN (Rp)',
+                'K' . $r2 => 'Nilai Perolehan per Unit (Rp)',
+                'L' . $r2 => 'Total Nilai Perolehan (Rp)',
+            ];
+            foreach ($headers2 as $cell => $val) {
+                $sheet2->setCellValue($cell, $val);
+            }
+            $sheet2->getStyle('A' . $r2 . ':L' . $r2)->applyFromArray([
+                'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F497D']],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            ]);
+            $sheet2->getRowDimension($r2)->setRowHeight(28);
+            $r2++;
+
+            $dasarItems = $this->dasarModel->orderBy('no_urut', 'ASC')->findAll();
+            foreach ($dasarItems as $d) {
+                $sheet2->setCellValue('A' . $r2, $d['no_urut']);
+                $sheet2->setCellValue('B' . $r2, $d['nama_aset']);
+                $sheet2->setCellValue('C' . $r2, $d['komponen_rab']);
+                $sheet2->setCellValue('D' . $r2, $d['jumlah']);
+                $sheet2->setCellValue('E' . $r2, $d['satuan']);
+                $sheet2->setCellValue('F' . $r2, $d['nilai_rab_sebelum_ppn']);
+                $sheet2->setCellValue('G' . $r2, $d['alokasi_biaya_umum']);
+                $sheet2->setCellValue('H' . $r2, $d['subtotal']);
+                $sheet2->setCellValue('I' . $r2, $d['ppn_11']);
+                $sheet2->setCellValue('J' . $r2, $d['total_termasuk_ppn']);
+                $sheet2->setCellValue('K' . $r2, $d['nilai_perolehan_per_unit']);
+                $sheet2->setCellValue('L' . $r2, $d['total_nilai_perolehan']);
+
+                $sheet2->getStyle('A' . $r2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet2->getStyle('D' . $r2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+                $sheet2->getStyle('E' . $r2)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet2->getStyle('F' . $r2 . ':L' . $r2)->getNumberFormat()->setFormatCode('#,##0');
+
+                if ((float) $d['total_nilai_perolehan'] == 0) {
+                    $sheet2->getStyle('A' . $r2 . ':L' . $r2)->applyFromArray([
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF2CC']],
+                    ]);
+                }
+
+                $sheet2->getStyle('A' . $r2 . ':L' . $r2)->applyFromArray($thinBorder);
+                $r2++;
+            }
+
+            // Atur Lebar Kolom Sheet 2
+            $s2Widths = [
+                'A' => 6,
+                'B' => 38,
+                'C' => 22,
+                'D' => 8,
+                'E' => 8,
+                'F' => 18,
+                'G' => 18,
+                'H' => 18,
+                'I' => 18,
+                'J' => 20,
+                'K' => 20,
+                'L' => 20,
+            ];
+            foreach ($s2Widths as $col => $w) {
+                $sheet2->getColumnDimension($col)->setWidth($w);
+            }
+        }
+
+        // Set Sheet Aktif kembali ke Sheet 1
+        $spreadsheet->setActiveSheetIndex(0);
+
         $writer = new Xlsx($spreadsheet);
-        $filename = 'Kertas_Kerja_BMN_Sekolah_Rakyat_' . date('Ymd_His') . '.xlsx';
+        $filename = 'Kertas_Kerja_Rincian_BMN_Sekolah_Rakyat_' . date('Ymd_His') . '.xlsx';
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
@@ -633,6 +993,39 @@ class InventarisSekolahRakyat extends BaseController
 
         $writer->save('php://output');
         exit;
+    }
+
+    /**
+     * Helper formatting nama kelompok BMN
+     */
+    private function getNamaKelompokClean(string $kelompok): string
+    {
+        $k = strtolower(trim($kelompok));
+        if (strpos($k, 'peralatan') !== false) {
+            return 'Peralatan dan Mesin';
+        }
+        if (strpos($k, 'gedung') !== false) {
+            return 'Gedung dan Bangunan';
+        }
+        if (strpos($k, 'jalan') !== false || strpos($k, 'jaringan') !== false) {
+            return 'Jalan, Irigasi dan Jaringan';
+        }
+        return $kelompok;
+    }
+
+    private function getKelompokRomawi(string $kelompok): string
+    {
+        $k = strtolower(trim($kelompok));
+        if (strpos($k, 'peralatan') !== false) {
+            return 'I.';
+        }
+        if (strpos($k, 'gedung') !== false) {
+            return 'II.';
+        }
+        if (strpos($k, 'jalan') !== false || strpos($k, 'jaringan') !== false) {
+            return 'III.';
+        }
+        return '';
     }
 
     /**
