@@ -118,13 +118,12 @@ class BmnSekolahRakyatModel extends Model
     public function getMaterialListPerLokasi(string $lokasi): array
     {
         $trimLokasi = trim($lokasi);
-        if ($trimLokasi === '') {
-            return [];
+        $builder = $this->select('jenis_bmn, COUNT(id) AS total_item');
+        if ($trimLokasi !== '' && $trimLokasi !== '*' && $trimLokasi !== 'all') {
+            $builder->where('lokasi', $trimLokasi);
         }
 
-        return $this->where('lokasi', $trimLokasi)
-            ->select('jenis_bmn, COUNT(id) AS total_item')
-            ->groupBy('jenis_bmn')
+        return $builder->groupBy('jenis_bmn')
             ->orderBy('jenis_bmn', 'ASC')
             ->findAll();
     }

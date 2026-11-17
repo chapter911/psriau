@@ -398,21 +398,13 @@ class BmnSekolahRakyat extends BaseController
         }
 
         $lokasiStats = $this->bmnModel->getStatistikFotoPerLokasi();
-        $defaultLokasi = ! empty($lokasiStats) ? $lokasiStats[0]['lokasi'] : '';
 
-        $filterLokasi   = trim((string) $this->request->getGet('lokasi')) ?: $defaultLokasi;
+        $filterLokasi   = trim((string) $this->request->getGet('lokasi'));
         $filterMaterial = trim((string) $this->request->getGet('material'));
         $filterStatus   = trim((string) $this->request->getGet('status_foto'));
 
-        $materialList = [];
-        if ($filterLokasi !== '') {
-            $materialList = $this->bmnModel->getMaterialListPerLokasi($filterLokasi);
-        }
-
-        $items = [];
-        if ($filterLokasi !== '') {
-            $items = $this->bmnModel->getItemsForFoto($filterLokasi, $filterMaterial, $filterStatus);
-        }
+        $materialList = $this->bmnModel->getMaterialListPerLokasi($filterLokasi);
+        $items = $this->bmnModel->getItemsForFoto($filterLokasi, $filterMaterial, $filterStatus);
 
         $permissions = [
             'can_add'    => ApiAuth::hasMenuAccess(self::MENU_FOTO_LINK, 'add'),

@@ -282,32 +282,20 @@ class InventarisSekolahRakyat extends BaseController
         $filterLokasi   = trim((string) $this->request->getGet('lokasi'));
         $filterMaterial = trim((string) $this->request->getGet('material'));
         $filterStatus   = trim((string) $this->request->getGet('status_foto'));
+        $viewMode       = trim((string) $this->request->getGet('view')) ?: 'grid';
 
-        // Jika filter lokasi kosong, default ke lokasi pertama
-        if ($filterLokasi === '' && ! empty($lokasiStats)) {
-            $filterLokasi = $lokasiStats[0]['lokasi'];
-        }
-
-        // Ambil daftar material/jenis barang yang ada di lokasi gedung ini
-        $materialList = [];
-        if ($filterLokasi !== '') {
-            $materialList = $this->bmnModel
-                ->where('lokasi', $filterLokasi)
-                ->select('jenis_bmn, COUNT(id) AS total_item')
-                ->groupBy('jenis_bmn')
-                ->orderBy('jenis_bmn', 'ASC')
-                ->findAll();
-        }
+        // Ambil daftar material/jenis barang (seluruh lokasi jika filter kosong)
+        $materialList   = $this->bmnModel->getMaterialListPerLokasi($filterLokasi);
 
         $builder = $this->bmnModel->builder()
             ->select('trn_bmn_sekolah_rakyat.*, COUNT(f.id) AS foto_count')
             ->join('trn_bmn_sekolah_rakyat_foto f', 'f.bmn_id = trn_bmn_sekolah_rakyat.id', 'left')
             ->groupBy('trn_bmn_sekolah_rakyat.id');
 
-        if ($filterLokasi !== '' && $filterLokasi !== '*') {
+        if ($filterLokasi !== '' && $filterLokasi !== '*' && $filterLokasi !== 'all') {
             $builder->where('trn_bmn_sekolah_rakyat.lokasi', $filterLokasi);
         }
-        if ($filterMaterial !== '' && $filterMaterial !== '*') {
+        if ($filterMaterial !== '' && $filterMaterial !== '*' && $filterMaterial !== 'all') {
             $builder->where('trn_bmn_sekolah_rakyat.jenis_bmn', $filterMaterial);
         }
         if ($filterStatus === 'sudah') {
@@ -316,7 +304,8 @@ class InventarisSekolahRakyat extends BaseController
             $builder->having('foto_count =', 0);
         }
 
-        $items = $builder->orderBy('trn_bmn_sekolah_rakyat.jenis_bmn', 'ASC')
+        $items = $builder->orderBy('trn_bmn_sekolah_rakyat.lokasi', 'ASC')
+            ->orderBy('trn_bmn_sekolah_rakyat.jenis_bmn', 'ASC')
             ->orderBy('trn_bmn_sekolah_rakyat.no_urut', 'ASC')
             ->get()->getResultArray();
 
@@ -338,6 +327,7 @@ class InventarisSekolahRakyat extends BaseController
             'filterLokasi'   => $filterLokasi,
             'filterMaterial' => $filterMaterial,
             'filterStatus'   => $filterStatus,
+            'viewMode'       => $viewMode,
             'materialList'   => $materialList,
             'items'          => $items,
             'fotosByItem'    => $fotosByItem,

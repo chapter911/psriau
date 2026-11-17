@@ -95,6 +95,18 @@
         </div>
     </div>
 
+    <?php if (! empty($filterLokasi) && $filterLokasi !== '*'): ?>
+        <div class="alert alert-info py-2 px-3 mb-3 d-flex justify-content-between align-items-center shadow-sm" style="border-radius: 8px;">
+            <div>
+                <i class="fas fa-building text-primary mr-1"></i>
+                Filter Lokasi Aktif: <strong class="text-dark"><?= esc($filterLokasi); ?></strong> (<?= count($items); ?> Item)
+            </div>
+            <a href="<?= site_url('admin/inventaris/sekolah-rakyat/barang'); ?>" class="btn btn-xs btn-light font-weight-bold shadow-sm border">
+                <i class="fas fa-globe mr-1"></i> Tampilkan Seluruh Lokasi
+            </a>
+        </div>
+    <?php endif; ?>
+
     <!-- Main Data Table Card -->
     <div class="card shadow-sm" style="border: 1px solid #e9eef5; border-radius: 12px; overflow: hidden;">
         <div class="card-header bg-white py-3" style="border-bottom: 1px solid #e9eef5;">
