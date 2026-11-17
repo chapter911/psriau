@@ -625,7 +625,6 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/sekolah-rakyat/barang/tambah', 'Admin\InventarisSekolahRakyat::tambahBarang');
 	$routes->post('inventaris/sekolah-rakyat/barang/(:num)/ubah', 'Admin\InventarisSekolahRakyat::ubahBarang/$1');
 	$routes->post('inventaris/sekolah-rakyat/barang/(:num)/hapus', 'Admin\InventarisSekolahRakyat::hapusBarang/$1');
-	$routes->post('inventaris/sekolah-rakyat/barang/(:num)/update-nup', 'Admin\InventarisSekolahRakyat::updateNupAjax/$1');
 	$routes->get('inventaris/sekolah-rakyat/barang/export-excel', 'Admin\InventarisSekolahRakyat::exportExcel');
 	$routes->post('inventaris/sekolah-rakyat/barang/import-excel', 'Admin\InventarisSekolahRakyat::importExcel');
 	$routes->get('inventaris/sekolah-rakyat/barang/(:num)/detail', 'Admin\InventarisSekolahRakyat::detailBarangAjax/$1');
@@ -763,7 +762,6 @@ $routes->group('api', static function ($routes): void {
             $routes->post('barang', 'Api\BmnSekolahRakyat::tambahBarang');
             $routes->post('barang/(:num)/update', 'Api\BmnSekolahRakyat::ubahBarang/$1');
             $routes->post('barang/(:num)/delete', 'Api\BmnSekolahRakyat::hapusBarang/$1');
-            $routes->post('barang/(:num)/update-nup', 'Api\BmnSekolahRakyat::updateNup/$1');
             $routes->get('foto', 'Api\BmnSekolahRakyat::foto');
             $routes->post('foto/(:num)/upload', 'Api\BmnSekolahRakyat::uploadFoto/$1');
             $routes->post('foto/(:num)/delete', 'Api\BmnSekolahRakyat::hapusFoto/$1');

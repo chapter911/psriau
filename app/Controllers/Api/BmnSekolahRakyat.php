@@ -147,7 +147,6 @@ class BmnSekolahRakyat extends BaseController
         if ($keyword !== '') {
             $builder->groupStart()
                 ->like('trn_bmn_sekolah_rakyat.kode_bmn', $keyword)
-                ->orLike('trn_bmn_sekolah_rakyat.nup', $keyword)
                 ->orLike('trn_bmn_sekolah_rakyat.jenis_bmn', $keyword)
                 ->orLike('trn_bmn_sekolah_rakyat.spesifikasi', $keyword)
                 ->orLike('trn_bmn_sekolah_rakyat.lokasi', $keyword)
@@ -237,7 +236,6 @@ class BmnSekolahRakyat extends BaseController
         $lokasi   = trim((string) ($input['lokasi'] ?? ''));
         $spek     = trim((string) ($input['spesifikasi'] ?? ''));
         $satuan   = trim((string) ($input['satuan'] ?? '')) ?: 'Unit';
-        $nup      = trim((string) ($input['nup'] ?? '')) ?: null;
         $kondisi  = trim((string) ($input['kondisi'] ?? '')) ?: 'Baik';
         $ket      = trim((string) ($input['keterangan'] ?? '')) ?: null;
 
@@ -261,7 +259,6 @@ class BmnSekolahRakyat extends BaseController
             'kelompok_bmn'          => $kelompok,
             'no_urut'               => $nextNo,
             'kode_bmn'              => $kodeBmn,
-            'nup'                   => $nup,
             'jenis_bmn'             => $jenisBmn,
             'spesifikasi'           => $spek,
             'jumlah'                => $jumlah,
@@ -314,7 +311,6 @@ class BmnSekolahRakyat extends BaseController
         $lokasi   = trim((string) ($input['lokasi'] ?? '')) ?: $existing['lokasi'];
         $spek     = isset($input['spesifikasi']) ? trim((string) $input['spesifikasi']) : $existing['spesifikasi'];
         $satuan   = trim((string) ($input['satuan'] ?? '')) ?: $existing['satuan'];
-        $nup      = isset($input['nup']) ? (trim((string) $input['nup']) ?: null) : $existing['nup'];
         $kondisi  = trim((string) ($input['kondisi'] ?? '')) ?: $existing['kondisi'];
         $ket      = isset($input['keterangan']) ? (trim((string) $input['keterangan']) ?: null) : $existing['keterangan'];
 
@@ -326,7 +322,6 @@ class BmnSekolahRakyat extends BaseController
         $updateData = [
             'kelompok_bmn'          => $kelompok,
             'kode_bmn'              => $kodeBmn,
-            'nup'                   => $nup,
             'jenis_bmn'             => $jenisBmn,
             'spesifikasi'           => $spek,
             'jumlah'                => $jumlah,
@@ -386,39 +381,6 @@ class BmnSekolahRakyat extends BaseController
         return $this->response->setJSON([
             'status'  => 'success',
             'message' => 'Barang BMN dan seluruh fotonya berhasil dihapus.',
-        ]);
-    }
-
-    /**
-     * Update NUP Cepat
-     * URL: POST /api/bmn-sekolah-rakyat/barang/{id}/update-nup
-     */
-    public function updateNup(int $id)
-    {
-        if (! ApiAuth::hasMenuAccess(self::MENU_BARANG_LINK, 'edit')) {
-            return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
-                'status'  => 'error',
-                'message' => 'Akses ditolak: Anda tidak memiliki izin mengedit data.',
-            ]);
-        }
-
-        $existing = $this->bmnModel->find($id);
-        if (! $existing) {
-            return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
-                'status'  => 'error',
-                'message' => 'Data barang tidak ditemukan.',
-            ]);
-        }
-
-        $input = $this->request->getJSON(true) ?: $this->request->getPost();
-        $nup = trim((string) ($input['nup'] ?? ''));
-
-        $this->bmnModel->update($id, ['nup' => $nup ?: null]);
-
-        return $this->response->setJSON([
-            'status'  => 'success',
-            'message' => 'NUP berhasil diperbarui.',
-            'nup'     => $nup ?: null,
         ]);
     }
 
@@ -548,9 +510,6 @@ class BmnSekolahRakyat extends BaseController
             }
 
             $notes = $bmn['jenis_bmn'] . "\n" . ($bmn['spesifikasi'] ?: '') . "\nLokasi: " . $bmn['lokasi'] . " | " . $judulFoto;
-            if (! empty($bmn['nup'])) {
-                $notes .= " | NUP: " . $bmn['nup'];
-            }
 
             $wmService = new TimeMarkWatermarkService();
             $wmRes = $wmService->processImage($origPath, [

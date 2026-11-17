@@ -75,7 +75,6 @@ class InventarisSekolahRakyat extends BaseController
         if ($keyword !== '') {
             $builder->groupStart()
                 ->like('trn_bmn_sekolah_rakyat.kode_bmn', $keyword)
-                ->orLike('trn_bmn_sekolah_rakyat.nup', $keyword)
                 ->orLike('trn_bmn_sekolah_rakyat.jenis_bmn', $keyword)
                 ->orLike('trn_bmn_sekolah_rakyat.spesifikasi', $keyword)
                 ->orLike('trn_bmn_sekolah_rakyat.lokasi', $keyword)
@@ -127,7 +126,6 @@ class InventarisSekolahRakyat extends BaseController
         $lokasi   = trim((string) $this->request->getPost('lokasi'));
         $spek     = trim((string) $this->request->getPost('spesifikasi'));
         $satuan   = trim((string) $this->request->getPost('satuan')) ?: 'Unit';
-        $nup      = trim((string) $this->request->getPost('nup')) ?: null;
         $kondisi  = trim((string) $this->request->getPost('kondisi')) ?: 'Baik';
         $ket      = trim((string) $this->request->getPost('keterangan')) ?: null;
 
@@ -143,7 +141,6 @@ class InventarisSekolahRakyat extends BaseController
             'kelompok_bmn'          => $kelompok,
             'no_urut'               => $nextNo,
             'kode_bmn'              => $kodeBmn,
-            'nup'                   => $nup,
             'jenis_bmn'             => $jenisBmn,
             'spesifikasi'           => $spek,
             'jumlah'                => $jumlah,
@@ -182,7 +179,6 @@ class InventarisSekolahRakyat extends BaseController
         $lokasi   = trim((string) $this->request->getPost('lokasi')) ?: $existing['lokasi'];
         $spek     = trim((string) $this->request->getPost('spesifikasi'));
         $satuan   = trim((string) $this->request->getPost('satuan')) ?: $existing['satuan'];
-        $nup      = trim((string) $this->request->getPost('nup')) ?: null;
         $kondisi  = trim((string) $this->request->getPost('kondisi')) ?: $existing['kondisi'];
         $ket      = trim((string) $this->request->getPost('keterangan')) ?: null;
 
@@ -194,7 +190,6 @@ class InventarisSekolahRakyat extends BaseController
         $updateData = [
             'kelompok_bmn'          => $kelompok,
             'kode_bmn'              => $kodeBmn,
-            'nup'                   => $nup,
             'jenis_bmn'             => $jenisBmn,
             'spesifikasi'           => $spek,
             'jumlah'                => $jumlah,
@@ -252,22 +247,6 @@ class InventarisSekolahRakyat extends BaseController
         }
 
         return redirect()->to(site_url(self::MENU_BARANG_LINK))->with('success', 'Barang BMN berhasil dihapus.');
-    }
-
-    /**
-     * Update NUP Cepat via AJAX
-     */
-    public function updateNupAjax(int $id)
-    {
-        $permissions = $this->resolveMenuPermissions(self::MENU_BARANG_LINK);
-        if (! ($permissions['edit'] ?? false)) {
-            return $this->response->setJSON(['success' => false, 'error' => 'Akses ditolak.']);
-        }
-
-        $nup = trim((string) $this->request->getPost('nup'));
-        $this->bmnModel->update($id, ['nup' => $nup ?: null]);
-
-        return $this->response->setJSON(['success' => true, 'message' => 'NUP berhasil diperbarui.']);
     }
 
     /**
@@ -428,9 +407,6 @@ class InventarisSekolahRakyat extends BaseController
 
         // Watermark Note
         $notes = $bmn['jenis_bmn'] . "\n" . ($bmn['spesifikasi'] ?: '') . "\nLokasi: " . $bmn['lokasi'] . " | " . $judulFoto;
-        if (! empty($bmn['nup'])) {
-            $notes .= " | NUP: " . $bmn['nup'];
-        }
 
         // Apply TimeMark Watermark
         $wmService = new TimeMarkWatermarkService();
@@ -580,28 +556,27 @@ class InventarisSekolahRakyat extends BaseController
         $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(12);
         $sheet->getStyle('A2:A7')->getFont()->setBold(true);
 
-        // Header Tabel Kolom (Baris 9) - 13 Kolom Lengkap
+        // Header Tabel Kolom (Baris 9) - 12 Kolom Lengkap
         $headers = [
             'A9' => 'No',
             'B9' => 'Kode BMN',
-            'C9' => 'NUP',
-            'D9' => 'Jenis BMN',
-            'E9' => 'Merk / Type / Spesifikasi Material Teknis',
-            'F9' => 'Jml',
-            'G9' => 'Sat',
-            'H9' => 'Nilai Perolehan (Rp)',
-            'I9' => 'Total Nilai Perolehan (Rp)',
-            'J9' => 'Kondisi',
-            'K9' => 'Foto Barang',
-            'L9' => 'Lokasi',
-            'M9' => 'Keterangan',
+            'C9' => 'Jenis BMN',
+            'D9' => 'Merk / Type / Spesifikasi Material Teknis',
+            'E9' => 'Jml',
+            'F9' => 'Sat',
+            'G9' => 'Nilai Perolehan (Rp)',
+            'H9' => 'Total Nilai Perolehan (Rp)',
+            'I9' => 'Kondisi',
+            'J9' => 'Foto Barang',
+            'K9' => 'Lokasi',
+            'L9' => 'Keterangan',
         ];
 
         foreach ($headers as $cell => $val) {
             $sheet->setCellValue($cell, $val);
         }
 
-        $sheet->getStyle('A9:M9')->applyFromArray([
+        $sheet->getStyle('A9:L9')->applyFromArray([
             'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F497D']],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
@@ -645,14 +620,14 @@ class InventarisSekolahRakyat extends BaseController
             if ($it['kelompok_bmn'] !== $currentKelompok) {
                 // Tulis Subtotal kelompok sebelumnya jika ada
                 if ($currentKelompok !== '' && ($filterLokasi === '' || $filterLokasi === '*')) {
-                    $sheet->setCellValue('E' . $rowIdx, 'Jumlah ' . $this->getNamaKelompokClean($currentKelompok));
-                    $sheet->setCellValue('I' . $rowIdx, $kelompokTotal);
-                    $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+                    $sheet->setCellValue('D' . $rowIdx, 'Jumlah ' . $this->getNamaKelompokClean($currentKelompok));
+                    $sheet->setCellValue('H' . $rowIdx, $kelompokTotal);
+                    $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray([
                         'font' => ['bold' => true],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
                     ]);
-                    $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
-                    $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+                    $sheet->getStyle('H' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+                    $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray($thinBorder);
                     $rowIdx++;
                 }
 
@@ -662,11 +637,11 @@ class InventarisSekolahRakyat extends BaseController
                 // Header Kelompok
                 $sheet->setCellValue('A' . $rowIdx, $this->getKelompokRomawi($currentKelompok));
                 $sheet->setCellValue('B' . $rowIdx, strtoupper($currentKelompok));
-                $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+                $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '000000']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9E1F2']],
                 ]);
-                $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+                $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray($thinBorder);
                 $rowIdx++;
             }
 
@@ -676,34 +651,32 @@ class InventarisSekolahRakyat extends BaseController
             // Data Cells
             $sheet->setCellValue('A' . $rowIdx, $it['no_urut']);
             $sheet->setCellValue('B' . $rowIdx, $it['kode_bmn']);
-            $sheet->setCellValue('C' . $rowIdx, $it['nup'] ?: '');
-            $sheet->setCellValue('D' . $rowIdx, $it['jenis_bmn']);
-            $sheet->setCellValue('E' . $rowIdx, $it['spesifikasi']);
-            $sheet->setCellValue('F' . $rowIdx, $it['jumlah']);
-            $sheet->setCellValue('G' . $rowIdx, $it['satuan']);
-            $sheet->setCellValue('H' . $rowIdx, $it['nilai_perolehan']);
-            $sheet->setCellValue('I' . $rowIdx, $it['total_nilai_perolehan']);
-            $sheet->setCellValue('J' . $rowIdx, $it['kondisi'] ?: 'Baik');
-            $sheet->setCellValue('L' . $rowIdx, $it['lokasi']);
-            $sheet->setCellValue('M' . $rowIdx, $it['keterangan'] ?: '');
+            $sheet->setCellValue('C' . $rowIdx, $it['jenis_bmn']);
+            $sheet->setCellValue('D' . $rowIdx, $it['spesifikasi']);
+            $sheet->setCellValue('E' . $rowIdx, $it['jumlah']);
+            $sheet->setCellValue('F' . $rowIdx, $it['satuan']);
+            $sheet->setCellValue('G' . $rowIdx, $it['nilai_perolehan']);
+            $sheet->setCellValue('H' . $rowIdx, $it['total_nilai_perolehan']);
+            $sheet->setCellValue('I' . $rowIdx, $it['kondisi'] ?: 'Baik');
+            $sheet->setCellValue('K' . $rowIdx, $it['lokasi']);
+            $sheet->setCellValue('L' . $rowIdx, $it['keterangan'] ?: '');
 
             // Formatting Angka & Perataan
             $sheet->getStyle('A' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('B' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('C' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('F' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-            $sheet->getStyle('G' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('J' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('H' . $rowIdx . ':I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('E' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+            $sheet->getStyle('F' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('I' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('G' . $rowIdx . ':H' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
 
             // Baris Kuning untuk item nilai 0 (seperti Gedung UKS dan Gudang sesuai format asli)
             if ((float) $it['total_nilai_perolehan'] == 0) {
-                $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+                $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray([
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FFF2CC']],
                 ]);
             }
 
-            // SEMATKAN FOTO BARANG DI KOLOM K
+            // SEMATKAN FOTO BARANG DI KOLOM J
             $hasDrawing = false;
             if (! empty($fotosByItem[$it['id']])) {
                 $firstFoto = $fotosByItem[$it['id']][0];
@@ -721,7 +694,7 @@ class InventarisSekolahRakyat extends BaseController
                         $drawing->setDescription($it['jenis_bmn'] . ' - ' . $it['spesifikasi']);
                         $drawing->setPath($imgPath);
                         $drawing->setHeight(65);
-                        $drawing->setCoordinates('K' . $rowIdx);
+                        $drawing->setCoordinates('J' . $rowIdx);
                         $drawing->setOffsetX(8);
                         $drawing->setOffsetY(4);
                         $drawing->setWorksheet($sheet);
@@ -734,48 +707,48 @@ class InventarisSekolahRakyat extends BaseController
             }
 
             if (! $hasDrawing) {
-                $sheet->setCellValue('K' . $rowIdx, '-');
-                $sheet->getStyle('K' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+                $sheet->setCellValue('J' . $rowIdx, '-');
+                $sheet->getStyle('J' . $rowIdx)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
                 $sheet->getRowDimension($rowIdx)->setRowHeight(22);
             }
 
-            $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+            $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray($thinBorder);
             $rowIdx++;
         }
 
         // Subtotal kelompok terakhir
         if ($currentKelompok !== '' && ($filterLokasi === '' || $filterLokasi === '*')) {
-            $sheet->setCellValue('E' . $rowIdx, 'Jumlah ' . $this->getNamaKelompokClean($currentKelompok));
-            $sheet->setCellValue('I' . $rowIdx, $kelompokTotal);
-            $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+            $sheet->setCellValue('D' . $rowIdx, 'Jumlah ' . $this->getNamaKelompokClean($currentKelompok));
+            $sheet->setCellValue('H' . $rowIdx, $kelompokTotal);
+            $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray([
                 'font' => ['bold' => true],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F2F2F2']],
             ]);
-            $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
-            $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+            $sheet->getStyle('H' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray($thinBorder);
             $rowIdx++;
         }
 
         // TOTAL, KONTROL & SELISIH
         $sheet->setCellValue('A' . $rowIdx, 'TOTAL');
-        $sheet->setCellValue('I' . $rowIdx, $grandTotal);
-        $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray([
+        $sheet->setCellValue('H' . $rowIdx, $grandTotal);
+        $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray([
             'font' => ['bold' => true],
             'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9E1F2']],
         ]);
-        $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
-        $sheet->getStyle('A' . $rowIdx . ':M' . $rowIdx)->applyFromArray($thinBorder);
+        $sheet->getStyle('H' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+        $sheet->getStyle('A' . $rowIdx . ':L' . $rowIdx)->applyFromArray($thinBorder);
         $rowIdx++;
 
         if ($filterLokasi === '' || $filterLokasi === '*') {
-            $sheet->setCellValue('E' . $rowIdx, 'Kontrol: nilai kontrak Addendum V (dibulatkan)');
-            $sheet->setCellValue('I' . $rowIdx, 239445195000);
-            $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->setCellValue('D' . $rowIdx, 'Kontrol: nilai kontrak Addendum V (dibulatkan)');
+            $sheet->setCellValue('H' . $rowIdx, 239445195000);
+            $sheet->getStyle('H' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
             $rowIdx++;
 
-            $sheet->setCellValue('E' . $rowIdx, 'Selisih');
-            $sheet->setCellValue('I' . $rowIdx, $grandTotal - 239445195000);
-            $sheet->getStyle('I' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
+            $sheet->setCellValue('D' . $rowIdx, 'Selisih');
+            $sheet->setCellValue('H' . $rowIdx, $grandTotal - 239445195000);
+            $sheet->getStyle('H' . $rowIdx)->getNumberFormat()->setFormatCode('#,##0');
             $rowIdx += 2;
 
             // LEMBAR TANDA TANGAN 3 PIHAK
@@ -823,21 +796,20 @@ class InventarisSekolahRakyat extends BaseController
             $rowIdx++;
         }
 
-        // Atur Lebar Kolom Sheet 1
+        // Atur Lebar Kolom Sheet 1 (12 Kolom)
         $colWidths = [
             'A' => 6,
             'B' => 16,
-            'C' => 8,
-            'D' => 28,
-            'E' => 46,
-            'F' => 9,
-            'G' => 8,
-            'H' => 16,
-            'I' => 18,
-            'J' => 10,
-            'K' => 18, // Kolom Foto Barang
-            'L' => 22,
-            'M' => 38,
+            'C' => 28,
+            'D' => 46,
+            'E' => 9,
+            'F' => 8,
+            'G' => 16,
+            'H' => 18,
+            'I' => 10,
+            'J' => 18, // Kolom Foto Barang
+            'K' => 22,
+            'L' => 38,
         ];
         foreach ($colWidths as $col => $w) {
             $sheet->getColumnDimension($col)->setWidth($w);

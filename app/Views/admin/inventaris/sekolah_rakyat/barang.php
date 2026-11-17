@@ -472,7 +472,6 @@ $(document).ready(function() {
                     $('#detailModalTitle').html('<i class="fas fa-boxes mr-1"></i> ' + (it.jenis_bmn || 'Detail'));
                     $('#dtl_kelompok').text(it.kelompok_bmn || '-');
                     $('#dtl_kode').text(it.kode_bmn || '-');
-                    $('#dtl_nup').text(it.nup || '-');
                     $('#dtl_jenis').text(it.jenis_bmn || '-');
                     $('#dtl_spek').text(it.spesifikasi || '-');
                     $('#dtl_volume').text((it.jumlah || 1) + ' ' + (it.satuan || ''));
@@ -514,7 +513,6 @@ $(document).ready(function() {
         $('#edit_kelompok').val(it.kelompok_bmn);
         $('#edit_kode_bmn').val(it.kode_bmn);
         $('#edit_jenis_bmn').val(it.jenis_bmn);
-        $('#edit_nup').val(it.nup);
         $('#edit_spesifikasi').val(it.spesifikasi);
         $('#edit_jumlah').val(it.jumlah);
         $('#edit_satuan').val(it.satuan);
