@@ -189,20 +189,24 @@ class InventarisPenempatan extends BaseController
                     $asli2 = ! empty($p['foto_asli_2']) ? base_url($p['foto_asli_2']) : '';
                     $asli3 = ! empty($p['foto_asli_3']) ? base_url($p['foto_asli_3']) : '';
                     $asli4 = ! empty($p['foto_asli_4']) ? base_url($p['foto_asli_4']) : '';
+                    $asli5 = ! empty($p['foto_asli_5']) ? base_url($p['foto_asli_5']) : '';
                     $wm1   = ! empty($p['foto_wm_1']) ? base_url($p['foto_wm_1']) : '';
                     $wm2   = ! empty($p['foto_wm_2']) ? base_url($p['foto_wm_2']) : '';
                     $wm3   = ! empty($p['foto_wm_3']) ? base_url($p['foto_wm_3']) : '';
                     $wm4   = ! empty($p['foto_wm_4']) ? base_url($p['foto_wm_4']) : '';
+                    $wm5   = ! empty($p['foto_wm_5']) ? base_url($p['foto_wm_5']) : '';
 
                     $fotoBtn = '<button type="button" class="btn btn-xs btn-outline-primary mr-1 btn-view-foto" '
                              . 'data-asli-1="' . esc($asli1, 'attr') . '" '
                              . 'data-asli-2="' . esc($asli2, 'attr') . '" '
                              . 'data-asli-3="' . esc($asli3, 'attr') . '" '
                              . 'data-asli-4="' . esc($asli4, 'attr') . '" '
+                             . 'data-asli-5="' . esc($asli5, 'attr') . '" '
                              . 'data-wm-1="' . esc($wm1, 'attr') . '" '
                              . 'data-wm-2="' . esc($wm2, 'attr') . '" '
                              . 'data-wm-3="' . esc($wm3, 'attr') . '" '
                              . 'data-wm-4="' . esc($wm4, 'attr') . '" '
+                             . 'data-wm-5="' . esc($wm5, 'attr') . '" '
                              . 'data-title="' . esc($it['nama_barang'], 'attr') . '" '
                              . 'title="Lihat Foto Dokumentasi">'
                              . '<i class="fas fa-images"></i>'
@@ -409,6 +413,7 @@ class InventarisPenempatan extends BaseController
             'foto_asli_2'        => $fotoPaths[1] ?? null,
             'foto_asli_3'        => $fotoPaths[2] ?? null,
             'foto_asli_4'        => $fotoPaths[3] ?? null,
+            'foto_asli_5'        => $fotoPaths[4] ?? null,
             'created_at'         => date('Y-m-d H:i:s'),
             'updated_at'         => date('Y-m-d H:i:s'),
             'created_by'         => session()->get('id_user') ?? session()->get('user_id'),
@@ -463,7 +468,7 @@ class InventarisPenempatan extends BaseController
         $formattedHistory = [];
         foreach ($histories as $h) {
             $fotos = [];
-            for ($k = 1; $k <= 4; $k++) {
+            for ($k = 1; $k <= 5; $k++) {
                 if (! empty($h['foto_wm_' . $k])) {
                     $fotos[] = $h['foto_wm_' . $k];
                 } elseif (! empty($h['foto_asli_' . $k])) {
@@ -632,10 +637,12 @@ class InventarisPenempatan extends BaseController
             'foto_asli_2'        => $lastPenempatan['foto_asli_2'] ?? null,
             'foto_asli_3'        => $lastPenempatan['foto_asli_3'] ?? null,
             'foto_asli_4'        => $lastPenempatan['foto_asli_4'] ?? null,
+            'foto_asli_5'        => $lastPenempatan['foto_asli_5'] ?? null,
             'foto_wm_1'          => $lastPenempatan['foto_wm_1'] ?? null,
             'foto_wm_2'          => $lastPenempatan['foto_wm_2'] ?? null,
             'foto_wm_3'          => $lastPenempatan['foto_wm_3'] ?? null,
             'foto_wm_4'          => $lastPenempatan['foto_wm_4'] ?? null,
+            'foto_wm_5'          => $lastPenempatan['foto_wm_5'] ?? null,
             'created_at'         => $now,
             'updated_at'         => $now,
             'created_by'         => session()->get('id_user') ?? session()->get('user_id'),

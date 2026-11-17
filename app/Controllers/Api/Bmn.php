@@ -70,7 +70,7 @@ class Bmn extends BaseController
                 if (! isset($fotoMap[$invId])) {
                     $asli = [];
                     $wm = [];
-                    for ($i = 1; $i <= 4; $i++) {
+                    for ($i = 1; $i <= 5; $i++) {
                         if (! empty($p['foto_asli_' . $i])) {
                             $asli[] = base_url($p['foto_asli_' . $i]);
                         }
@@ -390,7 +390,7 @@ class Bmn extends BaseController
         $fotoAsliPaths = [];
         $fotoWmPaths   = [];
 
-        for ($i = 0; $i < 4; $i++) {
+        for ($i = 0; $i < 5; $i++) {
             $fileAsli = $this->request->getFile('foto_asli_' . $i);
             if ($fileAsli && $fileAsli->isValid() && ! $fileAsli->hasMoved()) {
                 $newNameAsli = 'asli_' . $bmnId . '_' . time() . '_' . $i . '.' . $fileAsli->getExtension();
@@ -423,10 +423,12 @@ class Bmn extends BaseController
             'foto_asli_2'        => $fotoAsliPaths[2] ?? null,
             'foto_asli_3'        => $fotoAsliPaths[3] ?? null,
             'foto_asli_4'        => $fotoAsliPaths[4] ?? null,
+            'foto_asli_5'        => $fotoAsliPaths[5] ?? null,
             'foto_wm_1'          => $fotoWmPaths[1] ?? null,
             'foto_wm_2'          => $fotoWmPaths[2] ?? null,
             'foto_wm_3'          => $fotoWmPaths[3] ?? null,
             'foto_wm_4'          => $fotoWmPaths[4] ?? null,
+            'foto_wm_5'          => $fotoWmPaths[5] ?? null,
             'created_at'         => $now,
             'updated_at'         => $now,
         ];

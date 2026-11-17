@@ -254,9 +254,10 @@ class InventarisPemeliharaan extends BaseController
                 'foto_atas'     => null,
                 'foto_bawah'    => null,
                 'foto_belakang' => null,
+                'foto_nup'      => null,
             ];
 
-            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $pos) {
                 $base64Input = $this->request->getPost('foto_base64_' . $kKey . '_' . str_replace('foto_', '', $pos));
                 if (! empty($base64Input) && strpos($base64Input, 'data:image') === 0) {
                     $savedRelPath = $this->saveBase64Image($base64Input, $pemeliharaanId, $kKey, $pos, $uploadDir);
@@ -285,6 +286,7 @@ class InventarisPemeliharaan extends BaseController
                 'foto_atas'       => $fotoPaths['foto_atas'],
                 'foto_bawah'      => $fotoPaths['foto_bawah'],
                 'foto_belakang'   => $fotoPaths['foto_belakang'],
+                'foto_nup'        => $fotoPaths['foto_nup'],
                 'urutan'          => $fIndex++,
             ]);
         }
@@ -446,7 +448,7 @@ class InventarisPemeliharaan extends BaseController
         // Hapus foto dari kelompok yang tidak digunakan lagi
         foreach ($oldFotoByGroup as $oldKey => $oldRow) {
             if (! in_array($oldKey, $newGroupKeys, true)) {
-                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $pos) {
                     if (! empty($oldRow[$pos])) {
                         $fullOld = FCPATH . ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $oldRow[$pos]), DIRECTORY_SEPARATOR);
                         if (is_file($fullOld)) {
@@ -468,9 +470,10 @@ class InventarisPemeliharaan extends BaseController
                 'foto_atas'     => $existingFoto['foto_atas'] ?? null,
                 'foto_bawah'    => $existingFoto['foto_bawah'] ?? null,
                 'foto_belakang' => $existingFoto['foto_belakang'] ?? null,
+                'foto_nup'      => $existingFoto['foto_nup'] ?? null,
             ];
 
-            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $pos) {
                 // Cek jika ada request hapus foto lama via hidden input 'hapus_foto_{kKey}_{pos}'
                 $hapusCheck = $this->request->getPost('hapus_' . $pos . '_' . $kKey);
                 if ($hapusCheck === '1' && ! empty($fotoPaths[$pos])) {
@@ -523,6 +526,7 @@ class InventarisPemeliharaan extends BaseController
                     'foto_atas'     => $fotoPaths['foto_atas'],
                     'foto_bawah'    => $fotoPaths['foto_bawah'],
                     'foto_belakang' => $fotoPaths['foto_belakang'],
+                    'foto_nup'      => $fotoPaths['foto_nup'],
                     'urutan'        => $fIndex++,
                 ]);
             } else {
@@ -535,6 +539,7 @@ class InventarisPemeliharaan extends BaseController
                     'foto_atas'       => $fotoPaths['foto_atas'],
                     'foto_bawah'      => $fotoPaths['foto_bawah'],
                     'foto_belakang'   => $fotoPaths['foto_belakang'],
+                    'foto_nup'        => $fotoPaths['foto_nup'],
                     'urutan'          => $fIndex++,
                 ]);
             }
@@ -639,7 +644,7 @@ class InventarisPemeliharaan extends BaseController
                 $f['lokasi_ruangan'] = implode(', ', $uniqueLocs);
             }
 
-            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $pos) {
                 $f[$pos . '_base64'] = '';
                 if (! empty($f[$pos])) {
                     $cleanPos = ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $f[$pos]), DIRECTORY_SEPARATOR);
@@ -816,7 +821,7 @@ class InventarisPemeliharaan extends BaseController
 
         // Hitung statistik kelengkapan foto
         $totalGroups = count($fotos);
-        $totalSlots = $totalGroups * 4;
+        $totalSlots = $totalGroups * 5;
         $filledSlots = 0;
 
         // Map kategori, kode_barang, merk_tipe, dan lokasi dari item surat
@@ -867,7 +872,7 @@ class InventarisPemeliharaan extends BaseController
             }
 
             $groupFilled = 0;
-            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $pos) {
                 if (! empty($f[$pos])) {
                     $cleanPos = ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $f[$pos]), DIRECTORY_SEPARATOR);
                     if (is_file(FCPATH . $cleanPos)) {
@@ -879,8 +884,8 @@ class InventarisPemeliharaan extends BaseController
                 }
             }
             $f['group_filled'] = $groupFilled;
-            $f['group_target'] = 4;
-            $f['group_status'] = ($groupFilled === 4) ? 'success' : (($groupFilled > 0) ? 'warning' : 'danger');
+            $f['group_target'] = 5;
+            $f['group_status'] = ($groupFilled === 5) ? 'success' : (($groupFilled > 0) ? 'warning' : 'danger');
         }
         unset($f);
 
@@ -959,7 +964,7 @@ class InventarisPemeliharaan extends BaseController
             $kKey = $f['kelompok_key'];
             $updateData = [];
 
-            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $pos) {
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $pos) {
                 $posShort = str_replace('foto_', '', $pos);
                 $base64Input = $this->request->getPost('foto_base64_' . $fId . '_' . $posShort);
                 if (! empty($base64Input) && strpos($base64Input, 'data:image') === 0) {
@@ -1018,7 +1023,7 @@ class InventarisPemeliharaan extends BaseController
                 $posisi = 'foto_' . $posisi;
             }
 
-            if (! in_array($posisi, ['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'], true)) {
+            if (! in_array($posisi, ['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'], true)) {
                 return $this->response->setJSON(['success' => false, 'error' => 'Posisi sudut foto tidak valid.']);
             }
 
@@ -1061,10 +1066,10 @@ class InventarisPemeliharaan extends BaseController
 
             // Hitung ulang statistik progres kelengkapan
             $allFotos = $fotoModel->where('pemeliharaan_id', $id)->findAll();
-            $totalSlots = count($allFotos) * 4;
+            $totalSlots = count($allFotos) * 5;
             $filledSlots = 0;
             foreach ($allFotos as $af) {
-                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $p) {
+                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $p) {
                     if (! empty($af[$p])) $filledSlots++;
                 }
             }
@@ -1114,7 +1119,7 @@ class InventarisPemeliharaan extends BaseController
                 $posisi = 'foto_' . $posisi;
             }
 
-            if (! in_array($posisi, ['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'], true)) {
+            if (! in_array($posisi, ['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'], true)) {
                 return $this->response->setJSON(['success' => false, 'error' => 'Posisi sudut foto tidak valid.']);
             }
 
@@ -1132,10 +1137,10 @@ class InventarisPemeliharaan extends BaseController
             $fotoModel->update($fotoId, [$posisi => null]);
 
             $allFotos = $fotoModel->where('pemeliharaan_id', $id)->findAll();
-            $totalSlots = count($allFotos) * 4;
+            $totalSlots = count($allFotos) * 5;
             $filledSlots = 0;
             foreach ($allFotos as $af) {
-                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $p) {
+                foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $p) {
                     if (! empty($af[$p])) $filledSlots++;
                 }
             }

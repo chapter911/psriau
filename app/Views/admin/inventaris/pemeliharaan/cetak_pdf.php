@@ -437,7 +437,7 @@
         </table>
     </div>
 
-    <!-- HALAMAN LAMPIRAN FOTO 4 SUDUT -->
+    <!-- HALAMAN LAMPIRAN FOTO 5 SUDUT -->
     <div class="page-break"></div>
 
     <div class="page-header-lampiran">
@@ -452,12 +452,13 @@
         <thead>
             <tr>
                 <th style="width: 4%;">No</th>
-                <th style="width: 18%;">Nama Barang</th>
-                <th style="width: 12%;">NUP</th>
-                <th style="width: 16.5%;">Foto Tampak Depan</th>
-                <th style="width: 16.5%;">Foto Tampak Atas</th>
-                <th style="width: 16.5%;">Foto Tampak Bawah</th>
-                <th style="width: 16.5%;">Foto Tampak Belakang</th>
+                <th style="width: 17%;">Nama Barang</th>
+                <th style="width: 9%;">NUP</th>
+                <th style="width: 14%;">Foto Depan</th>
+                <th style="width: 14%;">Foto Atas</th>
+                <th style="width: 14%;">Foto Bawah</th>
+                <th style="width: 14%;">Foto Belakang</th>
+                <th style="width: 14%;">Foto NUP</th>
             </tr>
         </thead>
         <tbody>
@@ -483,7 +484,7 @@
             ?>
             <?php if (empty($fotos)): ?>
                 <tr>
-                    <td colspan="7" class="text-center" style="padding: 20px;">Belum ada lampiran foto yang diunggah.</td>
+                    <td colspan="8" class="text-center" style="padding: 20px;">Belum ada lampiran foto yang diunggah.</td>
                 </tr>
             <?php else: ?>
                 <?php foreach ($fotos as $fIdx => $f): ?>
@@ -528,6 +529,14 @@
                         <td class="text-center">
                             <?php if (! empty($f['foto_belakang_base64'])): ?>
                                 <img src="<?= $f['foto_belakang_base64']; ?>" class="img-lampiran" alt="Tampak Belakang">
+                            <?php else: ?>
+                                <div class="no-photo-box">Tidak Ada Foto</div>
+                            <?php endif; ?>
+                        </td>
+                        <!-- Foto NUP -->
+                        <td class="text-center">
+                            <?php if (! empty($f['foto_nup_base64'])): ?>
+                                <img src="<?= $f['foto_nup_base64']; ?>" class="img-lampiran" alt="Foto NUP">
                             <?php else: ?>
                                 <div class="no-photo-box">Tidak Ada Foto</div>
                             <?php endif; ?>

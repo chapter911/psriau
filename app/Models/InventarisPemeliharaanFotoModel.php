@@ -19,6 +19,7 @@ class InventarisPemeliharaanFotoModel extends Model
         'foto_atas',
         'foto_bawah',
         'foto_belakang',
+        'foto_nup',
         'urutan',
         'created_at',
         'updated_at',

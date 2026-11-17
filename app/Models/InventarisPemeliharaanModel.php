@@ -46,7 +46,8 @@ class InventarisPemeliharaanModel extends Model
                           (CASE WHEN f.foto_depan IS NOT NULL AND f.foto_depan != "" THEN 1 ELSE 0 END) +
                           (CASE WHEN f.foto_atas IS NOT NULL AND f.foto_atas != "" THEN 1 ELSE 0 END) +
                           (CASE WHEN f.foto_bawah IS NOT NULL AND f.foto_bawah != "" THEN 1 ELSE 0 END) +
-                          (CASE WHEN f.foto_belakang IS NOT NULL AND f.foto_belakang != "" THEN 1 ELSE 0 END)
+                          (CASE WHEN f.foto_belakang IS NOT NULL AND f.foto_belakang != "" THEN 1 ELSE 0 END) +
+                          (CASE WHEN f.foto_nup IS NOT NULL AND f.foto_nup != "" THEN 1 ELSE 0 END)
                       ), 0) AS total_foto_terisi')
             ->join('trn_inventaris_pemeliharaan_foto f', 'f.pemeliharaan_id = p.id', 'left')
             ->groupBy('p.id');
@@ -76,7 +77,7 @@ class InventarisPemeliharaanModel extends Model
         foreach ($rows as &$r) {
             $kelompok = (int) ($r['total_kelompok'] ?? 0);
             $terisi = (int) ($r['total_foto_terisi'] ?? 0);
-            $target = $kelompok * 4;
+            $target = $kelompok * 5;
 
             if ($kelompok === 0 || $terisi === 0) {
                 $r['status_foto'] = 'kosong';
@@ -184,7 +185,7 @@ class InventarisPemeliharaanModel extends Model
         $fotos = $fotoModel->where('pemeliharaan_id', $id)->findAll();
 
         foreach ($fotos as $f) {
-            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang'] as $col) {
+            foreach (['foto_depan', 'foto_atas', 'foto_bawah', 'foto_belakang', 'foto_nup'] as $col) {
                 if (! empty($f[$col])) {
                     $cleanPath = ltrim(str_replace(['\\', '/'], DIRECTORY_SEPARATOR, (string) $f[$col]), DIRECTORY_SEPARATOR);
                     $fullPath = FCPATH . $cleanPath;

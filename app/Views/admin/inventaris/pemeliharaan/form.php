@@ -161,7 +161,7 @@
                     <i class="fas fa-file-signature text-primary mr-2"></i><?= esc($title); ?>
                 </h1>
                 <p class="text-muted small mb-0 mt-1">
-                    Lengkapi data surat, pilih barang BMN, dan lengkapi foto fisik 4 sudut (bisa upload file atau foto langsung ber-watermark)
+                    Lengkapi data surat, pilih barang BMN, dan lengkapi foto fisik 5 sudut (bisa upload file atau foto langsung ber-watermark)
                 </p>
             </div>
             <div class="col-sm-4 text-sm-right mt-2 mt-sm-0">
@@ -298,6 +298,7 @@
                                     <th style="width: 68px;" class="align-middle" title="Tampak Atas">Atas</th>
                                     <th style="width: 68px;" class="align-middle" title="Tampak Bawah">Bawah</th>
                                     <th style="width: 68px;" class="align-middle" title="Tampak Belakang">Belakang</th>
+                                    <th style="width: 68px;" class="align-middle" title="Foto NUP">NUP</th>
                                     <th style="width: 135px;" class="align-middle">Kelengkapan</th>
                                     <th style="width: 85px;" class="align-middle">Aksi</th>
                                 </tr>
@@ -555,7 +556,7 @@
                 <div class="d-flex align-items-center">
                     <i class="fas fa-camera text-warning mr-2"></i>
                     <div>
-                        <h6 class="modal-title font-weight-bold mb-0" id="cameraWizardTitle">Pemotretan Terpandu 4 Sudut</h6>
+                        <h6 class="modal-title font-weight-bold mb-0" id="cameraWizardTitle">Pemotretan Terpandu 5 Sudut</h6>
                         <small class="text-light opacity-8" id="cameraWizardSubtitle">Target Aset: -</small>
                     </div>
                 </div>
@@ -565,7 +566,7 @@
             </div>
             <div class="modal-body p-0 bg-black text-center position-relative" style="background: #000; min-height: 380px;">
                 
-                <!-- Indikator Langkah 4 Sudut -->
+                <!-- Indikator Langkah 5 Sudut -->
                 <div class="wizard-steps-bar p-2 bg-dark d-flex justify-content-center align-items-center flex-wrap" style="gap: 8px; border-bottom: 1px solid #333;">
                     <span class="badge badge-secondary px-2.5 py-1.5 step-badge" id="stepBadge_depan"><i class="fas fa-circle mr-1"></i>1. Depan</span>
                     <i class="fas fa-chevron-right text-muted small"></i>
@@ -574,6 +575,8 @@
                     <span class="badge badge-secondary px-2.5 py-1.5 step-badge" id="stepBadge_bawah"><i class="fas fa-circle mr-1"></i>3. Bawah</span>
                     <i class="fas fa-chevron-right text-muted small"></i>
                     <span class="badge badge-secondary px-2.5 py-1.5 step-badge" id="stepBadge_belakang"><i class="fas fa-circle mr-1"></i>4. Belakang</span>
+                    <i class="fas fa-chevron-right text-muted small"></i>
+                    <span class="badge badge-secondary px-2.5 py-1.5 step-badge" id="stepBadge_nup"><i class="fas fa-circle mr-1"></i>5. NUP</span>
                 </div>
 
                 <!-- Video Viewfinder Kamera Langsung -->
@@ -768,7 +771,7 @@ var deletedPhotos = {};
 existingFotos.forEach(function(f) {
     if (f.kelompok_key) {
         groupPhotos[f.kelompok_key] = groupPhotos[f.kelompok_key] || {};
-        ['depan', 'atas', 'bawah', 'belakang'].forEach(function(pos) {
+        ['depan', 'atas', 'bawah', 'belakang', 'nup'].forEach(function(pos) {
             if (f['foto_' + pos]) {
                 groupPhotos[f.kelompok_key][pos] = baseUrl + '/' + f['foto_' + pos].replace(/^\/+/, '');
             }
@@ -786,7 +789,7 @@ var activeItemLokasi = '';
 var activeSrc = '';
 var singleModeAngle = null;
 var currentAngleIndex = 0;
-var angleOrder = ['depan', 'atas', 'bawah', 'belakang'];
+var angleOrder = ['depan', 'atas', 'bawah', 'belakang', 'nup'];
 var currentAngle = 'depan';
 var videoStream = null;
 var currentFacingMode = 'environment';
@@ -797,7 +800,8 @@ var angleLabels = {
     'depan': 'Tampak Depan',
     'atas': 'Tampak Atas',
     'bawah': 'Tampak Bawah',
-    'belakang': 'Tampak Belakang'
+    'belakang': 'Tampak Belakang',
+    'nup': 'Foto NUP'
 };
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -941,7 +945,7 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.keys(groupPhotos).forEach(function(kKey) {
             var photos = groupPhotos[kKey];
             if (photos) {
-                ['depan', 'atas', 'bawah', 'belakang'].forEach(function(pos) {
+                ['depan', 'atas', 'bawah', 'belakang', 'nup'].forEach(function(pos) {
                     var pData = photos[pos];
                     if (pData && pData.indexOf('data:image') === 0) {
                         photoContainer.append('<input type="hidden" name="foto_base64_' + kKey + '_' + pos + '" value="' + pData + '">');
@@ -1246,7 +1250,7 @@ function renderItemsTable() {
         return minNupA - minNupB;
     });
 
-    var angles = ['depan', 'atas', 'bawah', 'belakang'];
+    var angles = ['depan', 'atas', 'bawah', 'belakang', 'nup'];
 
     groupList.forEach(function(g, gIdx) {
         var kKey = g.key;
@@ -1375,9 +1379,9 @@ function renderItemsTable() {
             tr.append('<td class="text-center align-middle" id="cellSlot_' + kKey + '_' + pos + '" style="width: 68px;">' + btnHtml + '</td>');
         });
 
-        // 10. Kelengkapan & Tombol Wizard 4 Sudut
+        // 10. Kelengkapan & Tombol Wizard 5 Sudut
         var badgeColor = 'danger';
-        if (filledCount === 4) {
+        if (filledCount === 5) {
             badgeColor = 'success';
         } else if (filledCount > 0) {
             badgeColor = 'warning text-dark';
@@ -1387,15 +1391,15 @@ function renderItemsTable() {
             '<td class="text-center align-middle" style="width: 135px;">' +
                 '<div class="d-flex flex-column align-items-center" style="gap: 4px;">' +
                     '<span class="badge badge-' + badgeColor + ' px-2 py-1 font-weight-bold group-status-badge" id="badgeGroup_' + kKey + '" style="font-size: 0.74rem;">' +
-                        filledCount + ' / 4 Terisi' +
+                        filledCount + ' / 5 Terisi' +
                     '</span>' +
                     '<button type="button" class="btn btn-outline-primary btn-xs font-weight-bold rounded-pill px-2 py-0.5 btn-start-group-wizard shadow-sm"' +
                         ' data-key="' + kKey + '"' +
                         ' data-nama="' + escapeHtml(g.nama_barang) + '"' +
                         ' data-nup="' + escapeHtml(nupSummary) + '"' +
                         ' data-lokasi="' + escapeHtml(groupLokasiSummary) + '"' +
-                        ' title="Jepret 4 Sudut Berurutan (Wizard)">' +
-                        '<i class="fas fa-camera mr-0.5"></i>4 Sudut' +
+                        ' title="Jepret 5 Sudut Berurutan (Wizard)">' +
+                        '<i class="fas fa-camera mr-0.5"></i>5 Sudut' +
                     '</button>' +
                 '</div>' +
             '</td>'
@@ -1451,7 +1455,11 @@ function switchCameraStep(angle) {
     $('.step-badge').removeClass('badge-warning text-dark font-weight-bold').addClass('badge-secondary');
     $('#stepBadge_' + angle).removeClass('badge-secondary').addClass('badge-warning text-dark font-weight-bold');
 
-    $('#lblReticleAngle').text('Arahkan kamera ke bagian ' + angle.toUpperCase());
+    if (angle === 'nup') {
+        $('#lblReticleAngle').text('Arahkan kamera ke LABEL / STIKER NUP');
+    } else {
+        $('#lblReticleAngle').text('Arahkan kamera ke bagian ' + angle.toUpperCase());
+    }
     $('#lblCurrentAngleInstruction').html('<i class="fas fa-camera text-info mr-1"></i>Ambil foto dari <strong>' + angleLabels[angle] + '</strong>');
 
     $('#cameraSnapPreviewWrapper').hide();

@@ -337,7 +337,7 @@ $(document).ready(function() {
         $('#foto_modal_title').text(title);
 
         const listFoto = [];
-        for (let i = 1; i <= 4; i++) {
+        for (let i = 1; i <= 5; i++) {
             const wm   = btn.data('wm-' + i);
             const asli = btn.data('asli-' + i);
             if (wm || asli) {

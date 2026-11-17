@@ -2033,6 +2033,7 @@ class InventarisSmokeTest extends BaseCommand
                 'foto_atas'       => 'uploads/inventaris/pemeliharaan/dummy_z_atas.jpg',
                 'foto_bawah'      => 'uploads/inventaris/pemeliharaan/dummy_z_bawah.jpg',
                 'foto_belakang'   => 'uploads/inventaris/pemeliharaan/dummy_z_belakang.jpg',
+                'foto_nup'        => 'uploads/inventaris/pemeliharaan/dummy_z_nup.jpg',
                 'urutan'          => 1,
             ]);
             $pmlhFotoModel->insert([
@@ -2044,6 +2045,7 @@ class InventarisSmokeTest extends BaseCommand
                 'foto_atas'       => 'uploads/inventaris/pemeliharaan/dummy_atas.jpg',
                 'foto_bawah'      => 'uploads/inventaris/pemeliharaan/dummy_bawah.jpg',
                 'foto_belakang'   => 'uploads/inventaris/pemeliharaan/dummy_belakang.jpg',
+                'foto_nup'        => 'uploads/inventaris/pemeliharaan/dummy_nup.jpg',
                 'urutan'          => 2,
             ]);
 
@@ -2117,7 +2119,7 @@ class InventarisSmokeTest extends BaseCommand
             $fotoViewPath = APPPATH . 'Views/admin/inventaris/pemeliharaan/foto.php';
             if (is_file($fotoViewPath)) {
                 $fotoFileContent = file_get_contents($fotoViewPath);
-                if (strpos($fotoFileContent, 'Pemotretan Terpandu 4 Sudut') !== false && strpos($fotoFileContent, 'ajax-save-single') !== false && strpos($fotoFileContent, 'Lokasi / Ruangan') !== false) {
+                if ((strpos($fotoFileContent, 'Pemotretan Terpandu 5 Sudut') !== false || strpos($fotoFileContent, 'Pemotretan Terpandu 4 Sudut') !== false) && strpos($fotoFileContent, 'ajax-save-single') !== false && strpos($fotoFileContent, 'Lokasi / Ruangan') !== false) {
                     CLI::write("  [OK] Halaman khusus kelola foto lampiran bertahap (app/Views/admin/inventaris/pemeliharaan/foto.php) terverifikasi lengkap dengan kolom Lokasi / Ruangan, wizard kamera & auto-save", "green");
                 } else {
                     throw new \Exception("File view foto.php tidak memiliki komponen kolom Lokasi / Ruangan, wizard atau auto-save yang valid.");
