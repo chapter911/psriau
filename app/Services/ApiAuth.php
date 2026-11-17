@@ -101,7 +101,7 @@ class ApiAuth
 
     private static function resolveMenuIdByLinks($db, array $links): ?string
     {
-        foreach (['menu_lv1', 'menu_lv2', 'menu_lv3'] as $table) {
+        foreach (['menu_lv3', 'menu_lv2', 'menu_lv1'] as $table) {
             if (! $db->tableExists($table)) {
                 continue;
             }
