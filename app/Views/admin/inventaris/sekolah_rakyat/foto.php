@@ -89,8 +89,12 @@
                     <div class="card-header bg-white py-2 px-3 border-0 d-flex justify-content-between align-items-start">
                         <div>
                             <span class="badge badge-light border text-dark font-weight-bold mr-1"><?= esc($it['kode_bmn']); ?></span>
-                            <?php if (! empty($it['nup'])): ?>
-                                <span class="badge badge-secondary">NUP: <?= esc($it['nup']); ?></span>
+                            <?php if (str_starts_with($it['kelompok_bmn'], 'I.')): ?>
+                                <span class="badge badge-info font-weight-normal">Peralatan</span>
+                            <?php elseif (str_starts_with($it['kelompok_bmn'], 'II.')): ?>
+                                <span class="badge badge-primary font-weight-normal">Gedung</span>
+                            <?php else: ?>
+                                <span class="badge badge-success font-weight-normal">Jaringan</span>
                             <?php endif; ?>
                         </div>
                         <div>

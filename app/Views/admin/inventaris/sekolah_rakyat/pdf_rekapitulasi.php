@@ -104,8 +104,7 @@
         <thead>
             <tr>
                 <th style="width: 25px;">No</th>
-                <th style="width: 80px;">Kode BMN</th>
-                <th style="width: 50px;">NUP</th>
+                <th style="width: 90px;">Kode BMN</th>
                 <th>Jenis BMN</th>
                 <th>Merk / Type / Spesifikasi Material Teknis</th>
                 <th style="width: 40px;">Jml</th>
@@ -124,13 +123,12 @@
                         $currentGroup = $it['kelompok_bmn'];
             ?>
                 <tr>
-                    <td colspan="11" class="section-header"><?= esc($currentGroup); ?></td>
+                    <td colspan="10" class="section-header"><?= esc($currentGroup); ?></td>
                 </tr>
             <?php endif; ?>
                 <tr>
                     <td class="text-center"><?= $it['no_urut']; ?></td>
                     <td class="text-center font-bold"><?= esc($it['kode_bmn']); ?></td>
-                    <td class="text-center"><?= esc($it['nup'] ?: '-'); ?></td>
                     <td class="font-bold"><?= esc($it['jenis_bmn']); ?></td>
                     <td><?= esc($it['spesifikasi']); ?></td>
                     <td class="text-center"><?= rtrim(rtrim(number_format((float) $it['jumlah'], 2, ',', '.'), '0'), ','); ?></td>
@@ -144,7 +142,7 @@
         </tbody>
         <tfoot>
             <tr style="background-color: #EAEAEA; font-weight: bold;">
-                <td colspan="8" class="text-center">TOTAL KESELURUHAN NILAI PEROLEHAN BMN</td>
+                <td colspan="7" class="text-center">TOTAL KESELURUHAN NILAI PEROLEHAN BMN</td>
                 <td class="text-right">Rp <?= number_format($stats['total_nilai'] ?? 0, 0, ',', '.'); ?></td>
                 <td colspan="2"></td>
             </tr>

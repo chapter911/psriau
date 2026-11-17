@@ -132,14 +132,14 @@
                     <thead class="thead-dark">
                         <tr>
                             <th style="width: 40px;" class="text-center align-middle">No</th>
-                            <th style="width: 120px;" class="align-middle">Kode BMN</th>
-                            <th style="width: 80px;" class="align-middle">NUP</th>
-                            <th class="align-middle">Jenis BMN & Spesifikasi</th>
+                            <th style="width: 140px;" class="align-middle">Kode BMN</th>
+                            <th class="align-middle">Jenis BMN & Spesifikasi Material Teknis</th>
                             <th style="width: 90px;" class="text-center align-middle">Volume</th>
                             <th style="width: 130px;" class="text-right align-middle">Harga Satuan</th>
                             <th style="width: 140px;" class="text-right align-middle">Total Nilai</th>
-                            <th style="width: 140px;" class="align-middle">Lokasi Gedung</th>
-                            <th style="width: 100px;" class="text-center align-middle">Foto</th>
+                            <th style="width: 140px;" class="align-middle">Lokasi Gedung / Zona</th>
+                            <th style="width: 80px;" class="text-center align-middle">Kondisi</th>
+                            <th style="width: 100px;" class="text-center align-middle">Foto Fisik</th>
                             <th style="width: 90px;" class="text-center align-middle">Aksi</th>
                         </tr>
                     </thead>
@@ -159,18 +159,6 @@
                                         <?php endif; ?>
                                     </div>
                                 </td>
-                                <td class="align-middle text-center">
-                                    <?php if (! empty($it['nup'])): ?>
-                                        <span class="badge badge-secondary px-2 py-1"><?= esc($it['nup']); ?></span>
-                                    <?php else: ?>
-                                        <span class="text-muted small">- Kosong -</span>
-                                    <?php endif; ?>
-                                    <?php if ($canEdit): ?>
-                                        <button type="button" class="btn btn-xs btn-link text-primary p-0 d-block mx-auto mt-1 btn-edit-nup" data-id="<?= $it['id']; ?>" data-nup="<?= esc($it['nup'] ?? ''); ?>" title="Ubah NUP">
-                                            <i class="fas fa-edit"></i> Isi
-                                        </button>
-                                    <?php endif; ?>
-                                </td>
                                 <td class="align-middle">
                                     <div class="font-weight-bold text-primary mb-1"><?= esc($it['jenis_bmn']); ?></div>
                                     <small class="text-muted d-block" style="line-height: 1.35;"><?= esc($it['spesifikasi']); ?></small>
@@ -189,6 +177,9 @@
                                     <span class="badge badge-info px-2 py-1 font-weight-normal text-wrap" style="max-width: 140px; font-size: 0.8rem;">
                                         <i class="fas fa-map-marker-alt mr-1"></i><?= esc($it['lokasi']); ?>
                                     </span>
+                                </td>
+                                <td class="text-center align-middle">
+                                    <span class="badge badge-light border text-success px-2 py-1"><?= esc($it['kondisi']); ?></span>
                                 </td>
                                 <td class="text-center align-middle">
                                     <?php $fCount = (int) ($it['foto_count'] ?? 0); ?>
@@ -259,13 +250,9 @@
                             <label class="small font-weight-bold text-muted">Kode BMN <span class="text-danger">*</span></label>
                             <input type="text" name="kode_bmn" class="form-control form-control-sm" placeholder="Contoh: 3.05.02.01.001" required>
                         </div>
-                        <div class="col-md-8 mb-3">
+                        <div class="col-12 mb-3">
                             <label class="small font-weight-bold text-muted">Jenis BMN <span class="text-danger">*</span></label>
                             <input type="text" name="jenis_bmn" class="form-control form-control-sm" placeholder="Nama / Jenis Barang BMN" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="small font-weight-bold text-muted">NUP (Jika Ada)</label>
-                            <input type="text" name="nup" class="form-control form-control-sm" placeholder="Nomor Urut Pendaftaran">
                         </div>
                         <div class="col-12 mb-3">
                             <label class="small font-weight-bold text-muted">Merk / Tipe / Spesifikasi Teknis</label>
@@ -341,13 +328,9 @@
                             <label class="small font-weight-bold text-muted">Kode BMN</label>
                             <input type="text" name="kode_bmn" id="edit_kode_bmn" class="form-control form-control-sm" required>
                         </div>
-                        <div class="col-md-8 mb-3">
+                        <div class="col-12 mb-3">
                             <label class="small font-weight-bold text-muted">Jenis BMN</label>
                             <input type="text" name="jenis_bmn" id="edit_jenis_bmn" class="form-control form-control-sm" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="small font-weight-bold text-muted">NUP</label>
-                            <input type="text" name="nup" id="edit_nup" class="form-control form-control-sm">
                         </div>
                         <div class="col-12 mb-3">
                             <label class="small font-weight-bold text-muted">Spesifikasi Material Teknis</label>
@@ -392,29 +375,6 @@
     </div>
 </div>
 
-<!-- Modal Quick Edit NUP -->
-<div class="modal fade" id="modalQuickNup" tabindex="-1" role="dialog" aria-hidden="true">
-    <div class="modal-dialog modal-sm" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-secondary text-white py-2">
-                <h6 class="modal-title font-weight-bold"><i class="fas fa-tag mr-1"></i>Isi Nomor NUP</h6>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="quick_nup_id">
-                <label class="small font-weight-bold text-muted mb-1">Nomor Urut Pendaftaran (NUP)</label>
-                <input type="text" id="quick_nup_val" class="form-control form-control-sm" placeholder="Contoh: 1 atau 0001">
-            </div>
-            <div class="modal-footer py-1">
-                <button type="button" class="btn btn-xs btn-secondary" data-dismiss="modal">Batal</button>
-                <button type="button" id="btnSaveQuickNup" class="btn btn-xs btn-primary"><i class="fas fa-save mr-1"></i>Simpan</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Modal Detail Item & Galeri -->
 <div class="modal fade" id="modalDetailItem" tabindex="-1" role="dialog" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -432,7 +392,6 @@
                             <tbody>
                                 <tr><th style="width: 35%;" class="bg-light">Kelompok BMN</th><td id="dtl_kelompok"></td></tr>
                                 <tr><th class="bg-light">Kode BMN</th><td id="dtl_kode"></td></tr>
-                                <tr><th class="bg-light">NUP</th><td id="dtl_nup"></td></tr>
                                 <tr><th class="bg-light">Jenis BMN</th><td id="dtl_jenis" class="font-weight-bold text-primary"></td></tr>
                                 <tr><th class="bg-light">Spesifikasi</th><td id="dtl_spek"></td></tr>
                                 <tr><th class="bg-light">Volume / Satuan</th><td id="dtl_volume"></td></tr>
@@ -498,40 +457,6 @@ $(document).ready(function() {
             }
         },
         "order": []
-    });
-
-    // Quick Edit NUP Modal
-    $('.btn-edit-nup').on('click', function() {
-        const id = $(this).data('id');
-        const nup = $(this).data('nup');
-        $('#quick_nup_id').val(id);
-        $('#quick_nup_val').val(nup);
-        $('#modalQuickNup').modal('show');
-    });
-
-    $('#btnSaveQuickNup').on('click', function() {
-        const id = $('#quick_nup_id').val();
-        const nup = $('#quick_nup_val').val();
-
-        $.ajax({
-            url: '<?= site_url("admin/inventaris/sekolah-rakyat/barang"); ?>/' + id + '/update-nup',
-            type: 'POST',
-            data: {
-                <?= csrf_token(); ?>: '<?= csrf_hash(); ?>',
-                nup: nup
-            },
-            dataType: 'json',
-            success: function(res) {
-                if (res.success) {
-                    location.reload();
-                } else {
-                    alert(res.error || 'Gagal menyimpan NUP.');
-                }
-            },
-            error: function() {
-                alert('Terjadi kesalahan jaringan.');
-            }
-        });
     });
 
     // Detail Item AJAX

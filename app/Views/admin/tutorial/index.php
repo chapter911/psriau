@@ -1891,7 +1891,7 @@ graph TD
                                                 <li>Kelompok II: Gedung &amp; Bangunan (29 item kode 4.xx)</li>
                                                 <li>Kelompok III: Jalan, Irigasi &amp; Jaringan (4 item kode 5.xx)</li>
                                                 <li>Filter berdasarkan 35 Gedung/Zona, Kelompok, &amp; Status Foto</li>
-                                                <li>Fitur isi NUP cepat saat serah terima &amp; Ekspor Excel Kertas Kerja</li>
+                                                <li>Pencatatan rincian BMN berbasis volume kontrak &amp; spesifikasi teknis (non-NUP) serta Ekspor Excel Kertas Kerja</li>
                                             </ul>
                                         </div>
                                     </div>
