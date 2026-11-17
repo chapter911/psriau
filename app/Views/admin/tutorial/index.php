@@ -693,6 +693,11 @@ graph TD
     B8 --> J9["Auto-Save Instan per Sudut Kamera &amp; Konversi Format (JPG, PNG, WebP, HEIC/HEIF)"]
     B8 --> J10["Penerbitan Surat Resmi PDF A4: Seluruh Tabel Terurut Otomatis (Nama Barang ASC &amp; NUP Numerik) + Lampiran Foto"]
     B8 --> J11["Shortcut Terintegrasi 1-Klik dari Menu Daftar Barang (/admin/inventaris/barang)"]
+
+    A --> B9["9. BMN Sekolah Rakyat (/admin/inventaris/sekolah-rakyat)"]
+    B9 --> K1["Submenu Lv3.1: Daftar Barang (/admin/inventaris/sekolah-rakyat/barang) - 327 Rincian Aset BMN (Peralatan 3.xx, Gedung 4.xx, Jaringan 5.xx) Nilai Kontrak Rp 239,4 Miliar"]
+    B9 --> K2["Submenu Lv3.2: Dokumentasi Foto (/admin/inventaris/sekolah-rakyat/foto) - Survei Lapangan Kamera HP/Mobile, Watermark TimeMark Otomatis, Koordinat GPS &amp; Progres per 35 Gedung"]
+    B9 --> K3["Submenu Lv3.3: Rekapitulasi &amp; Nilai (/admin/inventaris/sekolah-rakyat/rekapitulasi) - Kertas Kerja Dasar Perhitungan 33 Aset, Alokasi Biaya Umum Rp 6,4 Miliar &amp; Cetak PDF Berita Acara"]
                 </pre>
             </div>
         </div>
@@ -1866,6 +1871,56 @@ graph TD
                                     <li><strong>Penerbitan Surat Resmi PDF (A4 Portrait Lengkap):</strong> Klik tombol <strong>PDF</strong> pada arsip surat (<code>/admin/inventaris/pemeliharaan/{id}/cetak-pdf</code>) untuk mencetak dokumen resmi 3 halaman persis standar dinas: Halaman 1-2 memuat Kop Surat resmi, Judul &amp; Nomor Surat, Data Pejabat Kasatker KPB, <strong>Tabel Rekapitulasi Aset yang otomatis dikelompokkan berdasarkan 4 kriteria (Jenis Barang, Kode Barang, Nama Barang, dan Merk) serta diurutkan rapi berdasarkan Nama Barang (A-Z) dan nomor NUP (numerik)</strong> dengan format rentang kompak tanpa spasi (contoh: <code>1-2</code> atau <code>1-35</code>), Poin Pernyataan &amp; Alasan Teknis Pemeliharaan, serta Kolom Tanda Tangan Kasatker (stempel &amp; meterai); Halaman 3+ memuat Lampiran Surat berisi tabel komparasi foto fisik 4 sudut per kelompok barang yang juga <strong>otomatis diurutkan berdasarkan Nama Barang dan NUP</strong> lengkap dengan keterangan <strong>Lokasi Ruangan</strong> fisik aset, resolusi optimal serta penomoran NUP kompak yang seragam.</li>
                                     <li><strong>Pengelolaan Arsip &amp; Izin Akses:</strong> Arsip surat yang tersimpan dapat diubah atau dihapus kapan saja oleh pengguna yang memiliki hak akses sesuai aturan tabel <code>menu_akses</code> (View, Add, Edit, Delete, Export).</li>
                                 </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBMENU 9: BMN SEKOLAH RAKYAT (LEVEL 3) -->
+                    <div class="col-12 mb-3">
+                        <div class="card border-0 shadow-sm" style="border-left: 4px solid #007bff !important;">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-university mr-1"></i> 9. BMN Sekolah Rakyat (Submenu Level 3 Terpadu)</h6>
+                                <p class="small text-muted mb-2"><code>/admin/inventaris/sekolah-rakyat/barang</code> | <code>/admin/inventaris/sekolah-rakyat/foto</code> | <code>/admin/inventaris/sekolah-rakyat/rekapitulasi</code> (Menu Lv2 &amp; Lv3 Inventarisasi)</p>
+                                <div class="row">
+                                    <div class="col-md-4 mb-2">
+                                        <div class="p-2 border rounded bg-white h-100">
+                                            <span class="font-weight-bold text-dark d-block small"><i class="fas fa-boxes text-info mr-1"></i> 1. Daftar Barang (Lv3)</span>
+                                            <small class="text-muted d-block mt-1">Pengelolaan <strong>327 item rincian BMN</strong> hasil pekerjaan konstruksi &amp; pengadaan mebel kawasan Sekolah Rakyat Kuansing (Nilai Kontrak Rp 239,44 Miliar):</small>
+                                            <ul class="pl-3 small text-muted mt-1 mb-0">
+                                                <li>Kelompok I: Peralatan &amp; Mesin (294 item kode 3.xx)</li>
+                                                <li>Kelompok II: Gedung &amp; Bangunan (29 item kode 4.xx)</li>
+                                                <li>Kelompok III: Jalan, Irigasi &amp; Jaringan (4 item kode 5.xx)</li>
+                                                <li>Filter berdasarkan 35 Gedung/Zona, Kelompok, &amp; Status Foto</li>
+                                                <li>Fitur isi NUP cepat saat serah terima &amp; Ekspor Excel Kertas Kerja</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="p-2 border rounded bg-white h-100">
+                                            <span class="font-weight-bold text-dark d-block small"><i class="fas fa-camera text-success mr-1"></i> 2. Dokumentasi Foto (Lv3)</span>
+                                            <small class="text-muted d-block mt-1">Pencatatan foto fisik lapangan yang ramah perangkat mobile / smartphone:</small>
+                                            <ul class="pl-3 small text-muted mt-1 mb-0">
+                                                <li>Pilih Gedung/Zona (misal: <em>Gedung SD</em>, <em>Asrama Putra</em>) &amp; monitor persentase progres foto</li>
+                                                <li>Tombol langsung buka kamera HP (kamera belakang)</li>
+                                                <li>Watermark TimeMark otomatis: Nama Barang, Spesifikasi, Gedung, Waktu &amp; Koordinat GPS Lapangan</li>
+                                                <li>Fleksibel multi-foto tanpa batasan jumlah per item</li>
+                                                <li>Pratinjau modal zoom &amp; opsi hapus foto terarsip</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-2">
+                                        <div class="p-2 border rounded bg-white h-100">
+                                            <span class="font-weight-bold text-dark d-block small"><i class="fas fa-chart-pie text-warning mr-1"></i> 3. Rekapitulasi &amp; Nilai (Lv3)</span>
+                                            <small class="text-muted d-block mt-1">Kertas kerja perhitungan nilai perolehan dan pelaporan resmi:</small>
+                                            <ul class="pl-3 small text-muted mt-1 mb-0">
+                                                <li>Kertas kerja dasar perhitungan 33 aset gedung &amp; prasarana</li>
+                                                <li>Alokasi proporsional biaya umum (SMKK, pematangan lahan, persiapan, mobilisasi, uji teknis, PLN) senilai Rp 6,47 Miliar</li>
+                                                <li>Rekapitulasi total nilai pembukuan klop Rp 239.445.195.000,-</li>
+                                                <li>Cetak Dokumen Resmi PDF Rekapitulasi Ber-Kop Satker untuk lampiran Berita Acara Serah Terima (BAST)</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

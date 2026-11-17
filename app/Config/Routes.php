@@ -619,6 +619,25 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->post('inventaris/penempatan/hapus-lokasi/(:num)', 'Admin\InventarisPenempatan::hapusLokasi/$1');
 	$routes->get('inventaris/penempatan/ajax-kpi', 'Admin\InventarisPenempatan::ajaxKpi');
 
+	// Modul Inventarisasi - BMN Sekolah Rakyat (Level 3 submenus)
+	$routes->get('inventaris/sekolah-rakyat', static fn() => redirect()->to('/admin/inventaris/sekolah-rakyat/barang'));
+	$routes->get('inventaris/sekolah-rakyat/barang', 'Admin\InventarisSekolahRakyat::barang');
+	$routes->post('inventaris/sekolah-rakyat/barang/tambah', 'Admin\InventarisSekolahRakyat::tambahBarang');
+	$routes->post('inventaris/sekolah-rakyat/barang/(:num)/ubah', 'Admin\InventarisSekolahRakyat::ubahBarang/$1');
+	$routes->post('inventaris/sekolah-rakyat/barang/(:num)/hapus', 'Admin\InventarisSekolahRakyat::hapusBarang/$1');
+	$routes->post('inventaris/sekolah-rakyat/barang/(:num)/update-nup', 'Admin\InventarisSekolahRakyat::updateNupAjax/$1');
+	$routes->get('inventaris/sekolah-rakyat/barang/export-excel', 'Admin\InventarisSekolahRakyat::exportExcel');
+	$routes->post('inventaris/sekolah-rakyat/barang/import-excel', 'Admin\InventarisSekolahRakyat::importExcel');
+	$routes->get('inventaris/sekolah-rakyat/barang/(:num)/detail', 'Admin\InventarisSekolahRakyat::detailBarangAjax/$1');
+
+	$routes->get('inventaris/sekolah-rakyat/foto', 'Admin\InventarisSekolahRakyat::foto');
+	$routes->post('inventaris/sekolah-rakyat/foto/(:num)/upload', 'Admin\InventarisSekolahRakyat::uploadFotoAjax/$1');
+	$routes->post('inventaris/sekolah-rakyat/foto/(:num)/hapus', 'Admin\InventarisSekolahRakyat::hapusFotoAjax/$1');
+	$routes->post('inventaris/sekolah-rakyat/foto/apply-watermark', 'Admin\InventarisSekolahRakyat::applyWatermark');
+
+	$routes->get('inventaris/sekolah-rakyat/rekapitulasi', 'Admin\InventarisSekolahRakyat::rekapitulasi');
+	$routes->get('inventaris/sekolah-rakyat/rekapitulasi/cetak-pdf', 'Admin\InventarisSekolahRakyat::cetakPdf');
+
 	// Modul KOMPU (Komunikasi Publik)
 	$routes->get('kompu', static fn() => redirect()->to('/admin/kompu/sosmed'));
 	$routes->get('kompu/sosmed', 'Admin\Kompu::sosmedIndex');
