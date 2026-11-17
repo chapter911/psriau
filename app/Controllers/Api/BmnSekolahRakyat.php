@@ -74,6 +74,38 @@ class BmnSekolahRakyat extends BaseController
     }
 
     /**
+     * Status Ringkas Sinkronisasi (Item Count & Last Update)
+     * URL: GET /api/bmn-sekolah-rakyat/sync-status
+     */
+    public function syncStatus()
+    {
+        if (! ApiAuth::hasMenuAccess(self::MENU_BARANG_LINK, 'view')) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                'status'  => 'error',
+                'message' => 'Anda tidak memiliki hak akses melihat status sinkronisasi.',
+            ]);
+        }
+
+        $db = $this->bmnModel->db;
+        $row = $db->table('trn_bmn_sekolah_rakyat')
+            ->select('COUNT(id) AS total_items, MAX(updated_at) AS last_updated')
+            ->get()
+            ->getRowArray();
+
+        $totalItems  = (int) ($row['total_items'] ?? 0);
+        $lastUpdated = $row['last_updated'] ?? null;
+
+        return $this->response->setJSON([
+            'status' => 'success',
+            'data'   => [
+                'total_items'  => $totalItems,
+                'last_updated' => $lastUpdated,
+                'server_time'  => date('Y-m-d H:i:s'),
+            ],
+        ]);
+    }
+
+    /**
      * Daftar Barang BMN Sekolah Rakyat
      * URL: GET /api/bmn-sekolah-rakyat/barang
      */

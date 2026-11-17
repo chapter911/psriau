@@ -757,6 +757,7 @@ $routes->group('api', static function ($routes): void {
         // BMN Sekolah Rakyat (Mobile) API
         $routes->group('bmn-sekolah-rakyat', static function ($routes): void {
             $routes->get('permissions', 'Api\BmnSekolahRakyat::permissions');
+            $routes->get('sync-status', 'Api\BmnSekolahRakyat::syncStatus');
             $routes->get('barang', 'Api\BmnSekolahRakyat::barang');
             $routes->get('barang/(:num)', 'Api\BmnSekolahRakyat::detailBarang/$1');
             $routes->post('barang', 'Api\BmnSekolahRakyat::tambahBarang');
