@@ -289,7 +289,7 @@ class InventarisSekolahRakyat extends BaseController
     }
 
     /**
-     * Submenu 2: Dokumentasi Foto Lapangan
+     * Submenu 2: Dokumentasi Foto Lapangan (Berdasarkan Lokasi Gedung & Material/Jenis BMN)
      */
     public function foto()
     {
@@ -298,12 +298,25 @@ class InventarisSekolahRakyat extends BaseController
             return $forbidden;
         }
 
-        $lokasiStats = $this->bmnModel->getLokasiStats();
-        $filterLokasi = trim((string) $this->request->getGet('lokasi'));
+        $lokasiStats    = $this->bmnModel->getLokasiStats();
+        $filterLokasi   = trim((string) $this->request->getGet('lokasi'));
+        $filterMaterial = trim((string) $this->request->getGet('material'));
+        $filterStatus   = trim((string) $this->request->getGet('status_foto'));
 
         // Jika filter lokasi kosong, default ke lokasi pertama
         if ($filterLokasi === '' && ! empty($lokasiStats)) {
             $filterLokasi = $lokasiStats[0]['lokasi'];
+        }
+
+        // Ambil daftar material/jenis barang yang ada di lokasi gedung ini
+        $materialList = [];
+        if ($filterLokasi !== '') {
+            $materialList = $this->bmnModel
+                ->where('lokasi', $filterLokasi)
+                ->select('jenis_bmn, COUNT(id) AS total_item')
+                ->groupBy('jenis_bmn')
+                ->orderBy('jenis_bmn', 'ASC')
+                ->findAll();
         }
 
         $builder = $this->bmnModel->builder()
@@ -314,8 +327,18 @@ class InventarisSekolahRakyat extends BaseController
         if ($filterLokasi !== '' && $filterLokasi !== '*') {
             $builder->where('trn_bmn_sekolah_rakyat.lokasi', $filterLokasi);
         }
+        if ($filterMaterial !== '' && $filterMaterial !== '*') {
+            $builder->where('trn_bmn_sekolah_rakyat.jenis_bmn', $filterMaterial);
+        }
+        if ($filterStatus === 'sudah') {
+            $builder->having('foto_count >', 0);
+        } elseif ($filterStatus === 'belum') {
+            $builder->having('foto_count =', 0);
+        }
 
-        $items = $builder->orderBy('trn_bmn_sekolah_rakyat.id', 'ASC')->get()->getResultArray();
+        $items = $builder->orderBy('trn_bmn_sekolah_rakyat.jenis_bmn', 'ASC')
+            ->orderBy('trn_bmn_sekolah_rakyat.no_urut', 'ASC')
+            ->get()->getResultArray();
 
         // Ambil semua foto untuk item-item ini
         $itemIds = array_column($items, 'id');
@@ -330,14 +353,17 @@ class InventarisSekolahRakyat extends BaseController
         $permissions = $this->resolveMenuPermissions(self::MENU_FOTO_LINK);
 
         return view('admin/inventaris/sekolah_rakyat/foto', [
-            'pageTitle'    => 'Dokumentasi Foto BMN Sekolah Rakyat',
-            'lokasiStats'  => $lokasiStats,
-            'filterLokasi' => $filterLokasi,
-            'items'        => $items,
-            'fotosByItem'  => $fotosByItem,
-            'canAdd'       => (bool) ($permissions['add'] ?? false),
-            'canEdit'      => (bool) ($permissions['edit'] ?? false),
-            'canDelete'    => (bool) ($permissions['delete'] ?? false),
+            'pageTitle'      => 'Dokumentasi Foto BMN Sekolah Rakyat',
+            'lokasiStats'    => $lokasiStats,
+            'filterLokasi'   => $filterLokasi,
+            'filterMaterial' => $filterMaterial,
+            'filterStatus'   => $filterStatus,
+            'materialList'   => $materialList,
+            'items'          => $items,
+            'fotosByItem'    => $fotosByItem,
+            'canAdd'         => (bool) ($permissions['add'] ?? false),
+            'canEdit'        => (bool) ($permissions['edit'] ?? false),
+            'canDelete'      => (bool) ($permissions['delete'] ?? false),
         ]);
     }
 

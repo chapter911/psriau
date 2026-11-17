@@ -695,8 +695,8 @@ graph TD
     B8 --> J11["Shortcut Terintegrasi 1-Klik dari Menu Daftar Barang (/admin/inventaris/barang)"]
 
     A --> B9["9. BMN Sekolah Rakyat (/admin/inventaris/sekolah-rakyat)"]
-    B9 --> K1["Submenu Lv3.1: Daftar Barang (/admin/inventaris/sekolah-rakyat/barang) - 327 Rincian Aset BMN (Peralatan 3.xx, Gedung 4.xx, Jaringan 5.xx) Nilai Kontrak Rp 239,4 Miliar"]
-    B9 --> K2["Submenu Lv3.2: Dokumentasi Foto (/admin/inventaris/sekolah-rakyat/foto) - Survei Lapangan Kamera HP/Mobile, Watermark TimeMark Otomatis, Koordinat GPS &amp; Progres per 35 Gedung"]
+    B9 --> K1["Submenu Lv3.1: Daftar Barang (/admin/inventaris/sekolah-rakyat/barang) - 327 Rincian Aset BMN (Peralatan 3.xx, Gedung 4.xx, Jaringan 5.xx) Nilai Kontrak Rp 239,4 Miliar (Non-NUP)"]
+    B9 --> K2["Submenu Lv3.2: Dokumentasi Foto (/admin/inventaris/sekolah-rakyat/foto) - Filter Hierarkis per Gedung &amp; Material/Jenis BMN, Quick Filter Pills, Grouping Rapi, Watermark TimeMark GPS &amp; Kamera HP"]
     B9 --> K3["Submenu Lv3.3: Rekapitulasi &amp; Nilai (/admin/inventaris/sekolah-rakyat/rekapitulasi) - Kertas Kerja Dasar Perhitungan 33 Aset, Alokasi Biaya Umum Rp 6,4 Miliar &amp; Cetak PDF Berita Acara"]
                 </pre>
             </div>
@@ -1898,13 +1898,14 @@ graph TD
                                     <div class="col-md-4 mb-2">
                                         <div class="p-2 border rounded bg-white h-100">
                                             <span class="font-weight-bold text-dark d-block small"><i class="fas fa-camera text-success mr-1"></i> 2. Dokumentasi Foto (Lv3)</span>
-                                            <small class="text-muted d-block mt-1">Pencatatan foto fisik lapangan yang ramah perangkat mobile / smartphone:</small>
+                                            <small class="text-muted d-block mt-1">Pencatatan foto fisik lapangan terstruktur per Gedung &amp; Material, ramah smartphone:</small>
                                             <ul class="pl-3 small text-muted mt-1 mb-0">
-                                                <li>Pilih Gedung/Zona (misal: <em>Gedung SD</em>, <em>Asrama Putra</em>) &amp; monitor persentase progres foto</li>
+                                                <li><strong>Filter Hierarkis:</strong> Pilih Gedung/Zona &amp; saring per Material / Jenis Barang (misal: Kursi, Meja, Lemari, AC)</li>
+                                                <li><strong>Quick Filter Pills:</strong> Kapsul navigasi cepat antar-material dalam gedung aktif</li>
+                                                <li><strong>Pengelompokan Rapi:</strong> Kartu barang otomatis dikelompokkan per sub-header Material/Jenis BMN</li>
                                                 <li>Tombol langsung buka kamera HP (kamera belakang)</li>
-                                                <li>Watermark TimeMark otomatis: Nama Barang, Spesifikasi, Gedung, Waktu &amp; Koordinat GPS Lapangan</li>
-                                                <li>Fleksibel multi-foto tanpa batasan jumlah per item</li>
-                                                <li>Pratinjau modal zoom &amp; opsi hapus foto terarsip</li>
+                                                <li>Watermark TimeMark otomatis: Nama Barang, Spesifikasi, Gedung, Waktu &amp; GPS</li>
+                                                <li>Fleksibel multi-foto per item tanpa batas &amp; modal zoom</li>
                                             </ul>
                                         </div>
                                     </div>
