@@ -605,6 +605,7 @@ class InventarisSekolahRakyat extends BaseController
         $kelompokStartRow = 10;
         $kelompokTotal = 0;
         $grandTotal = 0;
+        $maxRenderedFotos = 1;
 
         $thinBorder = [
             'borders' => [
@@ -676,32 +677,41 @@ class InventarisSekolahRakyat extends BaseController
                 ]);
             }
 
-            // SEMATKAN FOTO BARANG DI KOLOM J
+            // SEMATKAN FOTO BARANG DI KOLOM J (Bisa lebih dari 1 foto berdampingan)
             $hasDrawing = false;
             if (! empty($fotosByItem[$it['id']])) {
-                $firstFoto = $fotosByItem[$it['id']][0];
-                $imgPath = '';
-                if (! empty($firstFoto['foto_watermark']) && is_file(FCPATH . $firstFoto['foto_watermark'])) {
-                    $imgPath = FCPATH . $firstFoto['foto_watermark'];
-                } elseif (! empty($firstFoto['foto_asli']) && is_file(FCPATH . $firstFoto['foto_asli'])) {
-                    $imgPath = FCPATH . $firstFoto['foto_asli'];
+                $fotoIdx = 0;
+                foreach ($fotosByItem[$it['id']] as $fotoItem) {
+                    $imgPath = '';
+                    if (! empty($fotoItem['foto_watermark']) && is_file(FCPATH . $fotoItem['foto_watermark'])) {
+                        $imgPath = FCPATH . $fotoItem['foto_watermark'];
+                    } elseif (! empty($fotoItem['foto_asli']) && is_file(FCPATH . $fotoItem['foto_asli'])) {
+                        $imgPath = FCPATH . $fotoItem['foto_asli'];
+                    }
+
+                    if ($imgPath !== '') {
+                        try {
+                            $drawing = new Drawing();
+                            $drawing->setName('Foto_' . $it['id'] . '_' . ($fotoIdx + 1));
+                            $drawing->setDescription($it['jenis_bmn'] . ' - ' . ($fotoItem['judul_foto'] ?: $it['spesifikasi']));
+                            $drawing->setPath($imgPath);
+                            $drawing->setWidthAndHeight(85, 62);
+                            $drawing->setCoordinates('J' . $rowIdx);
+                            $drawing->setOffsetX(8 + ($fotoIdx * 94));
+                            $drawing->setOffsetY(4);
+                            $drawing->setWorksheet($sheet);
+                            $hasDrawing = true;
+                            $fotoIdx++;
+                        } catch (\Throwable $e) {
+                            // Abaikan jika berkas foto gagal dimuat
+                        }
+                    }
                 }
 
-                if ($imgPath !== '') {
-                    try {
-                        $drawing = new Drawing();
-                        $drawing->setName('Foto_' . $it['id']);
-                        $drawing->setDescription($it['jenis_bmn'] . ' - ' . $it['spesifikasi']);
-                        $drawing->setPath($imgPath);
-                        $drawing->setHeight(65);
-                        $drawing->setCoordinates('J' . $rowIdx);
-                        $drawing->setOffsetX(8);
-                        $drawing->setOffsetY(4);
-                        $drawing->setWorksheet($sheet);
-                        $sheet->getRowDimension($rowIdx)->setRowHeight(58);
-                        $hasDrawing = true;
-                    } catch (\Throwable $e) {
-                        $hasDrawing = false;
+                if ($hasDrawing) {
+                    $sheet->getRowDimension($rowIdx)->setRowHeight(58);
+                    if ($fotoIdx > $maxRenderedFotos) {
+                        $maxRenderedFotos = $fotoIdx;
                     }
                 }
             }
@@ -797,6 +807,9 @@ class InventarisSekolahRakyat extends BaseController
         }
 
         // Atur Lebar Kolom Sheet 1 (12 Kolom)
+        // Kolom Foto Barang (J) otomatis melebar mengikuti jumlah foto terbanyak per baris agar foto-foto tampil berjejer ke samping
+        $colFotoWidth = max(18, 5 + ($maxRenderedFotos * 13));
+
         $colWidths = [
             'A' => 6,
             'B' => 16,
@@ -807,7 +820,7 @@ class InventarisSekolahRakyat extends BaseController
             'G' => 16,
             'H' => 18,
             'I' => 10,
-            'J' => 18, // Kolom Foto Barang
+            'J' => $colFotoWidth, // Kolom Foto Barang (otomatis melebar jika ada item dengan 2+ foto)
             'K' => 22,
             'L' => 38,
         ];
