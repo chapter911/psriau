@@ -622,38 +622,33 @@ graph TD
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-table-tennis-paddle-ball mr-2 text-warning"></i> Alur Turnamen Tenis Meja Sistem Gugur (Putra, Putri, Ganda Putra, Ganda Putri) (/tenismeja)</h5>
-                <small class="text-muted">Akses publik bagan turnamen sistem gugur untuk 4 kategori (Putra, Putri, Ganda Putra, dan Ganda Putri) tanpa login, input nama peserta/pasangan &amp; asal balai (1 balai bisa multi-nama), live bracket, acak posisi aman (Superadmin), dan ekspor dokumen PDF.</small>
+                <small class="text-muted">Akses publik bagan turnamen sistem gugur 4 kategori, mode Pas Layar, cetak &amp; ekspor PDF 1 halaman A4; Pengelolaan peserta, acak posisi, reset skor, input skor, dan penentuan pemenang hanya dapat dilakukan setelah masuk (login).</small>
             </div>
             <div>
-                <span class="badge badge-info">Publik / Superadmin</span>
+                <span class="badge badge-info">Publik (View/Cetak/PDF) &bull; Login (Kelola/Skor/Acak)</span>
             </div>
         </div>
         <div class="flowchart-card__body">
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Akses Portal /tenismeja (Tanpa Perlu Login)"] --> B["Pilih Tab Kategori: Putra, Putri, Ganda Putra, atau Ganda Putri"]
-    B --> C{"Pilih / Tinjau Jumlah Peserta"}
-    C -- "5 Peserta" --> C1["Bagan 5 Peserta: Bagan Atas (Babak 1 -> Semifinal -> Final Bagan/Juara)"]
-    C -- "10 Peserta" --> C2["Bagan Gabungan 10 Peserta: Bagan Atas (5) + Bagan Bawah (5) -> Grand Final"]
-    C -- "Lainnya" --> C3["Bagan Sistem Gugur Standar Dinamis (4, 8, 16 Peserta)"]
-    C1 --> D["Klik Tombol 'Atur Peserta' untuk Ubah/Atur Nama &amp; Balai"]
-    C2 --> D
-    C3 --> D
-    D --> E["Form Input Berpasangan: Nama Peserta &amp; Asal Balai (1 Balai Bisa Multi-Nama)"]
-    E --> F["Pilihan Cepat Jumlah Peserta (5, 10, 4, 8, 16) atau Tambah Peserta Baru"]
-    F --> G["Klik 'Generate Bagan Turnamen' (Struktur Bagan Otomatis &amp; Resolusi BYE)"]
-    G --> H["Bagan Interaktif Tampil Otomatis Pas Layar (Tanpa Perlu Geser) &amp; Garis Alir Rapi"]
-    H --> H1["Tombol 'Pas Layar' untuk Beralih Mode Pas Layar atau Skala Penuh"]
-    H --> I1["Input Skor Pertandingan &amp; Simpan Skor"]
-    H --> I2["Klik Tombol Pemenang (Pemenang Lolos Otomatis ke Babak Selanjutnya)"]
-    I2 --> J1["Babak Final / Grand Final: Pemenang Dinobatkan sebagai Juara 1 &amp; Runner-Up"]
-    H --> K1["Klik 'Ekspor PDF' / 'Cetak Bagan' -> Pilihan Orientasi (Landscape / Portrait) Pas 1 Halaman A4 &amp; Presisi"]
-    H --> L1["Klik Tombol 'Acak Posisi' (Shuffle Bracket)"]
-    L1 --> M1["Modal Input Password Akun Superadministrator"]
-    M1 --> N1{"Verifikasi Password Superadmin"}
-    N1 -- Salah --> O1["Pemberitahuan Ditolak (Password Salah)"]
-    N1 -- Benar --> P1["Posisi Peserta Diacak Adil &amp; Bagan Diperbarui Otomatis"]
+    A["Akses Portal /tenismeja (Publik Tanpa Perlu Login)"] --> B["Pilih Tab Kategori: Putra, Putri, Ganda Putra, atau Ganda Putri"]
+    B --> C["Tinjau Bagan Interaktif: Mode 'Pas Layar' (Tanpa Geser) atau Skala Penuh"]
+    C --> D1["Fitur Publik: 'Cetak Bagan' / 'Ekspor PDF' (Pilihan Landscape / Portrait Pas 1 Halaman A4)"]
+    C --> E{"Status Autentikasi Pengguna"}
+    E -- "Belum Login (Pengunjung Publik)" --> F1["Tampilan Read-Only: Skor &amp; Pemenang Berupa Badge Statis, Tombol Kelola Disembunyikan"]
+    F1 --> F2["Klik Tombol 'Masuk' di Header -> Arahkan ke Halaman Login (/masuk)"]
+    E -- "Sudah Login (Pengelola / Admin / Superadmin)" --> G1["Aktifkan Fitur Pengelolaan Turnamen"]
+    G1 --> G2["Tombol 'Atur Peserta': Susun Daftar Nama &amp; Asal Balai (Skema 5, 10, atau Custom)"]
+    G1 --> G3["Input Skor &amp; Simpan Skor Pertandingan"]
+    G1 --> G4["Tandai Pemenang Pertandingan (Lolos Otomatis ke Babak Selanjutnya hingga Juara)"]
+    G1 --> G5["Tombol 'Reset Skor': Kembalikan Skor ke Awal tanpa Menghapus Peserta"]
+    G1 --> G6["Tombol 'Acak Posisi': Verifikasi Password Superadmin -> Pengacakan Posisi Adil"]
+    G2 --> H["Bagan Diperbarui Otomatis dengan Garis Alir SVG Presisi Bebas Distorsi"]
+    G3 --> H
+    G4 --> H
+    G5 --> H
+    G6 --> H
                 </pre>
             </div>
         </div>
@@ -2031,13 +2026,13 @@ graph TD
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-primary"><i class="fas fa-globe mr-1"></i> Akses Publik, Tab Kategori &amp; Input Peserta</h6>
-                                <p class="small text-muted mb-2"><code>/tenismeja</code> (Bisa diakses publik tanpa perlu login)</p>
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-globe mr-1"></i> Akses Publik vs Hak Akses Pengelolaan</h6>
+                                <p class="small text-muted mb-2"><code>/tenismeja</code> (Bagan publik, pengelolaan wajib login)</p>
                                 <ol class="pl-3 small mb-0">
-                                    <li>Buka URL <code>/tenismeja</code> dari peramban pada smartphone, tablet, laptop, atau display monitor.</li>
+                                    <li>Buka URL <code>/tenismeja</code> dari peramban pada smartphone, tablet, laptop, atau display monitor. Halaman ini dapat ditinjau oleh masyarakat dan peserta secara publik tanpa login.</li>
                                     <li>Gunakan tab navigasi di bagian atas untuk beralih antara 4 kategori turnamen: <strong>Putra</strong>, <strong>Putri</strong>, <strong>Ganda Putra</strong>, dan <strong>Ganda Putri</strong> (masing-masing memiliki bagan, daftar peserta/pasangan, dan hasil pertandingan mandiri).</li>
-                                    <li>Secara bawaan sistem telah memuat 5 peserta/pasangan awal untuk masing-masing kategori dari Balai PUPR (BWS Sumatera III, BPJN Riau, BPPW Riau, BP2JK Riau, dan Satker PPS Riau).</li>
-                                    <li><strong>Input Peserta &amp; Balai (1 Balai Bisa Multi-Nama):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta/pasangan terdapat kolom terpisah untuk <strong>Nama Peserta / Pasangan</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>, atau pasangan ganda).</li>
+                                    <li><strong>Hak Akses Pengelolaan (Wajib Login):</strong> Sesuai kebijakan otorisasi sistem, fitur <strong>Atur Peserta</strong>, <strong>Acak Posisi</strong>, <strong>Reset Skor</strong>, serta <strong>Mengubah Skor dan Menentukan Pemenang</strong> hanya dapat dilakukan oleh pengguna yang <strong>sudah masuk (login)</strong> ke dalam sistem. Bagi pengunjung umum (belum login), bagan ditampilkan secara <em>read-only</em> dengan badge skor statis dan tersedia tombol <strong>Masuk</strong> di header untuk masuk ke akun pengelola.</li>
+                                    <li><strong>Input Peserta &amp; Balai (Pengguna Login):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta/pasangan terdapat kolom terpisah untuk <strong>Nama Peserta / Pasangan</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>, atau pasangan ganda).</li>
                                     <li><strong>Pilihan Cepat Jumlah Peserta:</strong> Tersedia tombol pilihan cepat:
                                         <ul class="pl-3 mt-1 mb-1">
                                             <li><strong>5 Peserta (Bagan Atas):</strong> Skema 5 peserta dengan kartu Menang Bye simetris (Babak 1: Match #1, Match #2, Match #BYE 1; Semifinal: Match #BYE A, Match #5; Final: Match #7).</li>
@@ -2053,15 +2048,14 @@ graph TD
                     <div class="col-md-6 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-primary"><i class="fas fa-shield-halved mr-1"></i> Acak Posisi (Superadmin) &amp; Ekspor PDF</h6>
-                                <p class="small text-muted mb-2"><code>/tenismeja</code> (Otorisasi Password Superadmin &amp; Cetak Resmi)</p>
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-shield-halved mr-1"></i> Skor, Acak Posisi (Superadmin) &amp; Cetak/Ekspor PDF</h6>
+                                <p class="small text-muted mb-2"><code>/tenismeja</code> (Otorisasi Login &amp; Cetak Resmi Pas 1 Halaman A4)</p>
                                 <ol class="pl-3 small mb-0">
-                                    <li><strong>Acak Posisi Peserta (Shuffle Bracket):</strong> Klik tombol merah <strong>Acak Posisi</strong> pada toolbar atas. Untuk menjaga sportivitas dan integritas pengundian, sistem meminta verifikasi dengan <strong>memasukkan password akun Superadministrator</strong>.</li>
-                                    <li>Setelah password terverifikasi, posisi peserta pada bagan kategori yang aktif (Putra/Putri) akan diacak secara adil dan bagan otomatis diperbarui secara instan dengan notifikasi tunggal (bebas double alert).</li>
-                                    <li><strong>Catat Skor &amp; Tentukan Pemenang:</strong> Masukkan skor pada kartu pertandingan dan klik tombol simpan atau klik tanda centang pemenang. Pemenang otomatis melaju ke babak berikutnya hingga babak Final dan podium juara.</li>
+                                    <li><strong>Catat Skor &amp; Tentukan Pemenang (Pengguna Login):</strong> Masukkan skor pada kartu pertandingan dan klik tombol simpan atau klik tanda centang pemenang. Pemenang otomatis melaju ke babak berikutnya hingga babak Final/Grand Final dan podium juara. Akses API endpoint <code>/tenismeja/api/update-match</code> diproteksi ketat pada sisi server dengan status HTTP 401 jika diakses tanpa autentikasi session.</li>
+                                    <li><strong>Acak Posisi Peserta (Shuffle Bracket):</strong> Klik tombol merah <strong>Acak Posisi</strong> pada toolbar atas (hanya muncul saat login). Untuk menjaga sportivitas dan integritas pengundian, sistem meminta verifikasi dengan <strong>memasukkan password akun Superadministrator</strong> sebelum bagan diacak secara adil.</li>
+                                    <li><strong>Reset Skor:</strong> Tersedia tombol <strong>Reset Skor</strong> (hanya muncul saat login) untuk mengulang skor pertandingan kembali ke posisi awal tanpa menghapus daftar peserta.</li>
                                     <li><strong>Tampilan Pas Layar (Tanpa Geser):</strong> Tersedia tombol <strong>Pas Layar</strong> pada toolbar yang secara otomatis menyesuaikan ukuran bagan agar pas dan terlihat penuh di layar monitor/laptop tanpa perlu menggeser horizontal maupun vertikal. Pengguna dapat mengklik tombol tersebut kapan saja untuk beralih antara mode Pas Layar atau Skala Penuh.</li>
-                                    <li><strong>Ekspor Dokumen PDF &amp; Cetak Bagan (Pilihan Landscape / Portrait):</strong> Klik tombol <strong>Cetak Bagan</strong> atau <strong>Ekspor PDF</strong> untuk membuka dialog pilihan orientasi halaman (<strong>Landscape</strong> mendatar atau <strong>Portrait</strong> tegak). Seluruh output secara otomatis dihitung dan disesuaikan sehingga <strong>pas dalam 1 halaman A4</strong> dengan desain visual yang <strong>identik dan selaras penuh dengan tampilan portal web</strong> (Top Bar biru tua PUPR, kartu pertandingan dengan seed badge, balai badge, dan box skor, banner podium juara tanpa kolom tanda tangan, serta konektor garis alir orthogonal yang presisi tanpa terputus). Tata letak cetak peramban telah dioptimalkan agar bagan terisi penuh secara proporsional dan membatasi pencetakan tepat 1 halaman tunggal (tanpa halaman kedua yang kosong).</li>
-                                    <li>Tersedia tombol <strong>Reset Skor</strong> untuk mengulang skor pertandingan tanpa menghapus data peserta yang telah diinput.</li>
+                                    <li><strong>Ekspor Dokumen PDF &amp; Cetak Bagan (Pilihan Landscape / Portrait):</strong> Klik tombol <strong>Cetak Bagan</strong> atau <strong>Ekspor PDF</strong> untuk membuka dialog pilihan orientasi halaman (<strong>Landscape</strong> mendatar atau <strong>Portrait</strong> tegak). Seluruh output secara otomatis dihitung dan disesuaikan sehingga <strong>pas dalam 1 halaman A4</strong> dengan desain visual yang <strong>identik dan selaras penuh dengan tampilan portal web</strong> (Top Bar biru tua PUPR, kartu pertandingan dengan seed badge, balai badge, dan box skor, banner podium juara tanpa kolom tanda tangan, serta konektor garis alir orthogonal SVG yang presisi tanpa terputus). Tata letak cetak peramban telah dioptimalkan agar bagan terisi penuh secara proporsional dan membatasi pencetakan tepat 1 halaman tunggal (tanpa halaman kedua yang kosong).</li>
                                 </ol>
                             </div>
                         </div>

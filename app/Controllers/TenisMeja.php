@@ -100,6 +100,9 @@ class TenisMeja extends BaseController
             'gandaPutraTournament' => $gandaPutraTournament,
             'gandaPutriTournament' => $gandaPutriTournament,
             'defaultBalais'        => TenisMejaTournamentModel::$defaultBalais,
+            'isLoggedIn'           => (bool) session()->get('isLoggedIn'),
+            'currentUser'          => session()->get('fullName') ?? session()->get('username') ?? null,
+            'userRole'             => session()->get('role') ?? null,
         ];
 
         return view('public/tenismeja/index', $data);
@@ -135,6 +138,13 @@ class TenisMeja extends BaseController
      */
     public function apiSetup()
     {
+        if (! session()->get('isLoggedIn')) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON([
+                'status'  => 'error',
+                'message' => 'Silakan masuk (login) terlebih dahulu untuk mengatur peserta turnamen.',
+            ]);
+        }
+
         $title = trim((string) ($this->request->getPost('title') ?? ''));
         $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
         $participantsRaw = $this->request->getPost('participants');
@@ -199,6 +209,13 @@ class TenisMeja extends BaseController
      */
     public function apiAcakPosisi()
     {
+        if (! session()->get('isLoggedIn')) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON([
+                'status'  => 'error',
+                'message' => 'Silakan masuk (login) terlebih dahulu untuk mengacak posisi turnamen.',
+            ]);
+        }
+
         $password = trim((string) ($this->request->getPost('password') ?? ''));
         $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
 
@@ -248,6 +265,13 @@ class TenisMeja extends BaseController
      */
     public function apiUpdateMatch()
     {
+        if (! session()->get('isLoggedIn')) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON([
+                'status'  => 'error',
+                'message' => 'Silakan masuk (login) terlebih dahulu untuk mengubah skor atau menentukan pemenang pertandingan.',
+            ]);
+        }
+
         $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
         $tournament = $this->tournamentModel->getActiveTournament($category);
 
@@ -303,6 +327,13 @@ class TenisMeja extends BaseController
      */
     public function apiReset()
     {
+        if (! session()->get('isLoggedIn')) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)->setJSON([
+                'status'  => 'error',
+                'message' => 'Silakan masuk (login) terlebih dahulu untuk mereset skor turnamen.',
+            ]);
+        }
+
         $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
         $tournament = $this->tournamentModel->getActiveTournament($category);
 

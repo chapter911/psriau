@@ -464,6 +464,19 @@
             font-size: 0.92rem;
         }
 
+        .bracket-tree.is-10p .score-display-static {
+            min-width: 30px;
+            height: 26px;
+            font-size: 0.88rem;
+            padding: 0 4px;
+        }
+
+        .bracket-tree.is-10p .winner-check-badge {
+            width: 20px;
+            height: 20px;
+            font-size: 0.65rem;
+        }
+
         .bracket-tree.is-10p .btn-pick-winner {
             width: 24px;
             height: 24px;
@@ -509,6 +522,11 @@
             margin: 0 !important;
             padding: 0 !important;
             min-height: 0 !important;
+            max-height: 100% !important;
+            height: auto !important;
+            overflow: hidden !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
         }
 
         body.print-preview-mode {
@@ -531,6 +549,7 @@
             display: none !important;
         }
 
+        body.print-preview-mode .score-display-static,
         body.print-preview-mode .score-print-display {
             display: inline-flex !important;
             align-items: center !important;
@@ -544,14 +563,18 @@
             font-size: 0.68rem !important;
             color: #0f172a !important;
             background: #f8fafc !important;
+            padding: 0 !important;
+            min-width: 18px !important;
         }
 
+        body.print-preview-mode .score-display-static.is-winner,
         body.print-preview-mode .score-print-display.is-winner {
             background: #d1fae5 !important;
             border-color: #10b981 !important;
             color: #065f46 !important;
         }
 
+        body.print-preview-mode .winner-check-badge,
         body.print-preview-mode .winner-print-check {
             display: inline-flex !important;
             align-items: center !important;
@@ -564,6 +587,7 @@
             color: #ffffff !important;
             font-size: 0.52rem !important;
             margin-left: 2px !important;
+            flex-shrink: 0 !important;
         }
 
         body.print-preview-mode .site-header {
@@ -1113,6 +1137,43 @@
             box-shadow: 0 0 0 3px rgba(11, 60, 116, 0.15);
         }
 
+        /* STATIC SCORE DISPLAY (UNTUK PENGUNJUNG TANPA LOGIN) */
+        .score-display-static {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            height: 32px;
+            padding: 0 6px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #1e293b;
+            background: #f8fafc;
+            border: 1.5px solid #cbd5e1;
+            border-radius: 6px;
+        }
+
+        .score-display-static.is-winner {
+            background: #dcfce7;
+            color: #15803d;
+            border-color: #86efac;
+        }
+
+        .winner-check-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: #10b981;
+            color: #ffffff;
+            font-size: 0.72rem;
+            margin-left: 2px;
+            flex-shrink: 0;
+        }
+
         /* PRINT COMPATIBILITY SCORE DISPLAY (SELARAS TAMPILAN WEB) */
         .score-print-display,
         .winner-print-check {
@@ -1448,6 +1509,12 @@
                 width: 100% !important;
                 height: auto !important;
                 min-height: 0 !important;
+                max-height: 100% !important;
+                overflow: hidden !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+                break-after: avoid !important;
+                break-inside: avoid !important;
             }
 
             body {
@@ -1470,6 +1537,7 @@
                 display: none !important;
             }
 
+            .score-display-static,
             .score-print-display {
                 display: inline-flex !important;
                 align-items: center !important;
@@ -1483,14 +1551,18 @@
                 font-size: 0.68rem !important;
                 color: #0f172a !important;
                 background: #f8fafc !important;
+                padding: 0 !important;
+                min-width: 18px !important;
             }
 
+            .score-display-static.is-winner,
             .score-print-display.is-winner {
                 background: #d1fae5 !important;
                 border-color: #10b981 !important;
                 color: #065f46 !important;
             }
 
+            .winner-check-badge,
             .winner-print-check {
                 display: inline-flex !important;
                 align-items: center !important;
@@ -1503,6 +1575,7 @@
                 color: #ffffff !important;
                 font-size: 0.52rem !important;
                 margin-left: 2px !important;
+                flex-shrink: 0 !important;
             }
 
             .main-wrapper {
@@ -1749,13 +1822,30 @@
             </div>
 
             <div class="header-actions">
-                <!-- ACAK POSISI (SUPERADMINISTRATOR ONLY) -->
-                <button type="button" class="btn-action btn-action-shuffle" id="btnAcakPosisi">
-                    <i class="fas fa-shuffle"></i> Acak Posisi
-                    <span style="font-size: 0.7rem; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; margin-left: 2px;">
-                        <i class="fas fa-lock"></i> Superadmin
-                    </span>
-                </button>
+                <?php if (! empty($isLoggedIn)): ?>
+                    <!-- ACAK POSISI (SUPERADMINISTRATOR ONLY - HANYA KETIKA LOGIN) -->
+                    <button type="button" class="btn-action btn-action-shuffle" id="btnAcakPosisi">
+                        <i class="fas fa-shuffle"></i> Acak Posisi
+                        <span style="font-size: 0.7rem; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; margin-left: 2px;">
+                            <i class="fas fa-lock"></i> Superadmin
+                        </span>
+                    </button>
+
+                    <!-- ATUR PESERTA (HANYA KETIKA LOGIN) -->
+                    <button type="button" class="btn-action btn-action-primary" id="btnOpenSetup">
+                        <i class="fas fa-users-gear"></i> Atur Peserta
+                    </button>
+
+                    <!-- RESET SKOR (HANYA KETIKA LOGIN) -->
+                    <button type="button" class="btn-action btn-action-light" id="btnResetSkor" title="Reset Skor Pertandingan">
+                        <i class="fas fa-rotate-left"></i>
+                    </button>
+                <?php else: ?>
+                    <!-- TOMBOL MASUK UNTUK PENGELOLA TURNAMEN -->
+                    <a href="<?= site_url('masuk'); ?>" class="btn-action btn-action-primary" title="Masuk (Login) untuk mengelola skor, pemenang, dan bagan turnamen">
+                        <i class="fas fa-right-to-bracket"></i> Masuk
+                    </a>
+                <?php endif; ?>
 
                 <!-- PAS LAYAR (TANPA PERLU GESER-GESER) -->
                 <button type="button" class="btn-action btn-action-fit active" id="btnFitScreen" onclick="toggleFitScreen()" title="Mode Pas Layar (Otomatis menyesuaikan layar tanpa perlu menggeser)">
@@ -1772,15 +1862,12 @@
                     <i class="fas fa-file-pdf"></i> Ekspor PDF
                 </button>
 
-                <!-- ATUR PESERTA -->
-                <button type="button" class="btn-action btn-action-primary" id="btnOpenSetup">
-                    <i class="fas fa-users-gear"></i> Atur Peserta
-                </button>
-
-                <!-- RESET SKOR -->
-                <button type="button" class="btn-action btn-action-light" id="btnResetSkor" title="Reset Skor Pertandingan">
-                    <i class="fas fa-rotate-left"></i>
-                </button>
+                <?php if (! empty($isLoggedIn)): ?>
+                    <!-- SHORTCUT DASHBOARD ADMIN -->
+                    <a href="<?= site_url('admin/dashboard'); ?>" class="btn-action btn-action-light" title="Buka Dashboard Admin Satker PPS">
+                        <i class="fas fa-gauge-high"></i> Dashboard
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </header>
@@ -2026,7 +2113,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
-        // API ENDPOINTS
+        // STATUS OTORISASI LOGIN & API ENDPOINTS
+        const IS_LOGGED_IN = <?= ! empty($isLoggedIn) ? 'true' : 'false'; ?>;
+        const LOGIN_URL = '<?= site_url("masuk"); ?>';
         const API_SETUP = '<?= site_url("tenismeja/api/setup"); ?>';
         const API_ACAK = '<?= site_url("tenismeja/api/acak-posisi"); ?>';
         const API_UPDATE_MATCH = '<?= site_url("tenismeja/api/update-match"); ?>';
@@ -2234,17 +2323,29 @@
 
         // FUNGSI HITUNG POSISI ELEMEN RELATIF TERHADAP ROOT BRACKET TREE
         function getCardLocalPos(el, root) {
+            if (!el || !root) {
+                return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+            }
+
+            // Ambil skala transform aktif jika root sedang discale (misal: mode Pas Layar)
+            let currentTransformScale = 1;
+            if (root.style.transform && root.style.transform.includes('scale(')) {
+                const match = root.style.transform.match(/scale\(([^)]+)\)/);
+                if (match && match[1]) {
+                    const parsed = parseFloat(match[1]);
+                    if (!isNaN(parsed) && parsed > 0.01) {
+                        currentTransformScale = parsed;
+                    }
+                }
+            }
+
             const elRect = el.getBoundingClientRect();
             const rootRect = root.getBoundingClientRect();
-            const scaleX = (root.offsetWidth > 0 && rootRect.width > 0) ? (rootRect.width / root.offsetWidth) : 1;
-            const scaleY = (root.offsetHeight > 0 && rootRect.height > 0) ? (rootRect.height / root.offsetHeight) : 1;
-            const effectiveScaleX = (scaleX > 0.05) ? scaleX : 1;
-            const effectiveScaleY = (scaleY > 0.05) ? scaleY : 1;
 
-            const left = (elRect.left - rootRect.left) / effectiveScaleX;
-            const top = (elRect.top - rootRect.top) / effectiveScaleY;
-            const width = elRect.width / effectiveScaleX;
-            const height = elRect.height / effectiveScaleY;
+            const left = (elRect.left - rootRect.left) / currentTransformScale;
+            const top = (elRect.top - rootRect.top) / currentTransformScale;
+            const width = elRect.width / currentTransformScale;
+            const height = elRect.height / currentTransformScale;
 
             return {
                 left: left,
@@ -2443,10 +2544,10 @@
             }
 
             if (orientation === 'portrait') {
-                styleTag.textContent = '@page { size: A4 portrait; margin: 4mm 5mm; }';
+                styleTag.textContent = '@page { size: A4 portrait; margin: 3mm 4mm; } html, body { max-height: 100% !important; overflow: hidden !important; }';
                 document.body.classList.add('print-portrait-mode');
             } else {
-                styleTag.textContent = '@page { size: A4 landscape; margin: 4mm 6mm; }';
+                styleTag.textContent = '@page { size: A4 landscape; margin: 3mm 4mm; } html, body { max-height: 100% !important; overflow: hidden !important; }';
                 document.body.classList.remove('print-portrait-mode');
             }
 
@@ -2572,14 +2673,17 @@
                     <div class="player-score-ctrl">
                         ${isByeMatch ? `
                             <span class="badge-bye-pill" style="background:#ecfdf5; color:#065f46; font-size:0.75rem;"><i class="fas fa-check"></i> Lolos</span>
-                        ` : `
+                        ` : (IS_LOGGED_IN ? `
                             <input type="number" min="0" max="99" class="score-input" id="score1_${match.id}" value="${match.score1 !== null ? match.score1 : ''}" placeholder="0" ${!p1 ? 'disabled' : ''}>
                             <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p1 ? escapeHtml(p1.name) : ''}')" ${!p1 ? 'disabled' : ''}>
                                 <i class="fas fa-check"></i>
                             </button>
                             <span class="score-print-display ${isP1Winner ? 'is-winner' : ''}">${match.score1 !== null ? match.score1 : '0'}</span>
                             ${isP1Winner ? '<span class="winner-print-check"><i class="fas fa-check"></i></span>' : ''}
-                        `}
+                        ` : `
+                            <span class="score-display-static ${isP1Winner ? 'is-winner' : ''}">${match.score1 !== null ? match.score1 : '0'}</span>
+                            ${isP1Winner ? '<span class="winner-check-badge" title="Pemenang Pertandingan"><i class="fas fa-check"></i></span>' : ''}
+                        `)}
                     </div>
                 </div>
 
@@ -2595,14 +2699,17 @@
                     <div class="player-score-ctrl">
                         ${isByeMatch ? `
                             <span class="badge-bye-pill" style="opacity:0.6; font-size:0.75rem;">BYE</span>
-                        ` : `
+                        ` : (IS_LOGGED_IN ? `
                             <input type="number" min="0" max="99" class="score-input" id="score2_${match.id}" value="${match.score2 !== null ? match.score2 : ''}" placeholder="0" ${!p2 ? 'disabled' : ''}>
                             <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p2 ? escapeHtml(p2.name) : ''}')" ${!p2 ? 'disabled' : ''}>
                                 <i class="fas fa-check"></i>
                             </button>
                             <span class="score-print-display ${isP2Winner ? 'is-winner' : ''}">${match.score2 !== null ? match.score2 : '0'}</span>
                             ${isP2Winner ? '<span class="winner-print-check"><i class="fas fa-check"></i></span>' : ''}
-                        `}
+                        ` : `
+                            <span class="score-display-static ${isP2Winner ? 'is-winner' : ''}">${match.score2 !== null ? match.score2 : '0'}</span>
+                            ${isP2Winner ? '<span class="winner-check-badge" title="Pemenang Pertandingan"><i class="fas fa-check"></i></span>' : ''}
+                        `)}
                     </div>
                 </div>
 
@@ -2612,7 +2719,7 @@
                 </div>
                 ` : ''}
 
-                ${!isByeMatch && p1 && p2 ? `
+                ${IS_LOGGED_IN && !isByeMatch && p1 && p2 ? `
                 <div class="match-actions-footer">
                     <button type="button" class="btn-save-match" onclick="saveMatchScores('${match.id}')">
                         <i class="fas fa-floppy-disk mr-1"></i> Simpan Skor
@@ -2624,8 +2731,25 @@
             return card;
         }
 
-        // SAVE MATCH SCORES
+        // SAVE MATCH SCORES (HANYA KETIKA LOGIN)
         async function saveMatchScores(matchId) {
+            if (!IS_LOGGED_IN) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Perlu Masuk (Login)',
+                    text: 'Mengubah skor pertandingan hanya dapat dilakukan setelah masuk ke akun resmi.',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-right-to-bracket mr-1"></i> Masuk Sekarang',
+                    confirmButtonColor: '#0b3c74',
+                    cancelButtonText: 'Batal'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        window.location.href = LOGIN_URL;
+                    }
+                });
+                return;
+            }
+
             const score1Input = document.getElementById(`score1_${matchId}`);
             const score2Input = document.getElementById(`score2_${matchId}`);
 
@@ -2657,8 +2781,25 @@
             }
         }
 
-        // SET MATCH WINNER DIRECTLY
+        // SET MATCH WINNER DIRECTLY (HANYA KETIKA LOGIN)
         async function setMatchWinner(matchId, winnerName) {
+            if (!IS_LOGGED_IN) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Perlu Masuk (Login)',
+                    text: 'Menentukan pemenang pertandingan hanya dapat dilakukan setelah masuk ke akun resmi.',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fas fa-right-to-bracket mr-1"></i> Masuk Sekarang',
+                    confirmButtonColor: '#0b3c74',
+                    cancelButtonText: 'Batal'
+                }).then((res) => {
+                    if (res.isConfirmed) {
+                        window.location.href = LOGIN_URL;
+                    }
+                });
+                return;
+            }
+
             if (!winnerName) return;
 
             const score1Input = document.getElementById(`score1_${matchId}`);
@@ -2714,7 +2855,8 @@
         function initEventHandlers() {
             // ACAK POSISI DENGAN PASSWORD SUPERADMINISTRATOR
             const btnAcak = document.getElementById('btnAcakPosisi');
-            btnAcak.addEventListener('click', function () {
+            if (btnAcak) {
+                btnAcak.addEventListener('click', function () {
                 const catLabel = (currentCategory === 'putri') ? 'Putri' : 'Putra';
 
                 Swal.fire({
@@ -2812,11 +2954,13 @@
                         }
                     }
                 });
-            });
+                });
+            }
 
             // RESET SKOR
             const btnReset = document.getElementById('btnResetSkor');
-            btnReset.addEventListener('click', function () {
+            if (btnReset) {
+                btnReset.addEventListener('click', function () {
                 const catLabel = (currentCategory === 'putri') ? 'Putri' : 'Putra';
 
                 Swal.fire({
@@ -2852,7 +2996,8 @@
                         }
                     }
                 });
-            });
+                });
+            }
 
             // MODAL SETUP OPEN / CLOSE
             const modal = document.getElementById('setupModal');
@@ -2860,14 +3005,20 @@
             const btnCloseSetup = document.getElementById('btnCloseSetup');
             const btnCancelSetup = document.getElementById('btnCancelSetup');
 
-            btnOpenSetup.addEventListener('click', () => {
-                document.getElementById('formCategory').value = currentCategory;
-                populateParticipantInputs(currentCategory);
-                modal.classList.add('active');
-            });
+            if (btnOpenSetup && modal) {
+                btnOpenSetup.addEventListener('click', () => {
+                    document.getElementById('formCategory').value = currentCategory;
+                    populateParticipantInputs(currentCategory);
+                    modal.classList.add('active');
+                });
+            }
 
-            btnCloseSetup.addEventListener('click', () => modal.classList.remove('active'));
-            btnCancelSetup.addEventListener('click', () => modal.classList.remove('active'));
+            if (btnCloseSetup && modal) {
+                btnCloseSetup.addEventListener('click', () => modal.classList.remove('active'));
+            }
+            if (btnCancelSetup && modal) {
+                btnCancelSetup.addEventListener('click', () => modal.classList.remove('active'));
+            }
 
             // PARTICIPANT COUNT BUTTONS
             const countButtons = document.querySelectorAll('.btn-count-opt');
@@ -2889,9 +3040,28 @@
             });
 
             // SUBMIT SETUP FORM
-            document.getElementById('btnSubmitSetup').addEventListener('click', async function () {
-                const category = document.getElementById('formCategory').value;
-                const title = document.getElementById('formTitle').value.trim();
+            const btnSubmitSetup = document.getElementById('btnSubmitSetup');
+            if (btnSubmitSetup) {
+                btnSubmitSetup.addEventListener('click', async function () {
+                    if (!IS_LOGGED_IN) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Perlu Masuk (Login)',
+                            text: 'Mengatur peserta turnamen hanya dapat dilakukan setelah masuk ke akun resmi.',
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-right-to-bracket mr-1"></i> Masuk Sekarang',
+                            confirmButtonColor: '#0b3c74',
+                            cancelButtonText: 'Batal'
+                        }).then((res) => {
+                            if (res.isConfirmed) {
+                                window.location.href = LOGIN_URL;
+                            }
+                        });
+                        return;
+                    }
+
+                    const category = document.getElementById('formCategory').value;
+                    const title = document.getElementById('formTitle').value.trim();
 
                 const rows = document.querySelectorAll('.participant-input-row');
                 const participantList = [];
@@ -2968,6 +3138,7 @@
                     });
                 }
             });
+        }
 
             // REDRAW BRACKET CONNECTOR LINES ON RESIZE
             window.addEventListener('resize', () => {
