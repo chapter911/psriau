@@ -503,6 +503,22 @@
         }
 
         /* PRINT PREVIEW MODE STYLES (DIAPLIKASIKAN SEBELUM DIALOG CETAK TERBUKA) */
+        body.print-preview-mode,
+        body.print-preview-mode html {
+            background: #ffffff !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            min-height: 0 !important;
+            overflow: hidden !important;
+            display: block !important;
+        }
+
+        body.print-preview-mode > *:not(.site-header):not(.main-wrapper) {
+            display: none !important;
+        }
+
         body.print-preview-mode .header-actions,
         body.print-preview-mode .category-nav-bar,
         body.print-preview-mode .site-footer,
@@ -519,13 +535,13 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            width: 18px !important;
-            height: 15px !important;
-            line-height: 15px !important;
+            width: 20px !important;
+            height: 16px !important;
+            line-height: 16px !important;
             border: 1px solid #cbd5e1 !important;
             border-radius: 2px !important;
             font-weight: 800 !important;
-            font-size: 0.68rem !important;
+            font-size: 0.72rem !important;
             color: #0f172a !important;
             background: #f8fafc !important;
         }
@@ -540,190 +556,249 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            width: 12px !important;
-            height: 12px !important;
-            line-height: 12px !important;
+            width: 13px !important;
+            height: 13px !important;
+            line-height: 13px !important;
             border-radius: 50% !important;
             background: #10b981 !important;
             color: #ffffff !important;
-            font-size: 0.52rem !important;
+            font-size: 0.55rem !important;
             margin-left: 2px !important;
         }
 
         body.print-preview-mode .site-header {
-            padding: 4px 10px !important;
+            padding: 5px 12px !important;
             background: #002244 !important;
             border-radius: 4px !important;
-            margin-bottom: 3px !important;
+            margin-bottom: 4px !important;
+            position: static !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
         }
 
         body.print-preview-mode .site-header .header-logo {
-            width: 22px !important;
-            height: 22px !important;
+            width: 24px !important;
+            height: 24px !important;
         }
 
         body.print-preview-mode .site-header h1 {
-            font-size: 0.85rem !important;
+            font-size: 0.9rem !important;
+            margin: 0 !important;
         }
 
         body.print-preview-mode .tournament-banner {
             box-shadow: none !important;
             border: 1px solid #cbd5e1 !important;
             border-radius: 4px !important;
-            margin-bottom: 4px !important;
+            margin-bottom: 5px !important;
             padding: 4px 10px !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
         }
 
         body.print-preview-mode .tournament-banner h2 {
-            font-size: 0.85rem !important;
+            font-size: 0.9rem !important;
+            margin: 0 !important;
         }
 
         body.print-preview-mode .tournament-banner .podium-mini-card {
             padding: 2px 6px !important;
-            font-size: 0.6rem !important;
-        }
-
-        body.print-preview-mode .tournament-banner .meta-item {
             font-size: 0.62rem !important;
         }
 
-        body.print-preview-mode .main-wrapper,
-        body.print-preview-mode .bracket-scroll-container,
-        body.print-preview-mode .bracket-tree-wrapper {
-            overflow: visible !important;
+        body.print-preview-mode .tournament-banner .meta-item {
+            font-size: 0.64rem !important;
+        }
+
+        body.print-preview-mode .main-wrapper {
+            overflow: hidden !important;
             padding: 0 !important;
             margin: 0 !important;
             box-shadow: none !important;
             border: none !important;
-            height: auto !important;
-            min-height: auto !important;
+            height: calc(100% - 46px) !important;
+            max-height: calc(100% - 46px) !important;
+            min-height: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex: none !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+        }
+
+        body.print-preview-mode .bracket-scroll-container,
+        body.print-preview-mode .bracket-tree-wrapper {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            height: 100% !important;
+            min-height: 0 !important;
         }
 
         body.print-preview-mode .bracket-tree {
-            transform: none !important;
-            zoom: 1 !important;
+            flex: 1 !important;
+            display: flex !important;
+            align-items: stretch !important;
+            justify-content: space-between !important;
+            width: 100% !important;
             min-width: 100% !important;
             padding: 0 !important;
-        }
-
-        /* ULTRA COMPACT MATCH CARDS UNTUK PRINT */
-        body.print-preview-mode .bracket-tree.is-10p .match-card {
-            border-radius: 4px !important;
             margin: 0 !important;
-            box-shadow: none !important;
-            border-width: 1px !important;
+            transform: none !important;
+            zoom: 1 !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .match-card-header {
-            padding: 2px 5px !important;
-            font-size: 0.62rem !important;
+        body.print-preview-mode .bracket-round-column {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        body.print-preview-mode .round-matches-list {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-around !important;
+            flex: 1 !important;
+            gap: 0 !important;
+        }
+
+        /* ULTRA COMPACT & CLEAN MATCH CARDS UNTUK PRINT */
+        body.print-preview-mode .match-card {
+            border-radius: 6px !important;
+            margin: 0 !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+            border-width: 1px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        body.print-preview-mode .match-card-header {
+            padding: 2.5px 6px !important;
+            font-size: 0.65rem !important;
             border-bottom: 1px solid #f1f5f9 !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .match-num-badge {
-            font-size: 0.6rem !important;
+        body.print-preview-mode .match-num-badge {
+            font-size: 0.62rem !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .match-status-badge {
+        body.print-preview-mode .match-status-badge {
             font-size: 0.52rem !important;
-            padding: 1px 3px !important;
+            padding: 1px 4px !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .group-mini-pill {
-            font-size: 0.5rem !important;
-            padding: 0.5px 3px !important;
+        body.print-preview-mode .group-mini-pill {
+            font-size: 0.52rem !important;
+            padding: 1px 4px !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .player-slot {
-            padding: 1.5px 4px !important;
+        body.print-preview-mode .player-slot {
+            padding: 2.5px 5px !important;
             min-height: auto !important;
-            gap: 2px !important;
+            gap: 3px !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .player-seed {
-            width: 13px !important;
-            height: 13px !important;
-            line-height: 13px !important;
-            font-size: 0.55rem !important;
+        body.print-preview-mode .player-seed {
+            width: 15px !important;
+            height: 15px !important;
+            line-height: 15px !important;
+            font-size: 0.58rem !important;
             border-radius: 2px !important;
             flex-shrink: 0 !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .player-name {
-            font-size: 0.66rem !important;
+        body.print-preview-mode .player-name {
+            font-size: 0.72rem !important;
             line-height: 1.15 !important;
             font-weight: 700 !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .balai-badge-pill {
-            font-size: 0.52rem !important;
-            padding: 0.5px 3px !important;
+        body.print-preview-mode .balai-badge-pill {
+            font-size: 0.55rem !important;
+            padding: 1px 4px !important;
             border-radius: 2px !important;
             line-height: 1 !important;
             margin-top: 1px !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .bye-slot-card {
-            padding: 2px 4px !important;
-            border-radius: 4px !important;
-            gap: 2px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .round-header {
+        body.print-preview-mode .bye-slot-card {
             padding: 3px 6px !important;
-            margin-bottom: 3px !important;
+            border-radius: 6px !important;
+            gap: 2px !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        body.print-preview-mode .round-header {
+            padding: 4px 8px !important;
+            margin-bottom: 4px !important;
             border-radius: 4px !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .round-header h3 {
-            font-size: 0.72rem !important;
+        body.print-preview-mode .round-header h3 {
+            font-size: 0.78rem !important;
             margin: 0 !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .round-header span {
-            font-size: 0.55rem !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .round-matches-list {
-            gap: 3px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .bracket-group-section-title {
-            padding: 1px 4px !important;
-            margin: 2px 0 !important;
+        body.print-preview-mode .round-header span {
             font-size: 0.58rem !important;
+        }
+
+        body.print-preview-mode .bracket-group-section-title {
+            padding: 2px 6px !important;
+            margin: 3px 0 !important;
+            font-size: 0.62rem !important;
             border-radius: 3px !important;
         }
 
-        /* LANDSCAPE PRINT MODE (1 HALAMAN A4 MELEBAR) */
+        /* LANDSCAPE PRINT MODE (1 HALAMAN A4 MELEBAR - TERISI PENUH) */
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p {
-            gap: 14px !important;
+            gap: 16px !important;
         }
 
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p .bracket-round-column {
-            width: 205px !important;
+            width: 235px !important;
         }
 
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) {
-            gap: 36px !important;
+            gap: 40px !important;
         }
 
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) .bracket-round-column {
-            width: 260px !important;
+            width: 300px !important;
         }
 
-        /* PORTRAIT PRINT MODE (1 HALAMAN A4 TEGAK) */
+        /* PORTRAIT PRINT MODE (1 HALAMAN A4 TEGAK - TERISI PENUH) */
         body.print-portrait-mode .bracket-tree.is-10p {
             gap: 8px !important;
         }
         body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
-            width: 155px !important;
+            width: 170px !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .player-slot {
+            padding: 4px 5px !important;
         }
         body.print-portrait-mode .bracket-tree:not(.is-10p) {
             gap: 20px !important;
         }
         body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
-            width: 205px !important;
+            width: 225px !important;
+        }
+        body.print-portrait-mode .bracket-tree:not(.is-10p) .player-slot {
+            padding: 6px 8px !important;
         }
 
         /* MODAL ORIENTATION SELECT CARDS */
@@ -1418,6 +1493,22 @@
                 print-color-adjust: exact !important;
             }
 
+            html, body {
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                max-height: 100% !important;
+                min-height: 0 !important;
+                overflow: hidden !important;
+                display: block !important;
+            }
+
+            body > *:not(.site-header):not(.main-wrapper) {
+                display: none !important;
+            }
+
             .header-actions,
             .category-nav-bar,
             .site-footer,
@@ -1434,13 +1525,13 @@
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                width: 18px !important;
-                height: 15px !important;
-                line-height: 15px !important;
+                width: 20px !important;
+                height: 16px !important;
+                line-height: 16px !important;
                 border: 1px solid #cbd5e1 !important;
                 border-radius: 2px !important;
                 font-weight: 800 !important;
-                font-size: 0.68rem !important;
+                font-size: 0.72rem !important;
                 color: #0f172a !important;
                 background: #f8fafc !important;
             }
@@ -1455,216 +1546,250 @@
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                width: 12px !important;
-                height: 12px !important;
-                line-height: 12px !important;
+                width: 13px !important;
+                height: 13px !important;
+                line-height: 13px !important;
                 border-radius: 50% !important;
                 background: #10b981 !important;
                 color: #ffffff !important;
-                font-size: 0.52rem !important;
+                font-size: 0.55rem !important;
                 margin-left: 2px !important;
-            }
-
-            html, body {
-                background: #ffffff !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 100% !important;
-                height: auto !important;
-                overflow: visible !important;
             }
 
             .main-wrapper {
                 padding: 0 !important;
                 margin: 0 !important;
+                width: 100% !important;
                 max-width: 100% !important;
+                height: calc(100% - 46px) !important;
+                max-height: calc(100% - 46px) !important;
+                min-height: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
+                flex: none !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
             }
 
             .site-header {
-                padding: 4px 10px !important;
+                padding: 5px 12px !important;
                 background: #002244 !important;
                 border-radius: 4px !important;
-                margin-bottom: 3px !important;
+                margin-bottom: 4px !important;
+                position: static !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
             }
 
             .site-header .header-logo {
-                width: 22px !important;
-                height: 22px !important;
+                width: 24px !important;
+                height: 24px !important;
             }
 
             .site-header h1 {
-                font-size: 0.85rem !important;
+                font-size: 0.9rem !important;
+                margin: 0 !important;
             }
 
             .tournament-banner {
                 box-shadow: none !important;
                 border: 1px solid #cbd5e1 !important;
                 border-radius: 4px !important;
-                margin-bottom: 4px !important;
+                margin-bottom: 5px !important;
                 padding: 4px 10px !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
             }
 
             .tournament-banner h2 {
-                font-size: 0.85rem !important;
+                font-size: 0.9rem !important;
+                margin: 0 !important;
             }
 
             .tournament-banner .podium-mini-card {
                 padding: 2px 6px !important;
-                font-size: 0.6rem !important;
+                font-size: 0.62rem !important;
             }
 
             .tournament-banner .meta-item {
-                font-size: 0.62rem !important;
+                font-size: 0.64rem !important;
             }
 
             .bracket-scroll-container,
             .bracket-tree-wrapper {
-                overflow: visible !important;
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                overflow: hidden !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                min-height: auto !important;
-                height: auto !important;
+                height: 100% !important;
+                min-height: 0 !important;
             }
 
             .bracket-tree {
+                flex: 1 !important;
+                display: flex !important;
+                align-items: stretch !important;
+                justify-content: space-between !important;
+                width: 100% !important;
                 min-width: 100% !important;
                 padding: 0 !important;
+                margin: 0 !important;
                 transform: none !important;
                 zoom: 1 !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
+                page-break-after: avoid !important;
+                break-after: avoid !important;
             }
 
-            /* ULTRA COMPACT MATCH CARDS UNTUK PRINT */
-            .bracket-tree.is-10p .match-card {
-                border-radius: 4px !important;
+            .bracket-round-column {
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100% !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            .round-matches-list {
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-around !important;
+                flex: 1 !important;
+                gap: 0 !important;
+            }
+
+            /* ULTRA COMPACT & CLEAN MATCH CARDS UNTUK PRINT */
+            .match-card {
+                border-radius: 6px !important;
                 margin: 0 !important;
-                box-shadow: none !important;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
                 border-width: 1px !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
-            .bracket-tree.is-10p .match-card-header {
-                padding: 2px 5px !important;
-                font-size: 0.62rem !important;
+            .match-card-header {
+                padding: 2.5px 6px !important;
+                font-size: 0.65rem !important;
                 border-bottom: 1px solid #f1f5f9 !important;
             }
 
-            .bracket-tree.is-10p .match-num-badge {
-                font-size: 0.6rem !important;
+            .match-num-badge {
+                font-size: 0.62rem !important;
             }
 
-            .bracket-tree.is-10p .match-status-badge {
+            .match-status-badge {
                 font-size: 0.52rem !important;
-                padding: 1px 3px !important;
+                padding: 1px 4px !important;
             }
 
-            .bracket-tree.is-10p .group-mini-pill {
-                font-size: 0.5rem !important;
-                padding: 0.5px 3px !important;
+            .group-mini-pill {
+                font-size: 0.52rem !important;
+                padding: 1px 4px !important;
             }
 
-            .bracket-tree.is-10p .player-slot {
-                padding: 1.5px 4px !important;
+            .player-slot {
+                padding: 2.5px 5px !important;
                 min-height: auto !important;
-                gap: 2px !important;
+                gap: 3px !important;
             }
 
-            .bracket-tree.is-10p .player-seed {
-                width: 13px !important;
-                height: 13px !important;
-                line-height: 13px !important;
-                font-size: 0.55rem !important;
+            .player-seed {
+                width: 15px !important;
+                height: 15px !important;
+                line-height: 15px !important;
+                font-size: 0.58rem !important;
                 border-radius: 2px !important;
                 flex-shrink: 0 !important;
             }
 
-            .bracket-tree.is-10p .player-name {
-                font-size: 0.66rem !important;
+            .player-name {
+                font-size: 0.72rem !important;
                 line-height: 1.15 !important;
                 font-weight: 700 !important;
             }
 
-            .bracket-tree.is-10p .balai-badge-pill {
-                font-size: 0.52rem !important;
-                padding: 0.5px 3px !important;
+            .balai-badge-pill {
+                font-size: 0.55rem !important;
+                padding: 1px 4px !important;
                 border-radius: 2px !important;
                 line-height: 1 !important;
                 margin-top: 1px !important;
             }
 
-            .bracket-tree.is-10p .bye-slot-card {
-                padding: 2px 4px !important;
-                border-radius: 4px !important;
+            .bye-slot-card {
+                padding: 3px 6px !important;
+                border-radius: 6px !important;
                 gap: 2px !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
-            .bracket-tree.is-10p .round-header {
-                padding: 3px 6px !important;
-                margin-bottom: 3px !important;
+            .round-header {
+                padding: 4px 8px !important;
+                margin-bottom: 4px !important;
                 border-radius: 4px !important;
             }
 
-            .bracket-tree.is-10p .round-header h3 {
-                font-size: 0.72rem !important;
+            .round-header h3 {
+                font-size: 0.78rem !important;
                 margin: 0 !important;
             }
 
-            .bracket-tree.is-10p .round-header span {
-                font-size: 0.55rem !important;
-            }
-
-            .bracket-tree.is-10p .round-matches-list {
-                gap: 3px !important;
-            }
-
-            .bracket-tree.is-10p .bracket-group-section-title {
-                padding: 1px 4px !important;
-                margin: 2px 0 !important;
+            .round-header span {
                 font-size: 0.58rem !important;
+            }
+
+            .bracket-group-section-title {
+                padding: 2px 6px !important;
+                margin: 3px 0 !important;
+                font-size: 0.62rem !important;
                 border-radius: 3px !important;
             }
 
-            .bracket-round-column {
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            /* DEFAULT LANDSCAPE PRINT WIDTHS */
+            /* DEFAULT LANDSCAPE PRINT WIDTHS (TERISI PENUH) */
             .bracket-tree.is-10p {
-                gap: 14px !important;
+                gap: 16px !important;
             }
 
             .bracket-tree.is-10p .bracket-round-column {
-                width: 205px !important;
+                width: 235px !important;
             }
 
             .bracket-tree:not(.is-10p) {
-                gap: 36px !important;
+                gap: 40px !important;
             }
 
             .bracket-tree:not(.is-10p) .bracket-round-column {
-                width: 260px !important;
+                width: 300px !important;
             }
 
-            /* PORTRAIT PRINT STYLES (KETIKA PRINT PORTRAIT DIPILIH ATAU DIALOG PRINT OTOMATIS PORTRAIT) */
+            /* PORTRAIT PRINT STYLES (TERISI PENUH) */
             @media (orientation: portrait) {
                 .bracket-tree.is-10p {
                     gap: 8px !important;
                 }
                 .bracket-tree.is-10p .bracket-round-column {
-                    width: 155px !important;
+                    width: 170px !important;
+                }
+                .bracket-tree.is-10p .player-slot {
+                    padding: 4px 5px !important;
                 }
                 .bracket-tree:not(.is-10p) {
                     gap: 20px !important;
                 }
                 .bracket-tree:not(.is-10p) .bracket-round-column {
-                    width: 205px !important;
+                    width: 225px !important;
+                }
+                .bracket-tree:not(.is-10p) .player-slot {
+                    padding: 6px 8px !important;
                 }
             }
 
@@ -1673,7 +1798,11 @@
             }
 
             body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
-                width: 155px !important;
+                width: 170px !important;
+            }
+
+            body.print-portrait-mode .bracket-tree.is-10p .player-slot {
+                padding: 4px 5px !important;
             }
 
             body.print-portrait-mode .bracket-tree:not(.is-10p) {
@@ -1681,7 +1810,11 @@
             }
 
             body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
-                width: 205px !important;
+                width: 225px !important;
+            }
+
+            body.print-portrait-mode .bracket-tree:not(.is-10p) .player-slot {
+                padding: 6px 8px !important;
             }
 
             @page {
@@ -2400,10 +2533,10 @@
             }
 
             if (orientation === 'portrait') {
-                styleTag.textContent = '@page { size: A4 portrait !important; margin: 4mm 5mm !important; }';
+                styleTag.textContent = '@page { size: A4 portrait; margin: 4mm 5mm; }';
                 document.body.classList.add('print-portrait-mode');
             } else {
-                styleTag.textContent = '@page { size: A4 landscape !important; margin: 4mm 6mm !important; }';
+                styleTag.textContent = '@page { size: A4 landscape; margin: 4mm 6mm; }';
                 document.body.classList.remove('print-portrait-mode');
             }
 
