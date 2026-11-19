@@ -508,10 +508,10 @@
             background: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
-            height: 100% !important;
-            max-height: 100% !important;
             min-height: 0 !important;
-            overflow: hidden !important;
+        }
+
+        body.print-preview-mode {
             display: block !important;
         }
 
@@ -535,13 +535,13 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            width: 20px !important;
-            height: 16px !important;
-            line-height: 16px !important;
+            width: 18px !important;
+            height: 15px !important;
+            line-height: 15px !important;
             border: 1px solid #cbd5e1 !important;
             border-radius: 2px !important;
             font-weight: 800 !important;
-            font-size: 0.72rem !important;
+            font-size: 0.68rem !important;
             color: #0f172a !important;
             background: #f8fafc !important;
         }
@@ -556,33 +556,31 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            width: 13px !important;
-            height: 13px !important;
-            line-height: 13px !important;
+            width: 12px !important;
+            height: 12px !important;
+            line-height: 12px !important;
             border-radius: 50% !important;
             background: #10b981 !important;
             color: #ffffff !important;
-            font-size: 0.55rem !important;
+            font-size: 0.52rem !important;
             margin-left: 2px !important;
         }
 
         body.print-preview-mode .site-header {
-            padding: 5px 12px !important;
+            padding: 4px 10px !important;
             background: #002244 !important;
             border-radius: 4px !important;
-            margin-bottom: 4px !important;
+            margin-bottom: 3px !important;
             position: static !important;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
         }
 
         body.print-preview-mode .site-header .header-logo {
-            width: 24px !important;
-            height: 24px !important;
+            width: 22px !important;
+            height: 22px !important;
         }
 
         body.print-preview-mode .site-header h1 {
-            font-size: 0.9rem !important;
+            font-size: 0.85rem !important;
             margin: 0 !important;
         }
 
@@ -590,215 +588,165 @@
             box-shadow: none !important;
             border: 1px solid #cbd5e1 !important;
             border-radius: 4px !important;
-            margin-bottom: 5px !important;
+            margin-bottom: 4px !important;
             padding: 4px 10px !important;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
         }
 
         body.print-preview-mode .tournament-banner h2 {
-            font-size: 0.9rem !important;
+            font-size: 0.85rem !important;
             margin: 0 !important;
         }
 
         body.print-preview-mode .tournament-banner .podium-mini-card {
             padding: 2px 6px !important;
-            font-size: 0.62rem !important;
+            font-size: 0.6rem !important;
         }
 
         body.print-preview-mode .tournament-banner .meta-item {
-            font-size: 0.64rem !important;
-        }
-
-        body.print-preview-mode .main-wrapper {
-            overflow: hidden !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-            height: calc(100% - 46px) !important;
-            max-height: calc(100% - 46px) !important;
-            min-height: 0 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            flex: none !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-        }
-
-        body.print-preview-mode .bracket-scroll-container,
-        body.print-preview-mode .bracket-tree-wrapper {
-            flex: 1 !important;
-            display: flex !important;
-            flex-direction: column !important;
-            overflow: hidden !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-            height: 100% !important;
-            min-height: 0 !important;
-        }
-
-        body.print-preview-mode .bracket-tree {
-            flex: 1 !important;
-            display: flex !important;
-            align-items: stretch !important;
-            justify-content: space-between !important;
-            width: 100% !important;
-            min-width: 100% !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            transform: none !important;
-            zoom: 1 !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-            page-break-after: avoid !important;
-            break-after: avoid !important;
-        }
-
-        body.print-preview-mode .bracket-round-column {
-            display: flex !important;
-            flex-direction: column !important;
-            height: 100% !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
-
-        body.print-preview-mode .round-matches-list {
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-around !important;
-            flex: 1 !important;
-            gap: 0 !important;
-        }
-
-        /* ULTRA COMPACT & CLEAN MATCH CARDS UNTUK PRINT */
-        body.print-preview-mode .match-card {
-            border-radius: 6px !important;
-            margin: 0 !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
-            border-width: 1px !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
-
-        body.print-preview-mode .match-card-header {
-            padding: 2.5px 6px !important;
-            font-size: 0.65rem !important;
-            border-bottom: 1px solid #f1f5f9 !important;
-        }
-
-        body.print-preview-mode .match-num-badge {
             font-size: 0.62rem !important;
         }
 
-        body.print-preview-mode .match-status-badge {
-            font-size: 0.52rem !important;
-            padding: 1px 4px !important;
-        }
-
-        body.print-preview-mode .group-mini-pill {
-            font-size: 0.52rem !important;
-            padding: 1px 4px !important;
-        }
-
-        body.print-preview-mode .player-slot {
-            padding: 2.5px 5px !important;
+        body.print-preview-mode .main-wrapper,
+        body.print-preview-mode .bracket-scroll-container,
+        body.print-preview-mode .bracket-tree-wrapper {
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            height: auto !important;
             min-height: auto !important;
-            gap: 3px !important;
+            display: block !important;
+            flex: none !important;
         }
 
-        body.print-preview-mode .player-seed {
-            width: 15px !important;
-            height: 15px !important;
-            line-height: 15px !important;
-            font-size: 0.58rem !important;
+        body.print-preview-mode .bracket-tree {
+            transform: none !important;
+            zoom: 1 !important;
+            min-width: 100% !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: stretch !important;
+        }
+
+        /* CARD STYLES UNTUK PRINT */
+        body.print-preview-mode .bracket-tree.is-10p .match-card {
+            border-radius: 4px !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border-width: 1px !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .match-card-header {
+            padding: 2px 5px !important;
+            font-size: 0.62rem !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .match-num-badge {
+            font-size: 0.6rem !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .match-status-badge {
+            font-size: 0.52rem !important;
+            padding: 1px 3px !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .group-mini-pill {
+            font-size: 0.5rem !important;
+            padding: 0.5px 3px !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .player-slot {
+            padding: 2px 4px !important;
+            min-height: auto !important;
+            gap: 2px !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .player-seed {
+            width: 13px !important;
+            height: 13px !important;
+            line-height: 13px !important;
+            font-size: 0.55rem !important;
             border-radius: 2px !important;
             flex-shrink: 0 !important;
         }
 
-        body.print-preview-mode .player-name {
-            font-size: 0.72rem !important;
+        body.print-preview-mode .bracket-tree.is-10p .player-name {
+            font-size: 0.68rem !important;
             line-height: 1.15 !important;
             font-weight: 700 !important;
         }
 
-        body.print-preview-mode .balai-badge-pill {
-            font-size: 0.55rem !important;
-            padding: 1px 4px !important;
+        body.print-preview-mode .bracket-tree.is-10p .balai-badge-pill {
+            font-size: 0.52rem !important;
+            padding: 0.5px 3px !important;
             border-radius: 2px !important;
             line-height: 1 !important;
             margin-top: 1px !important;
         }
 
-        body.print-preview-mode .bye-slot-card {
-            padding: 3px 6px !important;
-            border-radius: 6px !important;
+        body.print-preview-mode .bracket-tree.is-10p .bye-slot-card {
+            padding: 2px 4px !important;
+            border-radius: 4px !important;
             gap: 2px !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
         }
 
-        body.print-preview-mode .round-header {
-            padding: 4px 8px !important;
-            margin-bottom: 4px !important;
+        body.print-preview-mode .bracket-tree.is-10p .round-header {
+            padding: 3px 6px !important;
+            margin-bottom: 3px !important;
             border-radius: 4px !important;
         }
 
-        body.print-preview-mode .round-header h3 {
-            font-size: 0.78rem !important;
+        body.print-preview-mode .bracket-tree.is-10p .round-header h3 {
+            font-size: 0.72rem !important;
             margin: 0 !important;
         }
 
-        body.print-preview-mode .round-header span {
-            font-size: 0.58rem !important;
+        body.print-preview-mode .bracket-tree.is-10p .round-header span {
+            font-size: 0.55rem !important;
         }
 
-        body.print-preview-mode .bracket-group-section-title {
-            padding: 2px 6px !important;
-            margin: 3px 0 !important;
-            font-size: 0.62rem !important;
+        body.print-preview-mode .bracket-tree.is-10p .round-matches-list {
+            gap: 4px !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .bracket-group-section-title {
+            padding: 1px 4px !important;
+            margin: 2px 0 !important;
+            font-size: 0.58rem !important;
             border-radius: 3px !important;
         }
 
-        /* LANDSCAPE PRINT MODE (1 HALAMAN A4 MELEBAR - TERISI PENUH) */
+        /* LANDSCAPE PRINT MODE (1 HALAMAN A4 MELEBAR) */
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p {
-            gap: 16px !important;
+            gap: 14px !important;
         }
 
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p .bracket-round-column {
-            width: 235px !important;
+            width: 210px !important;
         }
 
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) {
-            gap: 40px !important;
+            gap: 36px !important;
         }
 
         body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) .bracket-round-column {
-            width: 300px !important;
+            width: 260px !important;
         }
 
-        /* PORTRAIT PRINT MODE (1 HALAMAN A4 TEGAK - TERISI PENUH) */
+        /* PORTRAIT PRINT MODE (1 HALAMAN A4 TEGAK) */
         body.print-portrait-mode .bracket-tree.is-10p {
             gap: 8px !important;
         }
         body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
-            width: 170px !important;
-        }
-        body.print-portrait-mode .bracket-tree.is-10p .player-slot {
-            padding: 4px 5px !important;
+            width: 158px !important;
         }
         body.print-portrait-mode .bracket-tree:not(.is-10p) {
             gap: 20px !important;
         }
         body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
-            width: 225px !important;
-        }
-        body.print-portrait-mode .bracket-tree:not(.is-10p) .player-slot {
-            padding: 6px 8px !important;
+            width: 205px !important;
         }
 
         /* MODAL ORIENTATION SELECT CARDS */
@@ -1498,10 +1446,11 @@
                 margin: 0 !important;
                 padding: 0 !important;
                 width: 100% !important;
-                height: 100% !important;
-                max-height: 100% !important;
+                height: auto !important;
                 min-height: 0 !important;
-                overflow: hidden !important;
+            }
+
+            body {
                 display: block !important;
             }
 
@@ -1525,13 +1474,13 @@
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                width: 20px !important;
-                height: 16px !important;
-                line-height: 16px !important;
+                width: 18px !important;
+                height: 15px !important;
+                line-height: 15px !important;
                 border: 1px solid #cbd5e1 !important;
                 border-radius: 2px !important;
                 font-weight: 800 !important;
-                font-size: 0.72rem !important;
+                font-size: 0.68rem !important;
                 color: #0f172a !important;
                 background: #f8fafc !important;
             }
@@ -1546,51 +1495,42 @@
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                width: 13px !important;
-                height: 13px !important;
-                line-height: 13px !important;
+                width: 12px !important;
+                height: 12px !important;
+                line-height: 12px !important;
                 border-radius: 50% !important;
                 background: #10b981 !important;
                 color: #ffffff !important;
-                font-size: 0.55rem !important;
+                font-size: 0.52rem !important;
                 margin-left: 2px !important;
             }
 
             .main-wrapper {
                 padding: 0 !important;
                 margin: 0 !important;
-                width: 100% !important;
                 max-width: 100% !important;
-                height: calc(100% - 46px) !important;
-                max-height: calc(100% - 46px) !important;
-                min-height: 0 !important;
-                display: flex !important;
-                flex-direction: column !important;
-                overflow: hidden !important;
+                display: block !important;
                 flex: none !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                page-break-after: avoid !important;
-                break-after: avoid !important;
+                min-height: 0 !important;
+                height: auto !important;
+                overflow: visible !important;
             }
 
             .site-header {
-                padding: 5px 12px !important;
+                padding: 4px 10px !important;
                 background: #002244 !important;
                 border-radius: 4px !important;
-                margin-bottom: 4px !important;
+                margin-bottom: 3px !important;
                 position: static !important;
-                page-break-after: avoid !important;
-                break-after: avoid !important;
             }
 
             .site-header .header-logo {
-                width: 24px !important;
-                height: 24px !important;
+                width: 22px !important;
+                height: 22px !important;
             }
 
             .site-header h1 {
-                font-size: 0.9rem !important;
+                font-size: 0.85rem !important;
                 margin: 0 !important;
             }
 
@@ -1598,198 +1538,176 @@
                 box-shadow: none !important;
                 border: 1px solid #cbd5e1 !important;
                 border-radius: 4px !important;
-                margin-bottom: 5px !important;
+                margin-bottom: 4px !important;
                 padding: 4px 10px !important;
-                page-break-after: avoid !important;
-                break-after: avoid !important;
             }
 
             .tournament-banner h2 {
-                font-size: 0.9rem !important;
+                font-size: 0.85rem !important;
                 margin: 0 !important;
             }
 
             .tournament-banner .podium-mini-card {
                 padding: 2px 6px !important;
-                font-size: 0.62rem !important;
+                font-size: 0.6rem !important;
             }
 
             .tournament-banner .meta-item {
-                font-size: 0.64rem !important;
+                font-size: 0.62rem !important;
             }
 
             .bracket-scroll-container,
             .bracket-tree-wrapper {
-                flex: 1 !important;
-                display: flex !important;
-                flex-direction: column !important;
-                overflow: hidden !important;
+                overflow: visible !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 box-shadow: none !important;
                 border: none !important;
-                height: 100% !important;
-                min-height: 0 !important;
+                min-height: auto !important;
+                height: auto !important;
+                display: block !important;
+                flex: none !important;
             }
 
             .bracket-tree {
-                flex: 1 !important;
-                display: flex !important;
-                align-items: stretch !important;
-                justify-content: space-between !important;
-                width: 100% !important;
                 min-width: 100% !important;
                 padding: 0 !important;
-                margin: 0 !important;
                 transform: none !important;
                 zoom: 1 !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-                page-break-after: avoid !important;
-                break-after: avoid !important;
-            }
-
-            .bracket-round-column {
                 display: flex !important;
-                flex-direction: column !important;
-                height: 100% !important;
+                align-items: stretch !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
-            .round-matches-list {
-                display: flex !important;
-                flex-direction: column !important;
-                justify-content: space-around !important;
-                flex: 1 !important;
-                gap: 0 !important;
-            }
-
-            /* ULTRA COMPACT & CLEAN MATCH CARDS UNTUK PRINT */
-            .match-card {
-                border-radius: 6px !important;
+            /* CARD STYLES UNTUK PRINT */
+            .bracket-tree.is-10p .match-card {
+                border-radius: 4px !important;
                 margin: 0 !important;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+                box-shadow: none !important;
                 border-width: 1px !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
-            .match-card-header {
-                padding: 2.5px 6px !important;
-                font-size: 0.65rem !important;
+            .bracket-tree.is-10p .match-card-header {
+                padding: 2px 5px !important;
+                font-size: 0.62rem !important;
                 border-bottom: 1px solid #f1f5f9 !important;
             }
 
-            .match-num-badge {
-                font-size: 0.62rem !important;
+            .bracket-tree.is-10p .match-num-badge {
+                font-size: 0.6rem !important;
             }
 
-            .match-status-badge {
+            .bracket-tree.is-10p .match-status-badge {
                 font-size: 0.52rem !important;
-                padding: 1px 4px !important;
+                padding: 1px 3px !important;
             }
 
-            .group-mini-pill {
-                font-size: 0.52rem !important;
-                padding: 1px 4px !important;
+            .bracket-tree.is-10p .group-mini-pill {
+                font-size: 0.5rem !important;
+                padding: 0.5px 3px !important;
             }
 
-            .player-slot {
-                padding: 2.5px 5px !important;
+            .bracket-tree.is-10p .player-slot {
+                padding: 2px 4px !important;
                 min-height: auto !important;
-                gap: 3px !important;
+                gap: 2px !important;
             }
 
-            .player-seed {
-                width: 15px !important;
-                height: 15px !important;
-                line-height: 15px !important;
-                font-size: 0.58rem !important;
+            .bracket-tree.is-10p .player-seed {
+                width: 13px !important;
+                height: 13px !important;
+                line-height: 13px !important;
+                font-size: 0.55rem !important;
                 border-radius: 2px !important;
                 flex-shrink: 0 !important;
             }
 
-            .player-name {
-                font-size: 0.72rem !important;
+            .bracket-tree.is-10p .player-name {
+                font-size: 0.68rem !important;
                 line-height: 1.15 !important;
                 font-weight: 700 !important;
             }
 
-            .balai-badge-pill {
-                font-size: 0.55rem !important;
-                padding: 1px 4px !important;
+            .bracket-tree.is-10p .balai-badge-pill {
+                font-size: 0.52rem !important;
+                padding: 0.5px 3px !important;
                 border-radius: 2px !important;
                 line-height: 1 !important;
                 margin-top: 1px !important;
             }
 
-            .bye-slot-card {
-                padding: 3px 6px !important;
-                border-radius: 6px !important;
+            .bracket-tree.is-10p .bye-slot-card {
+                padding: 2px 4px !important;
+                border-radius: 4px !important;
                 gap: 2px !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
-            .round-header {
-                padding: 4px 8px !important;
-                margin-bottom: 4px !important;
+            .bracket-tree.is-10p .round-header {
+                padding: 3px 6px !important;
+                margin-bottom: 3px !important;
                 border-radius: 4px !important;
             }
 
-            .round-header h3 {
-                font-size: 0.78rem !important;
+            .bracket-tree.is-10p .round-header h3 {
+                font-size: 0.72rem !important;
                 margin: 0 !important;
             }
 
-            .round-header span {
-                font-size: 0.58rem !important;
+            .bracket-tree.is-10p .round-header span {
+                font-size: 0.55rem !important;
             }
 
-            .bracket-group-section-title {
-                padding: 2px 6px !important;
-                margin: 3px 0 !important;
-                font-size: 0.62rem !important;
+            .bracket-tree.is-10p .round-matches-list {
+                gap: 4px !important;
+            }
+
+            .bracket-tree.is-10p .bracket-group-section-title {
+                padding: 1px 4px !important;
+                margin: 2px 0 !important;
+                font-size: 0.58rem !important;
                 border-radius: 3px !important;
             }
 
-            /* DEFAULT LANDSCAPE PRINT WIDTHS (TERISI PENUH) */
+            .bracket-round-column {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+            }
+
+            /* DEFAULT LANDSCAPE PRINT WIDTHS */
             .bracket-tree.is-10p {
-                gap: 16px !important;
+                gap: 14px !important;
             }
 
             .bracket-tree.is-10p .bracket-round-column {
-                width: 235px !important;
+                width: 210px !important;
             }
 
             .bracket-tree:not(.is-10p) {
-                gap: 40px !important;
+                gap: 36px !important;
             }
 
             .bracket-tree:not(.is-10p) .bracket-round-column {
-                width: 300px !important;
+                width: 260px !important;
             }
 
-            /* PORTRAIT PRINT STYLES (TERISI PENUH) */
+            /* PORTRAIT PRINT STYLES */
             @media (orientation: portrait) {
                 .bracket-tree.is-10p {
                     gap: 8px !important;
                 }
                 .bracket-tree.is-10p .bracket-round-column {
-                    width: 170px !important;
-                }
-                .bracket-tree.is-10p .player-slot {
-                    padding: 4px 5px !important;
+                    width: 158px !important;
                 }
                 .bracket-tree:not(.is-10p) {
                     gap: 20px !important;
                 }
                 .bracket-tree:not(.is-10p) .bracket-round-column {
-                    width: 225px !important;
-                }
-                .bracket-tree:not(.is-10p) .player-slot {
-                    padding: 6px 8px !important;
+                    width: 205px !important;
                 }
             }
 
@@ -1798,11 +1716,7 @@
             }
 
             body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
-                width: 170px !important;
-            }
-
-            body.print-portrait-mode .bracket-tree.is-10p .player-slot {
-                padding: 4px 5px !important;
+                width: 158px !important;
             }
 
             body.print-portrait-mode .bracket-tree:not(.is-10p) {
@@ -1810,11 +1724,7 @@
             }
 
             body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
-                width: 225px !important;
-            }
-
-            body.print-portrait-mode .bracket-tree:not(.is-10p) .player-slot {
-                padding: 6px 8px !important;
+                width: 205px !important;
             }
 
             @page {
