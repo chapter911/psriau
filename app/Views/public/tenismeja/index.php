@@ -455,39 +455,11 @@
             position: relative;
         }
 
-        .bracket-round-column:not(:last-child) .match-card::after {
-            content: '';
-            position: absolute;
-            right: -16px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 3px;
-            background: #94a3b8;
-            border-radius: 2px;
-            z-index: 1;
-        }
-
-        .bracket-round-column:not(:last-child) .match-card.has-winner::after {
-            background: #10b981;
-            height: 3.5px;
-        }
-
-        .bracket-round-column:not(:first-child) .match-card::before {
-            content: '';
-            position: absolute;
-            left: -16px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 16px;
-            height: 3px;
-            background: #94a3b8;
-            border-radius: 2px;
-            z-index: 1;
-        }
-
         .match-card:hover {
             border-color: var(--pupr-blue);
+            box-shadow: 0 6px 16px rgba(11, 60, 116, 0.12);
+            transform: translateY(-2px);
+        }
             box-shadow: 0 6px 16px rgba(11, 60, 116, 0.12);
             transform: translateY(-2px);
         }
@@ -1407,21 +1379,6 @@
                     <i class="fas fa-info-circle text-primary"></i> ${escapeHtml(match.note)}
                 </div>
                 ` : ''}
-
-                ${!isByeMatch && p1 && p2 ? `
-                <div class="match-actions-footer">
-                    <button type="button" class="btn-save-match" onclick="saveMatchScores('${match.id}')">
-                        <i class="fas fa-floppy-disk mr-1"></i> Simpan Skor
-                    </button>
-                </div>
-                ` : ''}
-            `;
-                        <input type="number" min="0" max="99" class="score-input" id="score2_${match.id}" value="${match.score2 !== null ? match.score2 : ''}" placeholder="0" ${!p2 || isByeMatch ? 'disabled' : ''}>
-                        <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p2 ? escapeHtml(p2.name) : ''}')" ${!p2 || isByeMatch ? 'disabled' : ''}>
-                            <i class="fas fa-check"></i>
-                        </button>
-                    </div>
-                </div>
 
                 ${!isByeMatch && p1 && p2 ? `
                 <div class="match-actions-footer">
