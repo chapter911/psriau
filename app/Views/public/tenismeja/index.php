@@ -1056,28 +1056,49 @@
                 display: none !important;
             }
 
-            body {
+            html, body {
                 background: #ffffff !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                height: 100% !important;
+                overflow: hidden !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
 
             .main-wrapper {
                 padding: 0 !important;
+                margin: 0 !important;
                 max-width: 100% !important;
             }
 
             .site-header {
-                padding: 10px 16px !important;
+                padding: 8px 14px !important;
                 background: #002244 !important;
+                border-radius: 6px !important;
+                margin-bottom: 6px !important;
+            }
+
+            .site-header h1 {
+                font-size: 1rem !important;
             }
 
             .tournament-banner {
                 box-shadow: none !important;
                 border: 1px solid #cbd5e1 !important;
-                margin-bottom: 12px !important;
+                border-radius: 6px !important;
+                margin-bottom: 8px !important;
+                padding: 6px 12px !important;
+            }
+
+            .tournament-banner h2 {
+                font-size: 1rem !important;
+            }
+
+            .bracket-scroll-container {
+                overflow: hidden !important;
+                padding: 0 !important;
+                margin: 0 !important;
             }
 
             .bracket-tree-wrapper {
@@ -1089,11 +1110,18 @@
 
             .bracket-tree {
                 min-width: 100% !important;
+                padding: 0 !important;
+                gap: 40px !important;
+                zoom: 0.82;
+            }
+
+            .bracket-round-column {
+                width: 280px !important;
             }
 
             @page {
                 size: A4 landscape;
-                margin: 6mm 10mm;
+                margin: 5mm 8mm;
             }
         }
     </style>
@@ -1221,11 +1249,6 @@
         </section>
 
     </main>
-
-    <!-- FOOTER -->
-    <footer class="site-footer">
-        <p>&copy; <?= date('Y'); ?> <?= esc($officialName); ?> • Satker Pelaksanaan Prasarana Permukiman Provinsi Riau. Sistem Gugur Turnamen Tenis Meja.</p>
-    </footer>
 
     <!-- MODAL: ATUR / BUAT BAGAN TURNAMEN -->
     <div class="modal-overlay" id="setupModal">
