@@ -179,15 +179,21 @@
 
         .match-box-pdf {
             background-color: #ffffff;
-            border: 1px solid #94a3b8;
+            border: 1.5px solid #94a3b8;
+            border-left: 4px solid #0b3c74;
             border-radius: 4px;
-            padding: 4px 6px;
+            padding: 5px 6px;
             font-size: 7.5pt;
-            margin-bottom: 5px;
+            margin-bottom: 7px;
+        }
+
+        .match-box-pdf.has-winner {
+            border-left: 4px solid #10b981;
         }
 
         .match-box-pdf.is-final {
             border: 1.5px solid #d97706;
+            border-left: 4px solid #f59e0b;
             background-color: #fffbeb;
         }
 
@@ -383,9 +389,17 @@
                             $p2 = $m['player2'] ?? null;
                             $isP1Winner = ! empty($m['winner']) && ! empty($p1) && $m['winner']['name'] === $p1['name'];
                             $isP2Winner = ! empty($m['winner']) && ! empty($p2) && $m['winner']['name'] === $p2['name'];
+                            $hasWinner = ($isP1Winner || $isP2Winner);
                         ?>
-                        <div class="match-box-pdf <?= $isFinal ? 'is-final' : ''; ?>">
-                            <div class="match-box-header">Match #<?= esc($m['match_number']); ?></div>
+                        <div class="match-box-pdf <?= $isFinal ? 'is-final' : ''; ?> <?= $hasWinner ? 'has-winner' : ''; ?>">
+                            <div class="match-box-header">
+                                Match #<?= esc($m['match_number']); ?>
+                                <?php if (! empty($m['next_match_id'])): ?>
+                                    <span style="float: right; color: #0b3c74; font-weight: bold;">Lolos &rarr; Babak <?= ($r + 1); ?></span>
+                                <?php else: ?>
+                                    <span style="float: right; color: #d97706; font-weight: bold;">FINAL</span>
+                                <?php endif; ?>
+                            </div>
 
                             <!-- P1 -->
                             <div class="match-box-row <?= $isP1Winner ? 'winner' : ''; ?>">

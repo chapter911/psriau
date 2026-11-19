@@ -360,14 +360,25 @@
             border: 1px solid var(--border-color);
             overflow-x: auto;
             position: relative;
+            min-height: 520px;
+        }
+
+        .bracket-svg-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 5;
         }
 
         .bracket-tree {
             display: flex;
-            gap: 50px;
+            gap: 70px;
             min-width: max-content;
             align-items: stretch;
             padding: 10px 0;
+            position: relative;
+            z-index: 10;
         }
 
         .bracket-round-column {
@@ -375,6 +386,30 @@
             flex-direction: column;
             width: 330px;
             flex-shrink: 0;
+        }
+
+        .bracket-line {
+            fill: none;
+            stroke: #94a3b8;
+            stroke-width: 3px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: all 0.25s ease;
+        }
+
+        .bracket-line.winner {
+            stroke: #10b981;
+            stroke-width: 3.5px;
+            filter: drop-shadow(0 2px 4px rgba(16, 185, 129, 0.35));
+        }
+
+        .bracket-dot {
+            fill: #64748b;
+            transition: all 0.25s ease;
+        }
+
+        .bracket-dot.winner {
+            fill: #10b981;
         }
 
         .round-header {
@@ -416,9 +451,39 @@
             border: 1.5px solid #cbd5e1;
             border-radius: 12px;
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.04);
-            overflow: hidden;
             transition: all 0.25s ease;
             position: relative;
+        }
+
+        .bracket-round-column:not(:last-child) .match-card::after {
+            content: '';
+            position: absolute;
+            right: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 3px;
+            background: #94a3b8;
+            border-radius: 2px;
+            z-index: 1;
+        }
+
+        .bracket-round-column:not(:last-child) .match-card.has-winner::after {
+            background: #10b981;
+            height: 3.5px;
+        }
+
+        .bracket-round-column:not(:first-child) .match-card::before {
+            content: '';
+            position: absolute;
+            left: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 16px;
+            height: 3px;
+            background: #94a3b8;
+            border-radius: 2px;
+            z-index: 1;
         }
 
         .match-card:hover {
@@ -960,7 +1025,8 @@
         </section>
 
         <!-- INTERACTIVE BRACKET SECTION -->
-        <section class="bracket-scroll-container">
+        <section class="bracket-scroll-container" id="bracketScrollContainer">
+            <svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>
             <div class="bracket-tree" id="bracketTree">
                 <!-- RENDERED DYNAMICALLY BY JAVASCRIPT -->
             </div>
@@ -1179,12 +1245,87 @@
                     matchesList.appendChild(matchCard);
                 });
             }
+
+            // Draw visible SVG connector lines between matches
+            requestAnimationFrame(() => {
+                drawBracketLines(data);
+            });
+            setTimeout(() => {
+                drawBracketLines(data);
+            }, 60);
+        }
+
+        // DRAW VISIBLE BRACKET CONNECTOR LINES VIA SVG
+        function drawBracketLines(data) {
+            const svg = document.getElementById('bracketSvgCanvas');
+            const tree = document.getElementById('bracketTree');
+            if (!svg || !tree) return;
+
+            svg.innerHTML = '';
+
+            if (!data || !data.bracket_json || !data.bracket_json.rounds) {
+                return;
+            }
+
+            const scrollW = Math.max(tree.scrollWidth, tree.offsetWidth);
+            const scrollH = Math.max(tree.scrollHeight, tree.offsetHeight);
+
+            svg.setAttribute('width', scrollW);
+            svg.setAttribute('height', scrollH);
+            svg.style.width = scrollW + 'px';
+            svg.style.height = scrollH + 'px';
+
+            const treeRect = tree.getBoundingClientRect();
+            const rounds = data.bracket_json.rounds;
+            const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
+
+            for (let r = 1; r < totalRounds; r++) {
+                const roundData = rounds[r];
+                if (!roundData || !roundData.matches) continue;
+
+                roundData.matches.forEach((m) => {
+                    if (!m.next_match_id) return;
+
+                    const cardA = document.getElementById('card_' + m.id);
+                    const cardB = document.getElementById('card_' + m.next_match_id);
+
+                    if (!cardA || !cardB) return;
+
+                    const rectA = cardA.getBoundingClientRect();
+                    const rectB = cardB.getBoundingClientRect();
+
+                    const x1 = rectA.right - treeRect.left;
+                    const y1 = (rectA.top - treeRect.top) + (rectA.height / 2);
+
+                    const x2 = rectB.left - treeRect.left;
+                    const slotRatio = (m.next_match_slot === 1) ? 0.32 : 0.68;
+                    const y2 = (rectB.top - treeRect.top) + (rectB.height * slotRatio);
+
+                    const midX = x1 + (x2 - x1) * 0.5;
+
+                    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    const d = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+                    path.setAttribute('d', d);
+
+                    const isWinner = !!(m.winner && m.status === 'completed');
+                    path.setAttribute('class', 'bracket-line' + (isWinner ? ' winner' : ''));
+                    svg.appendChild(path);
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', x2);
+                    circle.setAttribute('cy', y2);
+                    circle.setAttribute('r', isWinner ? '4.5' : '3.5');
+                    circle.setAttribute('class', 'bracket-dot' + (isWinner ? ' winner' : ''));
+                    svg.appendChild(circle);
+                });
+            }
         }
 
         // CREATE SINGLE MATCH CARD
         function createMatchCardElement(match, isFinal) {
+            const hasWinner = !!(match.winner && match.status === 'completed');
             const card = document.createElement('div');
-            card.className = `match-card ${isFinal ? 'is-final' : ''}`;
+            card.className = `match-card ${isFinal ? 'is-final' : ''} ${hasWinner ? 'has-winner' : ''}`;
             card.id = `card_${match.id}`;
 
             const p1 = match.player1;
@@ -1589,6 +1730,13 @@
                         text: 'Gagal menghubungi server untuk membuat bagan turnamen.',
                         confirmButtonColor: '#0b3c74'
                     });
+                }
+            });
+
+            // REDRAW BRACKET CONNECTOR LINES ON RESIZE
+            window.addEventListener('resize', () => {
+                if (allTournaments[currentCategory]) {
+                    drawBracketLines(allTournaments[currentCategory]);
                 }
             });
         }
