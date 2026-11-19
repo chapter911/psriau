@@ -390,14 +390,17 @@
                             $isP1Winner = ! empty($m['winner']) && ! empty($p1) && $m['winner']['name'] === $p1['name'];
                             $isP2Winner = ! empty($m['winner']) && ! empty($p2) && $m['winner']['name'] === $p2['name'];
                             $hasWinner = ($isP1Winner || $isP2Winner);
+                            $isDirectToFinal = (! empty($m['next_match_id']) && str_starts_with($m['next_match_id'], 'R' . $totalRounds));
                         ?>
                         <div class="match-box-pdf <?= $isFinal ? 'is-final' : ''; ?> <?= $hasWinner ? 'has-winner' : ''; ?>">
                             <div class="match-box-header">
                                 Match #<?= esc($m['match_number']); ?>
-                                <?php if (! empty($m['next_match_id'])): ?>
-                                    <span style="float: right; color: #0b3c74; font-weight: bold;">Lolos &rarr; Babak <?= ($r + 1); ?></span>
-                                <?php else: ?>
+                                <?php if ($isFinal): ?>
                                     <span style="float: right; color: #d97706; font-weight: bold;">FINAL</span>
+                                <?php elseif ($isDirectToFinal): ?>
+                                    <span style="float: right; color: #0284c7; font-weight: bold;">Lolos &rarr; FINAL (Bye)</span>
+                                <?php elseif (! empty($m['next_match_id'])): ?>
+                                    <span style="float: right; color: #0b3c74; font-weight: bold;">Lolos &rarr; Semi Final</span>
                                 <?php endif; ?>
                             </div>
 
@@ -422,6 +425,12 @@
                                     <span class="balai-sub"><?= esc($p2['balai']); ?></span>
                                 <?php endif; ?>
                             </div>
+
+                            <?php if (! empty($m['note'])): ?>
+                                <div style="font-size: 6.5pt; color: #1e40af; font-weight: bold; margin-top: 3px; border-top: 0.5px dashed #cbd5e1; padding-top: 2px;">
+                                    * <?= esc($m['note']); ?>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </td>

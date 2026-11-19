@@ -48,26 +48,36 @@ class TenisMeja extends BaseController
 
         // Ensure Putra tournament
         $putra = $this->tournamentModel->getActiveTournament('putra');
-        if (! $putra) {
-            $putraParticipants = [];
-            foreach ($defaultBalais as $idx => $b) {
-                $putraParticipants[] = [
-                    'name'  => 'Peserta ' . ($idx + 1) . ' Putra',
-                    'balai' => $b,
-                ];
+        $needsRecreatePutra = (! $putra) || ((int)($putra['participant_count'] ?? 0) === 5 && count($putra['bracket_json']['rounds'][1]['matches'] ?? []) !== 2);
+        if ($needsRecreatePutra) {
+            $putraParticipants = (! empty($putra['participants_json']) && count($putra['participants_json']) === 5)
+                ? $putra['participants_json']
+                : [];
+            if (empty($putraParticipants)) {
+                foreach ($defaultBalais as $idx => $b) {
+                    $putraParticipants[] = [
+                        'name'  => 'Peserta ' . ($idx + 1) . ' Putra',
+                        'balai' => $b,
+                    ];
+                }
             }
             $this->tournamentModel->createTournament('Turnamen Tenis Meja Putra', 'putra', $putraParticipants);
         }
 
         // Ensure Putri tournament
         $putri = $this->tournamentModel->getActiveTournament('putri');
-        if (! $putri) {
-            $putriParticipants = [];
-            foreach ($defaultBalais as $idx => $b) {
-                $putriParticipants[] = [
-                    'name'  => 'Peserta ' . ($idx + 1) . ' Putri',
-                    'balai' => $b,
-                ];
+        $needsRecreatePutri = (! $putri) || ((int)($putri['participant_count'] ?? 0) === 5 && count($putri['bracket_json']['rounds'][1]['matches'] ?? []) !== 2);
+        if ($needsRecreatePutri) {
+            $putriParticipants = (! empty($putri['participants_json']) && count($putri['participants_json']) === 5)
+                ? $putri['participants_json']
+                : [];
+            if (empty($putriParticipants)) {
+                foreach ($defaultBalais as $idx => $b) {
+                    $putriParticipants[] = [
+                        'name'  => 'Peserta ' . ($idx + 1) . ' Putri',
+                        'balai' => $b,
+                    ];
+                }
             }
             $this->tournamentModel->createTournament('Turnamen Tenis Meja Putri', 'putri', $putriParticipants);
         }

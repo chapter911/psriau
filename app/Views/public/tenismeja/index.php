@@ -664,6 +664,30 @@
             gap: 6px;
         }
 
+        .match-note-banner {
+            background: #eff6ff;
+            color: #1e40af;
+            font-size: 0.73rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-top: 1px solid #dbeafe;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-bye-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.7rem;
+            color: #0369a1;
+            background: #e0f2fe;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
         .btn-save-match {
             font-size: 0.74rem;
             font-weight: 700;
@@ -1301,7 +1325,8 @@
                     const slotRatio = (m.next_match_slot === 1) ? 0.32 : 0.68;
                     const y2 = (rectB.top - treeRect.top) + (rectB.height * slotRatio);
 
-                    const midX = x1 + (x2 - x1) * 0.5;
+                    // If skipping across intermediate columns (e.g. R1 to R3 directly), turn vertically 25px before target card
+                    const midX = (x2 - x1 > 120) ? (x2 - 25) : (x1 + (x2 - x1) * 0.5);
 
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     const d = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
@@ -1366,9 +1391,31 @@
                         <div class="player-name-wrap">
                             <div class="player-name">${p2 ? escapeHtml(p2.name) : '<em style="color:#94a3b8">Menunggu Pemenang</em>'}</div>
                             ${p2 && p2.balai && !p2.is_bye ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(p2.balai)}</span>` : ''}
+                            ${match.round === 2 && match.match_number === 3 && p2 && !p2.is_bye ? `<span class="badge-bye-pill"><i class="fas fa-bolt"></i> Menang Bye Babak 1</span>` : ''}
                         </div>
                     </div>
                     <div class="player-score-ctrl">
+                        <input type="number" min="0" max="99" class="score-input" id="score2_${match.id}" value="${match.score2 !== null ? match.score2 : ''}" placeholder="0" ${!p2 || isByeMatch ? 'disabled' : ''}>
+                        <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p2 ? escapeHtml(p2.name) : ''}')" ${!p2 || isByeMatch ? 'disabled' : ''}>
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+
+                ${match.note ? `
+                <div class="match-note-banner">
+                    <i class="fas fa-info-circle text-primary"></i> ${escapeHtml(match.note)}
+                </div>
+                ` : ''}
+
+                ${!isByeMatch && p1 && p2 ? `
+                <div class="match-actions-footer">
+                    <button type="button" class="btn-save-match" onclick="saveMatchScores('${match.id}')">
+                        <i class="fas fa-floppy-disk mr-1"></i> Simpan Skor
+                    </button>
+                </div>
+                ` : ''}
+            `;
                         <input type="number" min="0" max="99" class="score-input" id="score2_${match.id}" value="${match.score2 !== null ? match.score2 : ''}" placeholder="0" ${!p2 || isByeMatch ? 'disabled' : ''}>
                         <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p2 ? escapeHtml(p2.name) : ''}')" ${!p2 || isByeMatch ? 'disabled' : ''}>
                             <i class="fas fa-check"></i>

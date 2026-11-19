@@ -2034,7 +2034,7 @@ graph TD
                                     <li>Secara bawaan sistem telah memuat 5 peserta awal Putra dan 5 peserta awal Putri dari Balai PUPR (BWS Sumatera III, BPJN Riau, BPPW Riau, BP2JK Riau, dan Satker PPS Riau).</li>
                                     <li><strong>Input Peserta &amp; Balai (1 Balai Bisa 2 Nama):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta terdapat kolom terpisah untuk <strong>Nama Peserta</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>).</li>
                                     <li><strong>Penambahan Peserta Dinamis:</strong> Jika jumlah peserta bertambah, klik tombol <strong>+ Tambah Peserta Baru</strong> untuk menambahkan slot peserta ke-6, ke-7, ke-8, dst.</li>
-                                    <li>Klik <strong>Generate Bagan Turnamen</strong> untuk langsung menyusun bagan pertandingan sistem gugur (otomatis menerapkan aturan <em>BYE</em> standar turnamen internasional jika jumlah peserta bukan kelipatan pangkat 2).</li>
+                                    <li>Klik <strong>Generate Bagan Turnamen</strong> untuk menyusun bagan sistem gugur bersih tanpa kartu kosong. Pada skema 5 peserta: <strong>Babak 1</strong> mempertandingkan <em>A vs B</em> (pemenang menang Bye langsung ke Final) dan <em>C vs D</em>, sementara <em>E menang Bye</em> ke Semifinal; <strong>Semi Final</strong> mempertandingkan <em>Pemenang (C vs D) melawan E</em>; dan <strong>Final</strong> mempertemukan <em>Pemenang (A vs B) melawan Pemenang Semi Final</em>.</li>
                                 </ol>
                             </div>
                         </div>

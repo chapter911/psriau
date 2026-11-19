@@ -148,18 +148,12 @@ class TenisMejaTournamentModel extends Model
 
     /**
      * Create and initialize a new tournament with single elimination bracket
-     *
-     * @param string $title
-     * @param string $category ('putra' or 'putri')
-     * @param array $participantList (list of ['name' => ..., 'balai' => ...])
-     * @return int Tournament ID
      */
     public function createTournament(string $title, string $category, array $participantList): int
     {
         $this->ensureTable();
         $cat = self::normalizeCategory($category);
 
-        // Clean and filter participant list
         $cleanedParticipants = [];
         $seed = 1;
 
@@ -174,7 +168,6 @@ class TenisMejaTournamentModel extends Model
                 $name = trim((string) $item);
             }
 
-            // If only balai or only name is given, populate sensibly
             if ($name === '' && $balai !== '') {
                 $name = $balai;
             } elseif ($name !== '' && $balai === '') {
@@ -196,7 +189,6 @@ class TenisMejaTournamentModel extends Model
             throw new \InvalidArgumentException('Jumlah peserta minimal 2 orang/balai.');
         }
 
-        // Build the bracket structure
         $bracket = $this->buildSingleEliminationBracket($cleanedParticipants);
 
         // Deactivate older tournaments in the same category
@@ -223,174 +215,535 @@ class TenisMejaTournamentModel extends Model
     }
 
     /**
-     * Build single elimination bracket data structure
+     * Build clean single elimination tournament bracket
+     * Specialized for 5 participants according to user requirements:
+     * - R1: A vs B (winner to Final slot 1), C vs D (winner to Semifinal slot 1)
+     * - R2 (Semi Final): Winner(C vs D) vs E (winner to Final slot 2)
+     * - R3 (Final): Winner(A vs B) vs Winner(Semi Final)
      */
     public function buildSingleEliminationBracket(array $participants): array
     {
         $N = count($participants);
 
-        // Find smallest power of 2 >= N
+        // 2 PARTICIPANTS (DIRECT FINAL)
+        if ($N === 2) {
+            $rounds = [
+                1 => [
+                    'round'   => 1,
+                    'name'    => 'Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R1_M0',
+                            'round'           => 1,
+                            'round_name'      => 'Final',
+                            'match_number'    => 1,
+                            'player1'         => $participants[0],
+                            'player2'         => $participants[1],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => null,
+                            'next_match_slot' => null,
+                            'note'            => 'Perebutan Juara 1 & 2',
+                        ]
+                    ]
+                ]
+            ];
+            return [
+                'total_rounds' => 1,
+                'bracket_size' => 2,
+                'rounds'       => $rounds,
+                'podium'       => ['champion' => null, 'runner_up' => null],
+            ];
+        }
+
+        // 3 PARTICIPANTS
+        if ($N === 3) {
+            $rounds = [
+                1 => [
+                    'round'   => 1,
+                    'name'    => 'Semi Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R1_M0',
+                            'round'           => 1,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 1,
+                            'player1'         => $participants[0],
+                            'player2'         => $participants[1],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M0',
+                            'next_match_slot' => 1,
+                            'note'            => 'Pemenang Lolos ke Final',
+                        ]
+                    ]
+                ],
+                2 => [
+                    'round'   => 2,
+                    'name'    => 'Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R2_M0',
+                            'round'           => 2,
+                            'round_name'      => 'Final',
+                            'match_number'    => 2,
+                            'player1'         => null,
+                            'player2'         => $participants[2],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => null,
+                            'next_match_slot' => null,
+                            'note'            => 'Perebutan Juara 1 & 2',
+                        ]
+                    ]
+                ]
+            ];
+            return [
+                'total_rounds' => 2,
+                'bracket_size' => 4,
+                'rounds'       => $rounds,
+                'podium'       => ['champion' => null, 'runner_up' => null],
+            ];
+        }
+
+        // 4 PARTICIPANTS
+        if ($N === 4) {
+            $rounds = [
+                1 => [
+                    'round'   => 1,
+                    'name'    => 'Semi Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R1_M0',
+                            'round'           => 1,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 1,
+                            'player1'         => $participants[0],
+                            'player2'         => $participants[1],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M0',
+                            'next_match_slot' => 1,
+                        ],
+                        [
+                            'id'              => 'R1_M1',
+                            'round'           => 1,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 2,
+                            'player1'         => $participants[2],
+                            'player2'         => $participants[3],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M0',
+                            'next_match_slot' => 2,
+                        ]
+                    ]
+                ],
+                2 => [
+                    'round'   => 2,
+                    'name'    => 'Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R2_M0',
+                            'round'           => 2,
+                            'round_name'      => 'Final',
+                            'match_number'    => 3,
+                            'player1'         => null,
+                            'player2'         => null,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => null,
+                            'next_match_slot' => null,
+                            'note'            => 'Perebutan Juara 1 & 2',
+                        ]
+                    ]
+                ]
+            ];
+            return [
+                'total_rounds' => 2,
+                'bracket_size' => 4,
+                'rounds'       => $rounds,
+                'podium'       => ['champion' => null, 'runner_up' => null],
+            ];
+        }
+
+        // 5 PARTICIPANTS (EXACT USER SPECIFICATION)
+        if ($N === 5) {
+            $rounds = [
+                1 => [
+                    'round'   => 1,
+                    'name'    => 'Babak Penyisihan',
+                    'matches' => [
+                        [
+                            'id'              => 'R1_M0',
+                            'round'           => 1,
+                            'round_name'      => 'Babak Penyisihan',
+                            'match_number'    => 1,
+                            'player1'         => $participants[0],
+                            'player2'         => $participants[1],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R3_M0',
+                            'next_match_slot' => 1,
+                            'note'            => 'Pemenang Lolos Langsung ke Final (Bye di Semifinal)',
+                        ],
+                        [
+                            'id'              => 'R1_M1',
+                            'round'           => 1,
+                            'round_name'      => 'Babak Penyisihan',
+                            'match_number'    => 2,
+                            'player1'         => $participants[2],
+                            'player2'         => $participants[3],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M0',
+                            'next_match_slot' => 1,
+                            'note'            => 'Pemenang Melawan ' . ($participants[4]['name'] ?? 'Peserta 5') . ' di Semifinal',
+                        ]
+                    ]
+                ],
+                2 => [
+                    'round'   => 2,
+                    'name'    => 'Semi Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R2_M0',
+                            'round'           => 2,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 3,
+                            'player1'         => null, // Winner of R1_M1
+                            'player2'         => $participants[4], // E (menang bye dari babak 1)
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R3_M0',
+                            'next_match_slot' => 2,
+                            'note'            => 'Memperebutkan Tiket Final',
+                        ]
+                    ]
+                ],
+                3 => [
+                    'round'   => 3,
+                    'name'    => 'Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R3_M0',
+                            'round'           => 3,
+                            'round_name'      => 'Final',
+                            'match_number'    => 4,
+                            'player1'         => null, // Winner of R1_M0 (Bye di semifinal)
+                            'player2'         => null, // Winner of R2_M0
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => null,
+                            'next_match_slot' => null,
+                            'note'            => 'Perebutan Juara 1 & 2',
+                        ]
+                    ]
+                ]
+            ];
+            return [
+                'total_rounds' => 3,
+                'bracket_size' => 8,
+                'rounds'       => $rounds,
+                'podium'       => ['champion' => null, 'runner_up' => null],
+            ];
+        }
+
+        // 6 PARTICIPANTS
+        if ($N === 6) {
+            $rounds = [
+                1 => [
+                    'round'   => 1,
+                    'name'    => 'Babak Penyisihan',
+                    'matches' => [
+                        [
+                            'id'              => 'R1_M0',
+                            'round'           => 1,
+                            'round_name'      => 'Babak Penyisihan',
+                            'match_number'    => 1,
+                            'player1'         => $participants[2],
+                            'player2'         => $participants[3],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M0',
+                            'next_match_slot' => 2,
+                        ],
+                        [
+                            'id'              => 'R1_M1',
+                            'round'           => 1,
+                            'round_name'      => 'Babak Penyisihan',
+                            'match_number'    => 2,
+                            'player1'         => $participants[4],
+                            'player2'         => $participants[5],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M1',
+                            'next_match_slot' => 2,
+                        ],
+                    ]
+                ],
+                2 => [
+                    'round'   => 2,
+                    'name'    => 'Semi Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R2_M0',
+                            'round'           => 2,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 3,
+                            'player1'         => $participants[0],
+                            'player2'         => null,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R3_M0',
+                            'next_match_slot' => 1,
+                        ],
+                        [
+                            'id'              => 'R2_M1',
+                            'round'           => 2,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 4,
+                            'player1'         => $participants[1],
+                            'player2'         => null,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R3_M0',
+                            'next_match_slot' => 2,
+                        ],
+                    ]
+                ],
+                3 => [
+                    'round'   => 3,
+                    'name'    => 'Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R3_M0',
+                            'round'           => 3,
+                            'round_name'      => 'Final',
+                            'match_number'    => 5,
+                            'player1'         => null,
+                            'player2'         => null,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => null,
+                            'next_match_slot' => null,
+                        ]
+                    ]
+                ]
+            ];
+            return [
+                'total_rounds' => 3,
+                'bracket_size' => 8,
+                'rounds'       => $rounds,
+                'podium'       => ['champion' => null, 'runner_up' => null],
+            ];
+        }
+
+        // 7 PARTICIPANTS
+        if ($N === 7) {
+            $rounds = [
+                1 => [
+                    'round'   => 1,
+                    'name'    => 'Babak Penyisihan',
+                    'matches' => [
+                        [
+                            'id'              => 'R1_M0',
+                            'round'           => 1,
+                            'round_name'      => 'Babak Penyisihan',
+                            'match_number'    => 1,
+                            'player1'         => $participants[1],
+                            'player2'         => $participants[2],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M0',
+                            'next_match_slot' => 2,
+                        ],
+                        [
+                            'id'              => 'R1_M1',
+                            'round'           => 1,
+                            'round_name'      => 'Babak Penyisihan',
+                            'match_number'    => 2,
+                            'player1'         => $participants[3],
+                            'player2'         => $participants[4],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M1',
+                            'next_match_slot' => 1,
+                        ],
+                        [
+                            'id'              => 'R1_M2',
+                            'round'           => 1,
+                            'round_name'      => 'Babak Penyisihan',
+                            'match_number'    => 3,
+                            'player1'         => $participants[5],
+                            'player2'         => $participants[6],
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R2_M1',
+                            'next_match_slot' => 2,
+                        ],
+                    ]
+                ],
+                2 => [
+                    'round'   => 2,
+                    'name'    => 'Semi Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R2_M0',
+                            'round'           => 2,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 4,
+                            'player1'         => $participants[0],
+                            'player2'         => null,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R3_M0',
+                            'next_match_slot' => 1,
+                        ],
+                        [
+                            'id'              => 'R2_M1',
+                            'round'           => 2,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 5,
+                            'player1'         => null,
+                            'player2'         => null,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => 'R3_M0',
+                            'next_match_slot' => 2,
+                        ],
+                    ]
+                ],
+                3 => [
+                    'round'   => 3,
+                    'name'    => 'Final',
+                    'matches' => [
+                        [
+                            'id'              => 'R3_M0',
+                            'round'           => 3,
+                            'round_name'      => 'Final',
+                            'match_number'    => 6,
+                            'player1'         => null,
+                            'player2'         => null,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'next_match_id'   => null,
+                            'next_match_slot' => null,
+                        ]
+                    ]
+                ]
+            ];
+            return [
+                'total_rounds' => 3,
+                'bracket_size' => 8,
+                'rounds'       => $rounds,
+                'podium'       => ['champion' => null, 'runner_up' => null],
+            ];
+        }
+
+        // DEFAULT FOR 8, 16, 32 PARTICIPANTS
         $P = 1;
         while ($P < $N) {
             $P *= 2;
         }
-        if ($P < 2) {
-            $P = 2;
-        }
-
         $totalRounds = (int) log($P, 2);
-
-        // Determine round names
-        $roundNames = $this->getRoundNames($totalRounds);
-
-        $byesCount = $P - $N;
-        $matchesInR1 = $P / 2;
-
-        // Distribute BYEs across matches from the bottom
-        $hasByeInMatch = array_fill(0, $matchesInR1, false);
-        if ($byesCount > 0) {
-            $assignedByes = 0;
-            for ($m = $matchesInR1 - 1; $m >= 0 && $assignedByes < $byesCount; $m--) {
-                $hasByeInMatch[$m] = true;
-                $assignedByes++;
-            }
-        }
-
         $rounds = [];
-
-        // Round 1 matches
-        $r1Matches = [];
         $matchNumber = 1;
-        $playerIdx = 0;
 
-        for ($m = 0; $m < $matchesInR1; $m++) {
-            $p1 = $participants[$playerIdx++] ?? null;
-            $isBye = $hasByeInMatch[$m];
-            $p2 = $isBye ? ['id' => 0, 'seed' => 0, 'name' => '(BYE)', 'balai' => '(BYE)', 'is_bye' => true] : ($participants[$playerIdx++] ?? null);
-
-            $matchId = 'R1_M' . $m;
-            $nextMatchId = $totalRounds > 1 ? ('R2_M' . (int) floor($m / 2)) : null;
-            $nextSlot = ($m % 2 === 0) ? 1 : 2;
-
-            $winner = null;
-            $status = 'pending';
-            $score1 = null;
-            $score2 = null;
-
-            // If player 2 is BYE, player 1 automatically wins and advances
-            if ($isBye && $p1 !== null) {
-                $winner = $p1;
-                $status = 'completed';
-                $score1 = 1;
-                $score2 = 0;
-            } elseif ($p1 === null && $p2 !== null && empty($p2['is_bye'])) {
-                $winner = $p2;
-                $status = 'completed';
-                $score1 = 0;
-                $score2 = 1;
-            }
-
+        $r1Matches = [];
+        $half = (int) ($P / 2);
+        for ($i = 0; $i < $half; $i++) {
+            $p1 = $participants[$i * 2] ?? null;
+            $p2 = $participants[$i * 2 + 1] ?? null;
             $r1Matches[] = [
-                'id'              => $matchId,
+                'id'              => 'R1_M' . $i,
                 'round'           => 1,
-                'round_name'      => $roundNames[1] ?? 'Babak 1',
-                'match_index'     => $m,
+                'round_name'      => ($totalRounds === 3 ? 'Perempat Final (8 Besar)' : 'Babak 1'),
                 'match_number'    => $matchNumber++,
                 'player1'         => $p1,
                 'player2'         => $p2,
-                'score1'          => $score1,
-                'score2'          => $score2,
-                'winner'          => $winner,
-                'status'          => $status,
-                'is_bye'          => $isBye,
-                'next_match_id'   => $nextMatchId,
-                'next_match_slot' => $nextSlot,
+                'score1'          => null,
+                'score2'          => null,
+                'winner'          => null,
+                'status'          => 'pending',
+                'next_match_id'   => 'R2_M' . ((int) floor($i / 2)),
+                'next_match_slot' => ($i % 2 === 0 ? 1 : 2),
             ];
         }
+        $rounds[1] = ['round' => 1, 'name' => ($totalRounds === 3 ? 'Perempat Final (8 Besar)' : 'Babak 1'), 'matches' => $r1Matches];
 
-        $rounds[1] = [
-            'round'      => 1,
-            'name'       => $roundNames[1] ?? 'Babak 1',
-            'matches'    => $r1Matches,
-        ];
-
-        // Build subsequent rounds (Round 2 to totalRounds)
         for ($r = 2; $r <= $totalRounds; $r++) {
-            $prevRoundMatches = $rounds[$r - 1]['matches'];
-            $currentMatchCount = count($prevRoundMatches) / 2;
-            $currentMatches = [];
-
-            for ($m = 0; $m < $currentMatchCount; $m++) {
-                $matchId = 'R' . $r . '_M' . $m;
-                $nextMatchId = ($r < $totalRounds) ? ('R' . ($r + 1) . '_M' . (int) floor($m / 2)) : null;
-                $nextSlot = ($m % 2 === 0) ? 1 : 2;
-
-                $parentMatch1 = $prevRoundMatches[$m * 2] ?? null;
-                $parentMatch2 = $prevRoundMatches[$m * 2 + 1] ?? null;
-
-                $p1 = $parentMatch1['winner'] ?? null;
-                $p2 = $parentMatch2['winner'] ?? null;
-
-                $currentMatches[] = [
-                    'id'              => $matchId,
+            $mCount = count($rounds[$r - 1]['matches']) / 2;
+            $rMatches = [];
+            $rName = ($r === $totalRounds ? 'Final' : ($r === $totalRounds - 1 ? 'Semi Final' : 'Babak ' . $r));
+            for ($i = 0; $i < $mCount; $i++) {
+                $nextId = ($r < $totalRounds) ? ('R' . ($r + 1) . '_M' . (int) floor($i / 2)) : null;
+                $rMatches[] = [
+                    'id'              => 'R' . $r . '_M' . $i,
                     'round'           => $r,
-                    'round_name'      => $roundNames[$r] ?? ('Babak ' . $r),
-                    'match_index'     => $m,
+                    'round_name'      => $rName,
                     'match_number'    => $matchNumber++,
-                    'player1'         => $p1,
-                    'player2'         => $p2,
+                    'player1'         => null,
+                    'player2'         => null,
                     'score1'          => null,
                     'score2'          => null,
                     'winner'          => null,
                     'status'          => 'pending',
-                    'is_bye'          => false,
-                    'next_match_id'   => $nextMatchId,
-                    'next_match_slot' => $nextSlot,
-                    'parent_match_1'  => $parentMatch1['id'] ?? null,
-                    'parent_match_2'  => $parentMatch2['id'] ?? null,
+                    'next_match_id'   => $nextId,
+                    'next_match_slot' => ($i % 2 === 0 ? 1 : 2),
                 ];
             }
-
-            $rounds[$r] = [
-                'round'   => $r,
-                'name'    => $roundNames[$r] ?? ('Babak ' . $r),
-                'matches' => $currentMatches,
-            ];
+            $rounds[$r] = ['round' => $r, 'name' => $rName, 'matches' => $rMatches];
         }
-
-        $podium = $this->calculatePodium($rounds, $totalRounds);
 
         return [
             'total_rounds' => $totalRounds,
             'bracket_size' => $P,
             'rounds'       => $rounds,
-            'podium'       => $podium,
+            'podium'       => ['champion' => null, 'runner_up' => null],
         ];
-    }
-
-    /**
-     * Get readable names for rounds based on total rounds
-     */
-    protected function getRoundNames(int $totalRounds): array
-    {
-        $names = [];
-        for ($r = 1; $r <= $totalRounds; $r++) {
-            $fromFinal = $totalRounds - $r;
-            if ($fromFinal === 0) {
-                $names[$r] = 'Final';
-            } elseif ($fromFinal === 1) {
-                $names[$r] = 'Semi Final';
-            } elseif ($fromFinal === 2) {
-                $names[$r] = 'Perempat Final (8 Besar)';
-            } elseif ($fromFinal === 3) {
-                $names[$r] = 'Babak 16 Besar';
-            } elseif ($fromFinal === 4) {
-                $names[$r] = 'Babak 32 Besar';
-            } else {
-                $names[$r] = 'Babak ' . $r;
-            }
-        }
-        return $names;
     }
 
     /**
@@ -401,7 +754,6 @@ class TenisMejaTournamentModel extends Model
         $finalMatch = $rounds[$totalRounds]['matches'][0] ?? null;
         $champion = null;
         $runnerUp = null;
-        $thirdPlace = null;
 
         if ($finalMatch && ! empty($finalMatch['winner'])) {
             $champion = $finalMatch['winner'];
@@ -412,26 +764,9 @@ class TenisMejaTournamentModel extends Model
             }
         }
 
-        if ($totalRounds > 1 && isset($rounds[$totalRounds - 1]['matches'])) {
-            $semiMatches = $rounds[$totalRounds - 1]['matches'];
-            $semiLosers = [];
-            foreach ($semiMatches as $sm) {
-                if (! empty($sm['winner']) && ! empty($sm['player1']) && ! empty($sm['player2'])) {
-                    $loser = ($sm['winner']['name'] === $sm['player1']['name']) ? $sm['player2'] : $sm['player1'];
-                    if (! empty($loser['name']) && $loser['name'] !== '(BYE)') {
-                        $semiLosers[] = $loser;
-                    }
-                }
-            }
-            if (! empty($semiLosers)) {
-                $thirdPlace = $semiLosers;
-            }
-        }
-
         return [
             'champion'    => $champion,
             'runner_up'   => $runnerUp,
-            'third_place' => $thirdPlace,
         ];
     }
 
@@ -452,10 +787,8 @@ class TenisMejaTournamentModel extends Model
             throw new \RuntimeException('Jumlah peserta tidak cukup untuk diacak.');
         }
 
-        // Fisher-Yates shuffle
         shuffle($participants);
 
-        // Reassign seeds
         foreach ($participants as $idx => &$p) {
             $p['seed'] = $idx + 1;
         }
@@ -478,7 +811,7 @@ class TenisMejaTournamentModel extends Model
     }
 
     /**
-     * Update match result (score and winner) and cascade to next round
+     * Update match result (score and winner) and cascade to designated target match
      */
     public function updateMatch(int $tournamentId, string $matchId, ?int $score1, ?int $score2, ?string $winnerName): array
     {
@@ -532,13 +865,13 @@ class TenisMejaTournamentModel extends Model
         $match['winner'] = $selectedWinner;
         $match['status'] = $selectedWinner ? 'completed' : 'pending';
 
+        // Cascade to next match (search by ID across all rounds)
         $nextMatchId = $match['next_match_id'] ?? null;
         $nextSlot = $match['next_match_slot'] ?? 1;
 
-        if ($nextMatchId && $targetRound < $totalRounds) {
-            $nextRoundNum = $targetRound + 1;
-            if (isset($rounds[$nextRoundNum]['matches'])) {
-                foreach ($rounds[$nextRoundNum]['matches'] as &$nextM) {
+        if ($nextMatchId) {
+            foreach ($rounds as $rIdx => &$rd) {
+                foreach ($rd['matches'] as &$nextM) {
                     if ($nextM['id'] === $nextMatchId) {
                         $oldPlayer = ($nextSlot === 1) ? ($nextM['player1'] ?? null) : ($nextM['player2'] ?? null);
 
@@ -549,13 +882,14 @@ class TenisMejaTournamentModel extends Model
                         }
 
                         if ($oldPlayer !== null && ($selectedWinner === null || $oldPlayer['name'] !== $selectedWinner['name'])) {
-                            $this->clearDownstreamMatches($rounds, $nextRoundNum, $nextM['id']);
+                            $this->clearDownstreamMatches($rounds, $nextM['id']);
                         }
-                        break;
+                        break 2;
                     }
                 }
                 unset($nextM);
             }
+            unset($rd);
         }
 
         $bracket['rounds'] = $rounds;
@@ -577,43 +911,45 @@ class TenisMejaTournamentModel extends Model
     /**
      * Clear downstream matches recursively if upstream winner changes
      */
-    protected function clearDownstreamMatches(array &$rounds, int $startRound, string $startMatchId): void
+    protected function clearDownstreamMatches(array &$rounds, string $startMatchId): void
     {
-        $queue = [[$startRound, $startMatchId]];
+        $queue = [$startMatchId];
 
         while (! empty($queue)) {
-            [$r, $mId] = array_shift($queue);
-            if (! isset($rounds[$r]['matches'])) {
-                continue;
-            }
+            $mId = array_shift($queue);
 
-            foreach ($rounds[$r]['matches'] as &$m) {
-                if ($m['id'] === $mId) {
-                    $m['score1'] = null;
-                    $m['score2'] = null;
-                    $m['winner'] = null;
-                    $m['status'] = 'pending';
+            foreach ($rounds as &$rd) {
+                foreach ($rd['matches'] as &$m) {
+                    if ($m['id'] === $mId) {
+                        $m['score1'] = null;
+                        $m['score2'] = null;
+                        $m['winner'] = null;
+                        $m['status'] = 'pending';
 
-                    if (! empty($m['next_match_id'])) {
-                        $nextR = $r + 1;
-                        $slot = $m['next_match_slot'] ?? 1;
-                        if (isset($rounds[$nextR]['matches'])) {
-                            foreach ($rounds[$nextR]['matches'] as &$nextM) {
-                                if ($nextM['id'] === $m['next_match_id']) {
-                                    if ($slot === 1) {
-                                        $nextM['player1'] = null;
-                                    } else {
-                                        $nextM['player2'] = null;
+                        if (! empty($m['next_match_id'])) {
+                            $nextMId = $m['next_match_id'];
+                            $slot = $m['next_match_slot'] ?? 1;
+
+                            foreach ($rounds as &$rd2) {
+                                foreach ($rd2['matches'] as &$targetM) {
+                                    if ($targetM['id'] === $nextMId) {
+                                        if ($slot === 1) {
+                                            $targetM['player1'] = null;
+                                        } else {
+                                            $targetM['player2'] = null;
+                                        }
+                                        $queue[] = $nextMId;
                                     }
-                                    $queue[] = [$nextR, $nextM['id']];
                                 }
+                                unset($targetM);
                             }
-                            unset($nextM);
+                            unset($rd2);
                         }
                     }
                 }
+                unset($m);
             }
-            unset($m);
+            unset($rd);
         }
     }
 
