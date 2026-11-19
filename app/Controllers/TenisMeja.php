@@ -34,7 +34,7 @@ class TenisMeja extends BaseController
     }
 
     /**
-     * Seed initial 5 participants for Putra and Putri if not already seeded
+     * Seed initial 5 participants for all categories if not already seeded
      */
     protected function ensureInitialTournaments(): void
     {
@@ -46,40 +46,30 @@ class TenisMeja extends BaseController
             'Satker PPS Riau',
         ];
 
-        // Ensure Putra tournament
-        $putra = $this->tournamentModel->getActiveTournament('putra');
-        $needsRecreatePutra = (! $putra) || ((int)($putra['participant_count'] ?? 0) === 5 && count($putra['bracket_json']['rounds'][1]['matches'] ?? []) !== 3);
-        if ($needsRecreatePutra) {
-            $putraParticipants = (! empty($putra['participants_json']) && count($putra['participants_json']) === 5)
-                ? $putra['participants_json']
-                : [];
-            if (empty($putraParticipants)) {
-                foreach ($defaultBalais as $idx => $b) {
-                    $putraParticipants[] = [
-                        'name'  => 'Peserta ' . ($idx + 1) . ' Putra',
-                        'balai' => $b,
-                    ];
-                }
-            }
-            $this->tournamentModel->createTournament('Turnamen Tenis Meja Putra', 'putra', $putraParticipants);
-        }
+        $categories = [
+            'putra'       => ['title' => 'Turnamen Tenis Meja Putra', 'prefix' => 'Peserta', 'suffix' => 'Putra'],
+            'putri'       => ['title' => 'Turnamen Tenis Meja Putri', 'prefix' => 'Peserta', 'suffix' => 'Putri'],
+            'ganda_putra' => ['title' => 'Turnamen Tenis Meja Ganda Putra', 'prefix' => 'Pasangan', 'suffix' => 'Ganda Putra'],
+            'ganda_putri' => ['title' => 'Turnamen Tenis Meja Ganda Putri', 'prefix' => 'Pasangan', 'suffix' => 'Ganda Putri'],
+        ];
 
-        // Ensure Putri tournament
-        $putri = $this->tournamentModel->getActiveTournament('putri');
-        $needsRecreatePutri = (! $putri) || ((int)($putri['participant_count'] ?? 0) === 5 && count($putri['bracket_json']['rounds'][1]['matches'] ?? []) !== 3);
-        if ($needsRecreatePutri) {
-            $putriParticipants = (! empty($putri['participants_json']) && count($putri['participants_json']) === 5)
-                ? $putri['participants_json']
-                : [];
-            if (empty($putriParticipants)) {
-                foreach ($defaultBalais as $idx => $b) {
-                    $putriParticipants[] = [
-                        'name'  => 'Peserta ' . ($idx + 1) . ' Putri',
-                        'balai' => $b,
-                    ];
+        foreach ($categories as $catKey => $catConfig) {
+            $existing = $this->tournamentModel->getActiveTournament($catKey);
+            $needsRecreate = (! $existing) || ((int)($existing['participant_count'] ?? 0) === 5 && count($existing['bracket_json']['rounds'][1]['matches'] ?? []) !== 3);
+            if ($needsRecreate) {
+                $participants = (! empty($existing['participants_json']) && count($existing['participants_json']) === 5)
+                    ? $existing['participants_json']
+                    : [];
+                if (empty($participants)) {
+                    foreach ($defaultBalais as $idx => $b) {
+                        $participants[] = [
+                            'name'  => $catConfig['prefix'] . ' ' . ($idx + 1) . ' ' . $catConfig['suffix'],
+                            'balai' => $b,
+                        ];
+                    }
                 }
+                $this->tournamentModel->createTournament($catConfig['title'], $catKey, $participants);
             }
-            $this->tournamentModel->createTournament('Turnamen Tenis Meja Putri', 'putri', $putriParticipants);
         }
     }
 
@@ -90,8 +80,10 @@ class TenisMeja extends BaseController
     {
         $this->ensureInitialTournaments();
 
-        $putraTournament = $this->tournamentModel->getActiveTournament('putra');
-        $putriTournament = $this->tournamentModel->getActiveTournament('putri');
+        $putraTournament      = $this->tournamentModel->getActiveTournament('putra');
+        $putriTournament      = $this->tournamentModel->getActiveTournament('putri');
+        $gandaPutraTournament = $this->tournamentModel->getActiveTournament('ganda_putra');
+        $gandaPutriTournament = $this->tournamentModel->getActiveTournament('ganda_putri');
 
         $homeSetting = [];
         try {
@@ -99,27 +91,30 @@ class TenisMeja extends BaseController
         } catch (\Throwable $e) {}
 
         $data = [
-            'title'           => 'Bagan Turnamen Tenis Meja - Sistem Gugur (Putra & Putri)',
-            'logoUrl'         => $this->getBrandingLogo(),
-            'officialName'    => $homeSetting['official_name'] ?? 'Kementerian Pekerjaan Umum',
-            'subHeader'       => 'Satuan Kerja Pelaksanaan Prasarana Permukiman Provinsi Riau',
-            'putraTournament' => $putraTournament,
-            'putriTournament' => $putriTournament,
-            'defaultBalais'   => TenisMejaTournamentModel::$defaultBalais,
+            'title'                => 'Bagan Turnamen Tenis Meja - Sistem Gugur (Putra, Putri, Ganda Putra, Ganda Putri)',
+            'logoUrl'              => $this->getBrandingLogo(),
+            'officialName'         => $homeSetting['official_name'] ?? 'Kementerian Pekerjaan Umum',
+            'subHeader'            => 'Satuan Kerja Pelaksanaan Prasarana Permukiman Provinsi Riau',
+            'putraTournament'      => $putraTournament,
+            'putriTournament'      => $putriTournament,
+            'gandaPutraTournament' => $gandaPutraTournament,
+            'gandaPutriTournament' => $gandaPutriTournament,
+            'defaultBalais'        => TenisMejaTournamentModel::$defaultBalais,
         ];
 
         return view('public/tenismeja/index', $data);
     }
 
     /**
-     * API: Get tournament data (JSON) for a specific category or both
+     * API: Get tournament data (JSON) for a specific category or all
      */
     public function apiData()
     {
         $cat = $this->request->getGet('category');
 
         if ($cat) {
-            $tournament = $this->tournamentModel->getActiveTournament($cat);
+            $normalized = TenisMejaTournamentModel::normalizeCategory($cat);
+            $tournament = $this->tournamentModel->getActiveTournament($normalized);
             return $this->response->setJSON([
                 'status'     => 'success',
                 'tournament' => $tournament,
@@ -127,9 +122,11 @@ class TenisMeja extends BaseController
         }
 
         return $this->response->setJSON([
-            'status' => 'success',
-            'putra'  => $this->tournamentModel->getActiveTournament('putra'),
-            'putri'  => $this->tournamentModel->getActiveTournament('putri'),
+            'status'      => 'success',
+            'putra'       => $this->tournamentModel->getActiveTournament('putra'),
+            'putri'       => $this->tournamentModel->getActiveTournament('putri'),
+            'ganda_putra' => $this->tournamentModel->getActiveTournament('ganda_putra'),
+            'ganda_putri' => $this->tournamentModel->getActiveTournament('ganda_putri'),
         ]);
     }
 
@@ -360,7 +357,7 @@ class TenisMeja extends BaseController
             $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($imgData);
         }
 
-        $catLabel = ($category === 'putri') ? 'PUTRI' : 'PUTRA';
+        $catLabel = strtoupper(TenisMejaTournamentModel::getCategoryLabel($category));
 
         $data = [
             'title'        => $tournament['title'] ?? ('Bagan Turnamen Tenis Meja ' . $catLabel),

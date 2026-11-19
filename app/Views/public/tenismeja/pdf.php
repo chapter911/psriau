@@ -379,7 +379,7 @@ $lineCol = '#0b3c74';
     <!-- JUDUL DOKUMEN -->
     <div class="doc-title-block">
         <h3>BAGAN PERTANDINGAN TURNAMEN TENIS MEJA SISTEM GUGUR</h3>
-        <span class="category-tag <?= ($category ?? '') === 'putri' ? 'putri' : ''; ?>">
+        <span class="category-tag <?= in_array($category ?? '', ['putri', 'ganda_putri']) ? 'putri' : ''; ?>">
             TURNAMEN <?= esc($categoryLabel ?? 'PUTRA'); ?>
         </span>
     </div>

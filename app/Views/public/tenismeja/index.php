@@ -207,12 +207,14 @@
             color: var(--pupr-blue);
         }
 
-        .category-tab-btn.active.tab-putra {
+        .category-tab-btn.active.tab-putra,
+        .category-tab-btn.active.tab-ganda-putra {
             color: var(--pupr-blue);
             border-bottom-color: var(--pupr-blue);
         }
 
-        .category-tab-btn.active.tab-putri {
+        .category-tab-btn.active.tab-putri,
+        .category-tab-btn.active.tab-ganda-putri {
             color: var(--accent-pink);
             border-bottom-color: var(--accent-pink);
         }
@@ -226,12 +228,14 @@
             font-weight: 700;
         }
 
-        .category-tab-btn.active.tab-putra .category-badge-count {
+        .category-tab-btn.active.tab-putra .category-badge-count,
+        .category-tab-btn.active.tab-ganda-putra .category-badge-count {
             background: #e0e7ff;
             color: #3730a3;
         }
 
-        .category-tab-btn.active.tab-putri .category-badge-count {
+        .category-tab-btn.active.tab-putri .category-badge-count,
+        .category-tab-btn.active.tab-ganda-putri .category-badge-count {
             background: #fce7f3;
             color: #9d174d;
         }
@@ -1001,16 +1005,24 @@
         </div>
     </header>
 
-    <!-- CATEGORY TABS (PUTRA & PUTRI) -->
+    <!-- CATEGORY TABS (PUTRA, PUTRI, GANDA PUTRA, GANDA PUTRI) -->
     <nav class="category-nav-bar">
         <div class="category-nav-container">
             <button type="button" class="category-tab-btn tab-putra active" id="tabBtnPutra" onclick="switchCategory('putra')">
-                <i class="fas fa-mars text-primary"></i> Turnamen Putra
+                <i class="fas fa-mars text-primary"></i> Putra
                 <span class="category-badge-count" id="countBadgePutra"><?= (int) ($putraTournament['participant_count'] ?? 5); ?> Peserta</span>
             </button>
             <button type="button" class="category-tab-btn tab-putri" id="tabBtnPutri" onclick="switchCategory('putri')">
-                <i class="fas fa-venus" style="color: #ec4899;"></i> Turnamen Putri
+                <i class="fas fa-venus" style="color: #ec4899;"></i> Putri
                 <span class="category-badge-count" id="countBadgePutri"><?= (int) ($putriTournament['participant_count'] ?? 5); ?> Peserta</span>
+            </button>
+            <button type="button" class="category-tab-btn tab-ganda-putra" id="tabBtnGandaPutra" onclick="switchCategory('ganda_putra')">
+                <i class="fas fa-user-group text-primary"></i> Ganda Putra
+                <span class="category-badge-count" id="countBadgeGandaPutra"><?= (int) ($gandaPutraTournament['participant_count'] ?? 5); ?> Peserta</span>
+            </button>
+            <button type="button" class="category-tab-btn tab-ganda-putri" id="tabBtnGandaPutri" onclick="switchCategory('ganda_putri')">
+                <i class="fas fa-user-group" style="color: #ec4899;"></i> Ganda Putri
+                <span class="category-badge-count" id="countBadgeGandaPutri"><?= (int) ($gandaPutriTournament['participant_count'] ?? 5); ?> Peserta</span>
             </button>
         </div>
     </nav>
@@ -1092,6 +1104,8 @@
                         <select id="formCategory" class="form-control" onchange="onModalCategoryChange(this.value)">
                             <option value="putra">Turnamen Putra</option>
                             <option value="putri">Turnamen Putri</option>
+                            <option value="ganda_putra">Turnamen Ganda Putra</option>
+                            <option value="ganda_putri">Turnamen Ganda Putri</option>
                         </select>
                     </div>
 
@@ -1158,16 +1172,28 @@
         // Initial Data injected from PHP
         let allTournaments = {
             putra: <?= json_encode($putraTournament ?? null, JSON_UNESCAPED_UNICODE); ?>,
-            putri: <?= json_encode($putriTournament ?? null, JSON_UNESCAPED_UNICODE); ?>
+            putri: <?= json_encode($putriTournament ?? null, JSON_UNESCAPED_UNICODE); ?>,
+            ganda_putra: <?= json_encode($gandaPutraTournament ?? null, JSON_UNESCAPED_UNICODE); ?>,
+            ganda_putri: <?= json_encode($gandaPutriTournament ?? null, JSON_UNESCAPED_UNICODE); ?>
         };
 
-        // Active Category: 'putra' or 'putri'
+        // Active Category: 'putra', 'putri', 'ganda_putra', 'ganda_putri'
         let currentCategory = 'putra';
 
+        function getCategoryName(cat) {
+            switch(cat) {
+                case 'putri': return 'Putri';
+                case 'ganda_putra': return 'Ganda Putra';
+                case 'ganda_putri': return 'Ganda Putri';
+                default: return 'Putra';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
-            // Check hash in URL (#putra or #putri)
-            if (window.location.hash === '#putri') {
-                currentCategory = 'putri';
+            // Check hash in URL (#putra, #putri, #ganda_putra, #ganda_putri)
+            const hash = window.location.hash.replace('#', '');
+            if (['putra', 'putri', 'ganda_putra', 'ganda_putri'].includes(hash)) {
+                currentCategory = hash;
             } else {
                 currentCategory = 'putra';
             }
@@ -1177,7 +1203,7 @@
             initEventHandlers();
         });
 
-        // SWITCH CATEGORY (PUTRA / PUTRI)
+        // SWITCH CATEGORY
         function switchCategory(cat) {
             currentCategory = cat;
             window.location.hash = cat;
@@ -1186,31 +1212,43 @@
         }
 
         function updateCategoryTabUI(cat) {
-            const tabPutra = document.getElementById('tabBtnPutra');
-            const tabPutri = document.getElementById('tabBtnPutri');
+            const tabs = {
+                putra: document.getElementById('tabBtnPutra'),
+                putri: document.getElementById('tabBtnPutri'),
+                ganda_putra: document.getElementById('tabBtnGandaPutra'),
+                ganda_putri: document.getElementById('tabBtnGandaPutri')
+            };
             const pdfBtn = document.getElementById('btnEksporPdf');
 
-            if (cat === 'putri') {
-                tabPutri.classList.add('active');
-                tabPutra.classList.remove('active');
-                pdfBtn.href = `${PDF_BASE_URL}?category=putri`;
-            } else {
-                tabPutra.classList.add('active');
-                tabPutri.classList.remove('active');
-                pdfBtn.href = `${PDF_BASE_URL}?category=putra`;
+            Object.keys(tabs).forEach(k => {
+                if (tabs[k]) {
+                    if (k === cat) tabs[k].classList.add('active');
+                    else tabs[k].classList.remove('active');
+                }
+            });
+
+            if (pdfBtn) {
+                pdfBtn.href = `${PDF_BASE_URL}?category=${cat}`;
             }
 
             // Update tab badge counts
-            const putraCount = allTournaments.putra ? (allTournaments.putra.participant_count || 0) : 0;
-            const putriCount = allTournaments.putri ? (allTournaments.putri.participant_count || 0) : 0;
-            document.getElementById('countBadgePutra').textContent = `${putraCount} Peserta`;
-            document.getElementById('countBadgePutri').textContent = `${putriCount} Peserta`;
+            const updateCount = (key, elemId) => {
+                const el = document.getElementById(elemId);
+                if (el) {
+                    const count = allTournaments[key] ? (allTournaments[key].participant_count || 0) : 0;
+                    el.textContent = `${count} Peserta`;
+                }
+            };
+            updateCount('putra', 'countBadgePutra');
+            updateCount('putri', 'countBadgePutri');
+            updateCount('ganda_putra', 'countBadgeGandaPutra');
+            updateCount('ganda_putri', 'countBadgeGandaPutri');
         }
 
         // RENDER BRACKET FUNCTION
         function renderBracket(data) {
             const container = document.getElementById('bracketTree');
-            const catLabel = (currentCategory === 'putri') ? 'Putri' : 'Putra';
+            const catLabel = getCategoryName(currentCategory);
 
             if (!data || !data.bracket_json || !data.bracket_json.rounds) {
                 container.innerHTML = `
@@ -1226,14 +1264,21 @@
             // Update Header Meta
             document.getElementById('tournamentTitle').textContent = data.title || `Turnamen Tenis Meja ${catLabel}`;
             const pill = document.getElementById('metaCategoryPill');
-            const pillLabel = document.getElementById('tournamentCategoryLabel');
 
-            if (currentCategory === 'putri') {
-                pill.className = 'meta-pill pill-putri';
-                pill.innerHTML = '<i class="fas fa-venus" style="color:#ec4899;"></i> <span>Kategori Putri</span>';
-            } else {
-                pill.className = 'meta-pill pill-putra';
-                pill.innerHTML = '<i class="fas fa-mars" style="color:#2563eb;"></i> <span>Kategori Putra</span>';
+            if (pill) {
+                if (currentCategory === 'putri') {
+                    pill.className = 'meta-pill pill-putri';
+                    pill.innerHTML = '<i class="fas fa-venus" style="color:#ec4899;"></i> <span>Kategori Putri</span>';
+                } else if (currentCategory === 'ganda_putri') {
+                    pill.className = 'meta-pill pill-putri';
+                    pill.innerHTML = '<i class="fas fa-user-group" style="color:#ec4899;"></i> <span>Kategori Ganda Putri</span>';
+                } else if (currentCategory === 'ganda_putra') {
+                    pill.className = 'meta-pill pill-putra';
+                    pill.innerHTML = '<i class="fas fa-user-group" style="color:#2563eb;"></i> <span>Kategori Ganda Putra</span>';
+                } else {
+                    pill.className = 'meta-pill pill-putra';
+                    pill.innerHTML = '<i class="fas fa-mars" style="color:#2563eb;"></i> <span>Kategori Putra</span>';
+                }
             }
 
             document.getElementById('tournamentCount').textContent = (data.participant_count || 0) + ' Peserta';
@@ -1809,19 +1854,19 @@
             const container = document.getElementById('participantInputs');
             container.innerHTML = '';
 
-            const catLabel = (cat === 'putri') ? 'Putri' : 'Putra';
+            const catLabel = getCategoryName(cat);
             document.getElementById('formTitle').value = data ? (data.title || `Turnamen Tenis Meja ${catLabel}`) : `Turnamen Tenis Meja ${catLabel}`;
 
             let list = (data && data.participants_json && Array.isArray(data.participants_json)) ? data.participants_json : [];
 
             if (list.length === 0) {
-                // Default 5 participants
+                const prefix = (cat === 'ganda_putra' || cat === 'ganda_putri') ? 'Pasangan' : 'Peserta';
                 list = [
-                    { name: `Peserta 1 ${catLabel}`, balai: 'BWS Sumatera III' },
-                    { name: `Peserta 2 ${catLabel}`, balai: 'BPJN Riau' },
-                    { name: `Peserta 3 ${catLabel}`, balai: 'BPPW Riau' },
-                    { name: `Peserta 4 ${catLabel}`, balai: 'BP2JK Riau' },
-                    { name: `Peserta 5 ${catLabel}`, balai: 'Satker PPS Riau' },
+                    { name: `${prefix} 1 ${catLabel}`, balai: 'BWS Sumatera III' },
+                    { name: `${prefix} 2 ${catLabel}`, balai: 'BPJN Riau' },
+                    { name: `${prefix} 3 ${catLabel}`, balai: 'BPPW Riau' },
+                    { name: `${prefix} 4 ${catLabel}`, balai: 'BP2JK Riau' },
+                    { name: `${prefix} 5 ${catLabel}`, balai: 'Satker PPS Riau' },
                 ];
             }
 
@@ -1838,7 +1883,7 @@
             row.innerHTML = `
                 <div class="participant-num">#${num}</div>
                 <div>
-                    <input type="text" class="form-control participant-name-field" placeholder="Nama Peserta #${num}" value="${escapeHtml(nameVal)}">
+                    <input type="text" class="form-control participant-name-field" placeholder="Nama Peserta / Pasangan #${num}" value="${escapeHtml(nameVal)}">
                 </div>
                 <div>
                     <input type="text" class="form-control participant-balai-field" placeholder="Asal Balai #${num}" value="${escapeHtml(balaiVal)}">

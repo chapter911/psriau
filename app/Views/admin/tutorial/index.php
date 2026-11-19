@@ -621,8 +621,8 @@ graph TD
     <div class="flowchart-card role-section" data-roles="operator,admin,super_administrator,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
             <div>
-                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-table-tennis-paddle-ball mr-2 text-warning"></i> Alur Turnamen Tenis Meja Sistem Gugur Putra &amp; Putri (/tenismeja)</h5>
-                <small class="text-muted">Akses publik bagan turnamen sistem gugur putra &amp; putri tanpa login, input nama peserta &amp; asal balai (1 balai bisa multi-nama), live bracket, acak posisi aman (Superadmin), dan ekspor dokumen PDF.</small>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-table-tennis-paddle-ball mr-2 text-warning"></i> Alur Turnamen Tenis Meja Sistem Gugur (Putra, Putri, Ganda Putra, Ganda Putri) (/tenismeja)</h5>
+                <small class="text-muted">Akses publik bagan turnamen sistem gugur untuk 4 kategori (Putra, Putri, Ganda Putra, dan Ganda Putri) tanpa login, input nama peserta/pasangan &amp; asal balai (1 balai bisa multi-nama), live bracket, acak posisi aman (Superadmin), dan ekspor dokumen PDF.</small>
             </div>
             <div>
                 <span class="badge badge-info">Publik / Superadmin</span>
@@ -632,8 +632,8 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Akses Portal /tenismeja (Tanpa Perlu Login)"] --> B["Pilih Tab Kategori: Turnamen Putra / Turnamen Putri"]
-    B --> C{"Lihat Bagan Aktif (Default 5 Peserta)"}
+    A["Akses Portal /tenismeja (Tanpa Perlu Login)"] --> B["Pilih Tab Kategori: Putra, Putri, Ganda Putra, atau Ganda Putri"]
+    B --> C{"Lihat Bagan Aktif (Default 5 Peserta / Pasangan)"}
     C --> D["Klik Tombol 'Atur Peserta' jika ingin Menambah / Mengubah Peserta"]
     D --> E["Form Input Berpasangan: Nama Peserta &amp; Asal Balai (1 Balai Bisa 2 Nama atau Lebih)"]
     E --> F["Klik 'Tambah Peserta Baru' untuk Menambah Peserta ke-6, ke-7, dst."]
@@ -2030,9 +2030,9 @@ graph TD
                                 <p class="small text-muted mb-2"><code>/tenismeja</code> (Bisa diakses publik tanpa perlu login)</p>
                                 <ol class="pl-3 small mb-0">
                                     <li>Buka URL <code>/tenismeja</code> dari peramban pada smartphone, tablet, laptop, atau display monitor.</li>
-                                    <li>Gunakan tab navigasi di bagian atas untuk beralih antara <strong>Turnamen Putra</strong> dan <strong>Turnamen Putri</strong> (masing-masing memiliki bagan, daftar peserta, dan hasil pertandingan mandiri).</li>
-                                    <li>Secara bawaan sistem telah memuat 5 peserta awal Putra dan 5 peserta awal Putri dari Balai PUPR (BWS Sumatera III, BPJN Riau, BPPW Riau, BP2JK Riau, dan Satker PPS Riau).</li>
-                                    <li><strong>Input Peserta &amp; Balai (1 Balai Bisa 2 Nama):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta terdapat kolom terpisah untuk <strong>Nama Peserta</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>).</li>
+                                    <li>Gunakan tab navigasi di bagian atas untuk beralih antara 4 kategori turnamen: <strong>Putra</strong>, <strong>Putri</strong>, <strong>Ganda Putra</strong>, dan <strong>Ganda Putri</strong> (masing-masing memiliki bagan, daftar peserta/pasangan, dan hasil pertandingan mandiri).</li>
+                                    <li>Secara bawaan sistem telah memuat 5 peserta/pasangan awal untuk masing-masing kategori dari Balai PUPR (BWS Sumatera III, BPJN Riau, BPPW Riau, BP2JK Riau, dan Satker PPS Riau).</li>
+                                    <li><strong>Input Peserta &amp; Balai (1 Balai Bisa 2 Nama):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta/pasangan terdapat kolom terpisah untuk <strong>Nama Peserta / Pasangan</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>, atau pasangan ganda).</li>
                                     <li><strong>Penambahan Peserta Dinamis:</strong> Jika jumlah peserta bertambah, klik tombol <strong>+ Tambah Peserta Baru</strong> untuk menambahkan slot peserta ke-6, ke-7, ke-8, dst.</li>
                                     <li>Klik <strong>Generate Bagan Turnamen</strong> untuk menyusun bagan sistem gugur otomatis. Pada skema 5 peserta: peserta yang menang Bye tetap ditampilkan kartu bagannya secara simetris dengan garis alir rapi presisi: <strong>Ronde 1 (Babak I)</strong> menampilkan 3 kartu: <em>Match #1 (A vs B)</em>, <em>Match #2 (C vs D)</em>, dan <em>Kartu Menang Bye (E vs BYE)</em>; <strong>Ronde 2 (Semi Final)</strong> menampilkan 2 kartu: <em>Kartu Menang Bye Ronde 2 (Pemenang A/B vs BYE)</em> dan <em>Match #3 (Pemenang C/D vs E)</em>; serta <strong>Ronde 3 (Final)</strong> menampilkan <em>Match #4 (Pemenang Bye A vs Pemenang Semifinal D)</em> untuk penentuan Juara 1 dan Runner-Up.</li>
                                 </ol>
@@ -2048,7 +2048,7 @@ graph TD
                                     <li><strong>Acak Posisi Peserta (Shuffle Bracket):</strong> Klik tombol merah <strong>Acak Posisi</strong> pada toolbar atas. Untuk menjaga sportivitas dan integritas pengundian, sistem meminta verifikasi dengan <strong>memasukkan password akun Superadministrator</strong>.</li>
                                     <li>Setelah password terverifikasi, posisi peserta pada bagan kategori yang aktif (Putra/Putri) akan diacak secara adil dan bagan otomatis diperbarui secara instan dengan notifikasi tunggal (bebas double alert).</li>
                                     <li><strong>Catat Skor &amp; Tentukan Pemenang:</strong> Masukkan skor pada kartu pertandingan dan klik tombol simpan atau klik tanda centang pemenang. Pemenang otomatis melaju ke babak berikutnya hingga babak Final dan podium juara.</li>
-                                    <li><strong>Ekspor Dokumen PDF:</strong> Klik tombol biru <strong>Ekspor PDF</strong> untuk mengunduh berkas PDF resmi berukuran A4 Landscape sesuai kategori aktif (Putra atau Putri). Halaman 1 menyajikan bagan pohon turnamen autentik dengan garis alir orthogonal rapi, kartu pertandingan proporsional (termasuk kartu Menang Bye dan Final), kop resmi Satker PPS Riau, banner podium juara tanpa kolom tanda tangan. Halaman 2 menyajikan lembar daftar pertandingan dan rekapitulasi skor lengkap.</li>
+                                    <li><strong>Ekspor Dokumen PDF:</strong> Klik tombol biru <strong>Ekspor PDF</strong> untuk mengunduh berkas PDF resmi berukuran A4 Landscape sesuai kategori aktif (Putra, Putri, Ganda Putra, atau Ganda Putri). Halaman 1 menyajikan bagan pohon turnamen autentik dengan garis alir orthogonal rapi, kartu pertandingan proporsional (termasuk kartu Menang Bye dan Final), kop resmi Satker PPS Riau, banner podium juara tanpa kolom tanda tangan. Halaman 2 menyajikan lembar daftar pertandingan dan rekapitulasi skor lengkap.</li>
                                     <li>Tersedia tombol <strong>Reset Skor</strong> untuk mengulang skor pertandingan tanpa menghapus data peserta yang telah diinput.</li>
                                 </ol>
                             </div>

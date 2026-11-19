@@ -116,10 +116,31 @@ class TenisMejaTournamentModel extends Model
     public static function normalizeCategory(?string $category): string
     {
         $c = strtolower(trim((string) $category));
-        if ($c === 'putri' || str_contains($c, 'putri')) {
+        $c = str_replace([' ', '-'], '_', $c);
+        if (str_contains($c, 'ganda_putri')) {
+            return 'ganda_putri';
+        }
+        if (str_contains($c, 'ganda_putra')) {
+            return 'ganda_putra';
+        }
+        if (str_contains($c, 'putri')) {
             return 'putri';
         }
         return 'putra';
+    }
+
+    /**
+     * Get display label for category
+     */
+    public static function getCategoryLabel(?string $category): string
+    {
+        $cat = self::normalizeCategory($category);
+        return match ($cat) {
+            'putri'       => 'Putri',
+            'ganda_putra' => 'Ganda Putra',
+            'ganda_putri' => 'Ganda Putri',
+            default       => 'Putra',
+        };
     }
 
     /**
@@ -197,7 +218,7 @@ class TenisMejaTournamentModel extends Model
              ->set(['is_active' => 0])
              ->update();
 
-        $catLabel = ($cat === 'putri') ? 'Putri' : 'Putra';
+        $catLabel = self::getCategoryLabel($cat);
         $now = date('Y-m-d H:i:s');
         $data = [
             'title'             => $title ?: ('Turnamen Tenis Meja ' . $catLabel),
