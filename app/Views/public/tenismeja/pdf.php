@@ -258,32 +258,6 @@
         .results-table tr:nth-child(even) td {
             background-color: #f8fafc;
         }
-
-        /* SIGNATURE SECTION */
-        .signature-table {
-            width: 100%;
-            margin-top: 10px;
-            border-collapse: collapse;
-        }
-
-        .signature-table td {
-            vertical-align: top;
-            width: 50%;
-            font-size: 8pt;
-        }
-
-        .sig-box {
-            text-align: center;
-        }
-
-        .sig-space {
-            height: 40px;
-        }
-
-        .sig-name {
-            font-weight: bold;
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
@@ -495,24 +469,6 @@
             </tr>
             <?php endforeach; endforeach; ?>
         </tbody>
-    </table>
-
-    <!-- LEMBAR PENGESAHAN / TANDA TANGAN -->
-    <table class="signature-table">
-        <tr>
-            <td class="sig-box">
-                <p>Mengetahui,<br><strong>Kepala Satuan Kerja Pelaksanaan Prasarana Permukiman Provinsi Riau</strong></p>
-                <div class="sig-space"></div>
-                <p class="sig-name">M. SYAIFUDDIN, S.T., M.T.</p>
-                <p>NIP. 19780512 200502 1 002</p>
-            </td>
-            <td class="sig-box">
-                <p>Pekanbaru, <?= esc($printDate); ?><br><strong>Panitia Pelaksana Turnamen Tenis Meja</strong></p>
-                <div class="sig-space"></div>
-                <p class="sig-name">PANITIA PERTANDINGAN</p>
-                <p>Keluarga Besar Satker PPS Riau</p>
-            </td>
-        </tr>
     </table>
 
 </body>
