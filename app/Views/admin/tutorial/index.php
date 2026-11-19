@@ -633,22 +633,26 @@ graph TD
                 <pre class="mermaid">
 graph TD
     A["Akses Portal /tenismeja (Tanpa Perlu Login)"] --> B["Pilih Tab Kategori: Putra, Putri, Ganda Putra, atau Ganda Putri"]
-    B --> C{"Lihat Bagan Aktif (Default 5 Peserta / Pasangan)"}
-    C --> D["Klik Tombol 'Atur Peserta' jika ingin Menambah / Mengubah Peserta"]
-    D --> E["Form Input Berpasangan: Nama Peserta &amp; Asal Balai (1 Balai Bisa 2 Nama atau Lebih)"]
-    E --> F["Klik 'Tambah Peserta Baru' untuk Menambah Peserta ke-6, ke-7, dst."]
-    F --> G["Klik 'Generate Bagan Turnamen' (Sistem Gugur Standar Otomatis &amp; Resolusi BYE)"]
-    C --> H["Bagan Interaktif Tampil: Ronde 1 (Babak I), Ronde 2 (Semi Final), Ronde 3 (Final: Bye vs Pemenang Semifinal)"]
-    G --> H
+    B --> C{"Pilih / Tinjau Jumlah Peserta"}
+    C -- "5 Peserta" --> C1["Bagan 5 Peserta: Bagan Atas (Babak 1 -> Semifinal -> Final Bagan/Juara)"]
+    C -- "10 Peserta" --> C2["Bagan Gabungan 10 Peserta: Bagan Atas (5) + Bagan Bawah (5) -> Grand Final"]
+    C -- "Lainnya" --> C3["Bagan Sistem Gugur Standar Dinamis (4, 8, 16 Peserta)"]
+    C1 --> D["Klik Tombol 'Atur Peserta' untuk Ubah/Atur Nama &amp; Balai"]
+    C2 --> D
+    C3 --> D
+    D --> E["Form Input Berpasangan: Nama Peserta &amp; Asal Balai (1 Balai Bisa Multi-Nama)"]
+    E --> F["Pilihan Cepat Jumlah Peserta (5, 10, 4, 8, 16) atau Tambah Peserta Baru"]
+    F --> G["Klik 'Generate Bagan Turnamen' (Struktur Bagan Otomatis &amp; Resolusi BYE)"]
+    G --> H["Bagan Interaktif Tampil dengan Garis Alir Rapi &amp; Visual Pemisah Bagan"]
     H --> I1["Input Skor Pertandingan &amp; Simpan Skor"]
     H --> I2["Klik Tombol Pemenang (Pemenang Lolos Otomatis ke Babak Selanjutnya)"]
-    I2 --> J1["Babak Final: Pemenang Dinobatkan sebagai Juara 1 (Champion) &amp; Juara 2 (Runner-Up)"]
-    H --> K1["Klik Tombol 'Ekspor PDF' -> Unduh Dokumen PDF Resmi Kop Satker PPS &amp; Bagan Kategori Aktif"]
+    I2 --> J1["Babak Final / Grand Final: Pemenang Dinobatkan sebagai Juara 1 &amp; Runner-Up"]
+    H --> K1["Klik Tombol 'Ekspor PDF' -> Unduh PDF Resmi A4 Landscape Kop Satker PPS &amp; Bagan Autentik"]
     H --> L1["Klik Tombol 'Acak Posisi' (Shuffle Bracket)"]
     L1 --> M1["Modal Input Password Akun Superadministrator"]
     M1 --> N1{"Verifikasi Password Superadmin"}
     N1 -- Salah --> O1["Pemberitahuan Ditolak (Password Salah)"]
-    N1 -- Benar --> P1["Posisi Peserta Diacak Secara Adil &amp; Bagan Diperbarui Otomatis"]
+    N1 -- Benar --> P1["Posisi Peserta Diacak Adil &amp; Bagan Diperbarui Otomatis"]
                 </pre>
             </div>
         </div>
@@ -2018,7 +2022,7 @@ graph TD
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="all,admin,super_administrator,staf_pelaksana,ppk_kasatker">
             <div class="card-header bg-white py-3">
                 <h5 class="mb-0 font-weight-bold text-primary">
-                    <i class="fas fa-table-tennis-paddle-ball mr-2 text-warning"></i> Modul Turnamen Tenis Meja: Sistem Gugur Putra &amp; Putri, Input Multi-Nama Balai, Acak Posisi &amp; Ekspor PDF
+                    <i class="fas fa-table-tennis-paddle-ball mr-2 text-warning"></i> Modul Turnamen Tenis Meja: Sistem Gugur 4 Kategori (Putra, Putri, Ganda Putra, Ganda Putri), Skema 5 &amp; 10 Peserta, Acak Posisi &amp; Ekspor PDF
                 </h5>
             </div>
             <div class="card-body bg-light">
@@ -2032,9 +2036,15 @@ graph TD
                                     <li>Buka URL <code>/tenismeja</code> dari peramban pada smartphone, tablet, laptop, atau display monitor.</li>
                                     <li>Gunakan tab navigasi di bagian atas untuk beralih antara 4 kategori turnamen: <strong>Putra</strong>, <strong>Putri</strong>, <strong>Ganda Putra</strong>, dan <strong>Ganda Putri</strong> (masing-masing memiliki bagan, daftar peserta/pasangan, dan hasil pertandingan mandiri).</li>
                                     <li>Secara bawaan sistem telah memuat 5 peserta/pasangan awal untuk masing-masing kategori dari Balai PUPR (BWS Sumatera III, BPJN Riau, BPPW Riau, BP2JK Riau, dan Satker PPS Riau).</li>
-                                    <li><strong>Input Peserta &amp; Balai (1 Balai Bisa 2 Nama):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta/pasangan terdapat kolom terpisah untuk <strong>Nama Peserta / Pasangan</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>, atau pasangan ganda).</li>
-                                    <li><strong>Penambahan Peserta Dinamis:</strong> Jika jumlah peserta bertambah, klik tombol <strong>+ Tambah Peserta Baru</strong> untuk menambahkan slot peserta ke-6, ke-7, ke-8, dst.</li>
-                                    <li>Klik <strong>Generate Bagan Turnamen</strong> untuk menyusun bagan sistem gugur otomatis. Pada skema 5 peserta: peserta yang menang Bye tetap ditampilkan kartu bagannya secara simetris dengan garis alir rapi presisi: <strong>Ronde 1 (Babak I)</strong> menampilkan 3 kartu: <em>Match #1 (A vs B)</em>, <em>Match #2 (C vs D)</em>, dan <em>Kartu Menang Bye (E vs BYE)</em>; <strong>Ronde 2 (Semi Final)</strong> menampilkan 2 kartu: <em>Kartu Menang Bye Ronde 2 (Pemenang A/B vs BYE)</em> dan <em>Match #3 (Pemenang C/D vs E)</em>; serta <strong>Ronde 3 (Final)</strong> menampilkan <em>Match #4 (Pemenang Bye A vs Pemenang Semifinal D)</em> untuk penentuan Juara 1 dan Runner-Up.</li>
+                                    <li><strong>Input Peserta &amp; Balai (1 Balai Bisa Multi-Nama):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta/pasangan terdapat kolom terpisah untuk <strong>Nama Peserta / Pasangan</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>, atau pasangan ganda).</li>
+                                    <li><strong>Pilihan Cepat Jumlah Peserta:</strong> Tersedia tombol pilihan cepat:
+                                        <ul class="pl-3 mt-1 mb-1">
+                                            <li><strong>5 Peserta (Bagan Atas):</strong> Skema 5 peserta dengan kartu Menang Bye simetris (Babak 1: Match #1, Match #2, Match #BYE 1; Semifinal: Match #BYE A, Match #5; Final: Match #7).</li>
+                                            <li><strong>10 Peserta (Gabungan Atas &amp; Bawah):</strong> Menggabungkan <strong>Bagan Atas (5 peserta)</strong> dan <strong>Bagan Bawah (5 peserta)</strong> yang masing-masing melaju melewati Babak 1, Semifinal, dan Final Bagan, kemudian kedua pemenang bagan dipertemukan pada <strong>Grand Final (Match #9)</strong> untuk penentuan Juara 1 dan Runner-Up.</li>
+                                            <li><strong>4, 8, 16 Peserta:</strong> Skema sistem gugur standar dinamis.</li>
+                                        </ul>
+                                    </li>
+                                    <li>Klik <strong>Generate Bagan Turnamen</strong> untuk menyusun bagan turnamen otomatis dengan garis alir rapi presisi dan visual pembatas bagan.</li>
                                 </ol>
                             </div>
                         </div>

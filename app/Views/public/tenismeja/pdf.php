@@ -94,6 +94,75 @@ if (! function_exists('renderPdfMatchBox')) {
     }
 }
 
+// Helper function untuk render kartu pertandingan 10 peserta (kompak) di PDF
+if (! function_exists('renderPdfMatchBox10')) {
+    function renderPdfMatchBox10($m, $isFinal = false, $isGrandFinal = false) {
+        if (! $m) {
+            return '';
+        }
+        $p1 = $m['player1'] ?? null;
+        $p2 = $m['player2'] ?? null;
+        $isBye = ! empty($m['is_bye']);
+        $w = $m['winner'] ?? null;
+        
+        $p1Win = $w && $p1 && (! empty($p1['name'])) && ($w['name'] === $p1['name']);
+        $p2Win = $w && $p2 && (! empty($p2['name'])) && ($w['name'] === $p2['name']);
+
+        $borderCol = $isGrandFinal ? '#1e3a8a' : ($isFinal ? '#d97706' : ($isBye ? '#10b981' : '#0b3c74'));
+        $bgCol = $isGrandFinal ? '#eff6ff' : ($isFinal ? '#fffbeb' : ($isBye ? '#f0fdf4' : '#ffffff'));
+        $headerBg = $isGrandFinal ? '#1e3a8a' : ($isFinal ? '#fef3c7' : ($isBye ? '#dcfce7' : '#0b3c74'));
+        $headerText = $isGrandFinal ? '#ffffff' : ($isFinal ? '#92400e' : ($isBye ? '#166534' : '#ffffff'));
+        $borderStyle = $isBye ? 'border: 1px dashed ' . $borderCol : 'border: 1px solid ' . $borderCol;
+
+        $html = '<div style="' . $borderStyle . '; background: ' . $bgCol . '; border-radius: 3px; font-size: 6.2pt; width: 165px; box-sizing: border-box; overflow: hidden;">';
+        
+        // Header Kartu
+        $html .= '<div style="background: ' . $headerBg . '; color: ' . $headerText . '; padding: 1.5px 4px; font-weight: bold; font-size: 5.8pt;">';
+        $html .= 'Match #' . esc($m['match_number']);
+        if ($isGrandFinal) {
+            $html .= '<span style="float: right; color: #facc15; font-weight: bold;">GRAND FINAL</span>';
+        } elseif ($isFinal) {
+            $html .= '<span style="float: right; color: #b45309; font-weight: bold;">FINAL BAGAN</span>';
+        } elseif ($isBye) {
+            $html .= '<span style="float: right; color: #15803d; font-weight: bold;">MENANG BYE</span>';
+        }
+        $html .= '</div>';
+
+        // Baris Peserta 1
+        $p1Bg = $p1Win ? 'background: #d1fae5; font-weight: bold; color: #065f46;' : '';
+        $html .= '<div style="padding: 1.5px 4px; border-bottom: 0.5px solid #e2e8f0; ' . $p1Bg . '">';
+        $html .= esc($p1['name'] ?? '- Menunggu -');
+        if ($m['score1'] !== null) {
+            $html .= '<span style="float: right; font-weight: bold; background: #e2e8f0; color: #002244; padding: 0 3px; border-radius: 2px;">' . (int)$m['score1'] . '</span>';
+        } elseif ($isBye && $p1) {
+            $html .= '<span style="float: right; font-weight: bold; color: #166534;">BYE</span>';
+        }
+        if (! empty($p1['balai']) && ! empty($p1['name']) && $p1['name'] !== $p1['balai']) {
+            $html .= '<br><span style="font-size: 5.2pt; color: #64748b; font-weight: normal;">' . esc($p1['balai']) . '</span>';
+        }
+        $html .= '</div>';
+
+        // Baris Peserta 2
+        $p2Bg = $p2Win ? 'background: #d1fae5; font-weight: bold; color: #065f46;' : '';
+        $html .= '<div style="padding: 1.5px 4px; ' . $p2Bg . '">';
+        if ($p2 && ! empty($p2['is_bye'])) {
+            $html .= '<span style="color: #64748b; font-style: italic;">(BYE) - Lolos Otomatis</span>';
+        } else {
+            $html .= esc($p2['name'] ?? '- Menunggu -');
+        }
+        if ($m['score2'] !== null) {
+            $html .= '<span style="float: right; font-weight: bold; background: #e2e8f0; color: #002244; padding: 0 3px; border-radius: 2px;">' . (int)$m['score2'] . '</span>';
+        }
+        if ($p2 && ! empty($p2['balai']) && empty($p2['is_bye']) && $p2['name'] !== $p2['balai']) {
+            $html .= '<br><span style="font-size: 5.2pt; color: #64748b; font-weight: normal;">' . esc($p2['balai']) . '</span>';
+        }
+        $html .= '</div>';
+
+        $html .= '</div>';
+        return $html;
+    }
+}
+
 $lineCol = '#0b3c74';
 ?>
 <!DOCTYPE html>
@@ -303,6 +372,61 @@ $lineCol = '#0b3c74';
             border-radius: 50%;
         }
 
+        /* 10 PARTICIPANTS CANVAS */
+        .canvas-10p {
+            position: relative;
+            width: 780px;
+            height: 395px;
+            margin: 0 auto;
+        }
+
+        .group-tag-10p {
+            position: absolute;
+            font-size: 7.2pt;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .round-hdr-10p {
+            position: absolute;
+            width: 165px;
+            height: 18px;
+            line-height: 18px;
+            background: #002244;
+            color: #f7a81b;
+            font-size: 6.8pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            text-align: center;
+            border-radius: 3px;
+        }
+
+        .card-pos-10p {
+            position: absolute;
+            width: 165px;
+        }
+
+        .line-h-10p {
+            position: absolute;
+            height: 0px;
+            border-top: 1.5px solid <?= $lineCol; ?>;
+        }
+
+        .line-v-10p {
+            position: absolute;
+            width: 0px;
+            border-left: 1.5px solid <?= $lineCol; ?>;
+        }
+
+        .dot-10p {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: <?= $lineCol; ?>;
+            border-radius: 50%;
+        }
+
         /* FALLBACK GENERIC TABLE */
         .bracket-fallback-table {
             width: 100%;
@@ -500,6 +624,126 @@ $lineCol = '#0b3c74';
             <div class="match-card-wrapper" style="left: 560px; top: 104px;">
                 <?= renderPdfMatchBox($m4, true); ?>
             </div>
+        </div>
+
+    <?php elseif ($numParticipants === 10 && ! empty($rounds)): ?>
+        <?php
+            // Temukan match berdasarkan ID atau index
+            $findMatchById = function($matchId) use ($rounds) {
+                foreach ($rounds as $r) {
+                    foreach ($r['matches'] as $m) {
+                        if (($m['id'] ?? '') === $matchId) {
+                            return $m;
+                        }
+                    }
+                }
+                return null;
+            };
+
+            // Bagan Atas
+            $m1     = $findMatchById('R1_M0');
+            $m2     = $findMatchById('R1_M1');
+            $m1Bye  = $findMatchById('R1_M_BYE1');
+            $m2Bye  = $findMatchById('R2_M_BYE1');
+            $m5     = $findMatchById('R2_M0');
+            $m7     = $findMatchById('R3_M0');
+
+            // Bagan Bawah
+            $m3     = $findMatchById('R1_M2');
+            $m4     = $findMatchById('R1_M3');
+            $m2Bye2 = $findMatchById('R1_M_BYE2');
+            $m2ByeB = $findMatchById('R2_M_BYE2');
+            $m6     = $findMatchById('R2_M1');
+            $m8     = $findMatchById('R3_M1');
+
+            // Grand Final
+            $m9     = $findMatchById('R4_M0');
+        ?>
+        <div class="canvas-10p">
+            <!-- COLUMN HEADERS -->
+            <div class="round-hdr-10p" style="left: 0px; top: 0px;">BABAK 1</div>
+            <div class="round-hdr-10p" style="left: 205px; top: 0px;">SEMIFINAL</div>
+            <div class="round-hdr-10p" style="left: 410px; top: 0px;">FINAL BAGAN</div>
+            <div class="round-hdr-10p" style="left: 615px; top: 0px; background: #1e3a8a; color: #facc15;">GRAND FINAL</div>
+
+            <!-- SECTION LABELS -->
+            <div class="group-tag-10p" style="left: 0px; top: 22px; color: #0284c7;">[BAGAN ATAS - 5 PESERTA]</div>
+            <div class="group-tag-10p" style="left: 0px; top: 204px; color: #059669;">[BAGAN BAWAH - 5 PESERTA]</div>
+
+            <!-- ==================== BAGAN ATAS ==================== -->
+            <!-- Babak 1 -->
+            <div class="card-pos-10p" style="left: 0px; top: 38px;"><?= renderPdfMatchBox10($m1); ?></div>
+            <div class="card-pos-10p" style="left: 0px; top: 94px;"><?= renderPdfMatchBox10($m2); ?></div>
+            <div class="card-pos-10p" style="left: 0px; top: 150px;"><?= renderPdfMatchBox10($m1Bye); ?></div>
+
+            <!-- Conn 1 Atas -->
+            <!-- M1 (Y=60) straight to M2Bye (Y=60) -->
+            <div class="line-h-10p" style="left: 165px; top: 60px; width: 40px;"></div>
+            <div class="dot-10p" style="left: 203px; top: 58px;"></div>
+
+            <!-- M2 (Y=116) and M1Bye (Y=172) fork into M5 (Y=144) -->
+            <div class="line-h-10p" style="left: 165px; top: 116px; width: 20px;"></div>
+            <div class="line-h-10p" style="left: 165px; top: 172px; width: 20px;"></div>
+            <div class="line-v-10p" style="left: 185px; top: 116px; height: 56px;"></div>
+            <div class="line-h-10p" style="left: 185px; top: 144px; width: 20px;"></div>
+            <div class="dot-10p" style="left: 203px; top: 142px;"></div>
+
+            <!-- Semifinal Atas -->
+            <div class="card-pos-10p" style="left: 205px; top: 38px;"><?= renderPdfMatchBox10($m2Bye); ?></div>
+            <div class="card-pos-10p" style="left: 205px; top: 122px;"><?= renderPdfMatchBox10($m5); ?></div>
+
+            <!-- Conn 2 Atas: M2Bye (Y=60) and M5 (Y=144) fork into Final Atas M7 (Y=102) -->
+            <div class="line-h-10p" style="left: 370px; top: 60px; width: 20px;"></div>
+            <div class="line-h-10p" style="left: 370px; top: 144px; width: 20px;"></div>
+            <div class="line-v-10p" style="left: 390px; top: 60px; height: 84px;"></div>
+            <div class="line-h-10p" style="left: 390px; top: 102px; width: 20px;"></div>
+            <div class="dot-10p" style="left: 408px; top: 100px;"></div>
+
+            <!-- Final Bagan Atas -->
+            <div class="card-pos-10p" style="left: 410px; top: 80px;"><?= renderPdfMatchBox10($m7, true); ?></div>
+
+            <!-- ==================== BAGAN BAWAH ==================== -->
+            <!-- Babak 1 -->
+            <div class="card-pos-10p" style="left: 0px; top: 220px;"><?= renderPdfMatchBox10($m3); ?></div>
+            <div class="card-pos-10p" style="left: 0px; top: 276px;"><?= renderPdfMatchBox10($m4); ?></div>
+            <div class="card-pos-10p" style="left: 0px; top: 332px;"><?= renderPdfMatchBox10($m2Bye2); ?></div>
+
+            <!-- Conn 1 Bawah -->
+            <!-- M3 (Y=242) straight to M2ByeB (Y=242) -->
+            <div class="line-h-10p" style="left: 165px; top: 242px; width: 40px;"></div>
+            <div class="dot-10p" style="left: 203px; top: 240px;"></div>
+
+            <!-- M4 (Y=298) and M2Bye2 (Y=354) fork into M6 (Y=326) -->
+            <div class="line-h-10p" style="left: 165px; top: 298px; width: 20px;"></div>
+            <div class="line-h-10p" style="left: 165px; top: 354px; width: 20px;"></div>
+            <div class="line-v-10p" style="left: 185px; top: 298px; height: 56px;"></div>
+            <div class="line-h-10p" style="left: 185px; top: 326px; width: 20px;"></div>
+            <div class="dot-10p" style="left: 203px; top: 324px;"></div>
+
+            <!-- Semifinal Bawah -->
+            <div class="card-pos-10p" style="left: 205px; top: 220px;"><?= renderPdfMatchBox10($m2ByeB); ?></div>
+            <div class="card-pos-10p" style="left: 205px; top: 304px;"><?= renderPdfMatchBox10($m6); ?></div>
+
+            <!-- Conn 2 Bawah: M2ByeB (Y=242) and M6 (Y=326) fork into Final Bawah M8 (Y=284) -->
+            <div class="line-h-10p" style="left: 370px; top: 242px; width: 20px;"></div>
+            <div class="line-h-10p" style="left: 370px; top: 326px; width: 20px;"></div>
+            <div class="line-v-10p" style="left: 390px; top: 242px; height: 84px;"></div>
+            <div class="line-h-10p" style="left: 390px; top: 284px; width: 20px;"></div>
+            <div class="dot-10p" style="left: 408px; top: 282px;"></div>
+
+            <!-- Final Bagan Bawah -->
+            <div class="card-pos-10p" style="left: 410px; top: 262px;"><?= renderPdfMatchBox10($m8, true); ?></div>
+
+            <!-- ==================== GRAND FINAL ==================== -->
+            <!-- Conn 3: Final Atas (Y=102) and Final Bawah (Y=284) fork into Grand Final (Y=193) -->
+            <div class="line-h-10p" style="left: 575px; top: 102px; width: 20px;"></div>
+            <div class="line-h-10p" style="left: 575px; top: 284px; width: 20px;"></div>
+            <div class="line-v-10p" style="left: 595px; top: 102px; height: 182px;"></div>
+            <div class="line-h-10p" style="left: 595px; top: 193px; width: 20px;"></div>
+            <div class="dot-10p" style="left: 613px; top: 191px;"></div>
+
+            <!-- Grand Final Card -->
+            <div class="card-pos-10p" style="left: 615px; top: 171px;"><?= renderPdfMatchBox10($m9, false, true); ?></div>
         </div>
 
     <?php elseif (! empty($rounds)): ?>

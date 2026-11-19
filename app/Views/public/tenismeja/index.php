@@ -512,6 +512,77 @@
             background: #fafdfb;
         }
 
+        .match-card.group-atas {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .match-card.group-bawah {
+            border-left: 4px solid #10b981;
+        }
+
+        .match-card.group-grand-final {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .bracket-group-section-title {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            width: fit-content;
+            text-transform: uppercase;
+        }
+
+        .bracket-group-section-title.group-atas {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .bracket-group-section-title.group-bawah {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+            margin-top: 14px;
+        }
+
+        .bracket-group-section-title.group-grand-final {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
+        .group-mini-pill {
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .group-atas-pill {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+        }
+
+        .group-bawah-pill {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
+        }
+
+        .group-gf-pill {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
+        }
+
         .match-card.is-bye-card .match-card-header {
             background: #ecfdf5;
             color: #065f46;
@@ -1117,11 +1188,11 @@
                     <div class="form-group">
                         <label>Pilihan Cepat Jumlah Peserta</label>
                         <div class="participant-count-buttons">
-                            <button type="button" class="btn-count-opt active" data-count="5">5 Peserta (Saat Ini)</button>
+                            <button type="button" class="btn-count-opt active" data-count="5">5 Peserta (Bagan Atas)</button>
+                            <button type="button" class="btn-count-opt" data-count="10">10 Peserta (Gabungan Atas &amp; Bawah)</button>
                             <button type="button" class="btn-count-opt" data-count="4">4 Peserta</button>
                             <button type="button" class="btn-count-opt" data-count="8">8 Peserta</button>
                             <button type="button" class="btn-count-opt" data-count="16">16 Peserta</button>
-                            <button type="button" class="btn-count-opt" data-count="32">32 Peserta</button>
                         </div>
                     </div>
 
@@ -1324,7 +1395,23 @@
 
                 const matchesList = col.querySelector(`#roundMatchesList_${r}`);
 
+                let currentGroup = null;
                 roundData.matches.forEach((m) => {
+                    if (data.participant_count === 10 && m.group && m.group !== currentGroup) {
+                        currentGroup = m.group;
+                        const groupTitle = document.createElement('div');
+                        if (currentGroup === 'atas') {
+                            groupTitle.className = 'bracket-group-section-title group-atas';
+                            groupTitle.innerHTML = '<i class="fas fa-arrow-up"></i> Bagan Atas';
+                        } else if (currentGroup === 'bawah') {
+                            groupTitle.className = 'bracket-group-section-title group-bawah';
+                            groupTitle.innerHTML = '<i class="fas fa-arrow-down"></i> Bagan Bawah';
+                        } else if (currentGroup === 'grand_final') {
+                            groupTitle.className = 'bracket-group-section-title group-grand-final';
+                            groupTitle.innerHTML = '<i class="fas fa-trophy"></i> Grand Final (Juara Utama)';
+                        }
+                        matchesList.appendChild(groupTitle);
+                    }
                     const matchCard = createMatchCardElement(m, isFinalRound);
                     matchesList.appendChild(matchCard);
                 });
@@ -1409,7 +1496,21 @@
         function createMatchCardElement(match, isFinal) {
             const hasWinner = !!(match.winner && match.status === 'completed');
             const card = document.createElement('div');
-            card.className = `match-card ${isFinal ? 'is-final' : ''} ${hasWinner ? 'has-winner' : ''} ${match.is_bye ? 'is-bye-card' : ''}`;
+
+            let groupBadge = '';
+            let groupClass = '';
+            if (match.group === 'atas') {
+                groupClass = 'group-atas';
+                groupBadge = '<span class="group-mini-pill group-atas-pill">Bagan Atas</span>';
+            } else if (match.group === 'bawah') {
+                groupClass = 'group-bawah';
+                groupBadge = '<span class="group-mini-pill group-bawah-pill">Bagan Bawah</span>';
+            } else if (match.group === 'grand_final') {
+                groupClass = 'group-grand-final';
+                groupBadge = '<span class="group-mini-pill group-gf-pill">Grand Final</span>';
+            }
+
+            card.className = `match-card ${isFinal ? 'is-final' : ''} ${hasWinner ? 'has-winner' : ''} ${match.is_bye ? 'is-bye-card' : ''} ${groupClass}`;
             card.id = `card_${match.id}`;
 
             const p1 = match.player1;
@@ -1422,8 +1523,9 @@
 
             card.innerHTML = `
                 <div class="match-card-header">
-                    <span>
+                    <span style="display:flex; align-items:center; gap:6px;">
                         ${match.is_bye ? '<i class="fas fa-bolt text-warning mr-1"></i> Menang Bye' : '<i class="fas fa-gamepad mr-1"></i> Match #' + match.match_number}
+                        ${groupBadge}
                     </span>
                     <span>
                         ${match.is_bye ? '<span style="color: #10b981; font-weight: 800;"><i class="fas fa-check-circle"></i> ' + (match.status === 'completed' ? 'MENANG BYE' : 'MENUNGGU') + '</span>' : (match.status === 'completed' ? '<span style="color: #10b981; font-weight: 800;"><i class="fas fa-check"></i> SELESAI</span>' : '<span style="color: #f59e0b;"><i class="fas fa-hourglass-half"></i> PENDING</span>')}
@@ -1873,6 +1975,16 @@
             list.forEach((item, idx) => {
                 addParticipantRow(idx + 1, item.name || '', item.balai || '');
             });
+
+            // Sync quick count buttons active state
+            const countButtons = document.querySelectorAll('.btn-count-opt');
+            countButtons.forEach(b => {
+                if (parseInt(b.dataset.count) === list.length) {
+                    b.classList.add('active');
+                } else {
+                    b.classList.remove('active');
+                }
+            });
         }
 
         // ADD SINGLE ROW TO MODAL INPUTS
@@ -1926,10 +2038,16 @@
         function adjustParticipantRowsCount(targetCount) {
             const container = document.getElementById('participantInputs');
             const currentRows = container.children.length;
+            const currentCat = document.getElementById('formCategory').value || currentCategory;
+            const catLabel = getCategoryName(currentCat);
+            const prefix = (currentCat === 'ganda_putra' || currentCat === 'ganda_putri') ? 'Pasangan' : 'Peserta';
+            const defaultBalaiList = ['BWS Sumatera III', 'BPJN Riau', 'BPPW Riau', 'BP2JK Riau', 'Satker PPS Riau'];
 
             if (currentRows < targetCount) {
                 for (let i = currentRows + 1; i <= targetCount; i++) {
-                    addParticipantRow(i, '', '');
+                    const balaiDefault = defaultBalaiList[(i - 1) % defaultBalaiList.length];
+                    const nameDefault = `${prefix} ${i} ${catLabel}`;
+                    addParticipantRow(i, nameDefault, balaiDefault);
                 }
             } else if (currentRows > targetCount) {
                 while (container.children.length > targetCount && container.children.length > 2) {
