@@ -6,33 +6,33 @@
     <style>
         @page {
             size: A4 landscape;
-            margin: 12mm 15mm 12mm 15mm;
+            margin: 10mm 14mm 10mm 14mm;
         }
 
         body {
             font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 9pt;
+            font-size: 8.5pt;
             color: #1e293b;
-            line-height: 1.35;
+            line-height: 1.3;
         }
 
         /* KOP SURAT */
         .kop-table {
             width: 100%;
             border-bottom: 2.5px solid #002244;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
+            padding-bottom: 6px;
+            margin-bottom: 10px;
         }
 
         .kop-logo {
-            width: 65px;
+            width: 60px;
             height: auto;
             text-align: center;
             vertical-align: middle;
         }
 
         .kop-logo img {
-            width: 58px;
+            width: 52px;
             height: auto;
         }
 
@@ -43,7 +43,7 @@
         }
 
         .kop-text h2 {
-            font-size: 11pt;
+            font-size: 10.5pt;
             font-weight: bold;
             margin: 0;
             text-transform: uppercase;
@@ -51,7 +51,7 @@
         }
 
         .kop-text h1 {
-            font-size: 13pt;
+            font-size: 12pt;
             font-weight: 800;
             margin: 1px 0;
             text-transform: uppercase;
@@ -60,7 +60,7 @@
         }
 
         .kop-text p {
-            font-size: 8pt;
+            font-size: 7.5pt;
             margin: 2px 0 0 0;
             color: #475569;
         }
@@ -68,36 +68,44 @@
         /* DOCUMENT TITLE */
         .doc-title-block {
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .doc-title-block h3 {
-            font-size: 12pt;
+            font-size: 11pt;
             font-weight: 800;
             color: #002244;
             text-transform: uppercase;
             margin: 0;
         }
 
-        .doc-title-block p {
-            font-size: 8.5pt;
-            color: #64748b;
-            margin-top: 2px;
+        .category-tag {
+            display: inline-block;
+            background-color: #0b3c74;
+            color: #ffffff;
+            font-weight: bold;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 8pt;
+            margin-top: 3px;
+        }
+
+        .category-tag.putri {
+            background-color: #be185d;
         }
 
         /* META TABLE */
         .meta-info-table {
             width: 100%;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             border-collapse: collapse;
             background-color: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-radius: 4px;
         }
 
         .meta-info-table td {
-            padding: 5px 10px;
-            font-size: 8.5pt;
+            padding: 4px 8px;
+            font-size: 8pt;
         }
 
         .meta-label {
@@ -115,15 +123,15 @@
         /* PODIUM BANNER IN PDF */
         .podium-pdf-table {
             width: 100%;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
             border-collapse: collapse;
         }
 
         .podium-cell {
             border: 1.5px solid #cbd5e1;
-            padding: 8px 12px;
+            padding: 6px 10px;
             text-align: center;
-            border-radius: 6px;
+            border-radius: 4px;
         }
 
         .podium-cell.gold {
@@ -136,13 +144,8 @@
             border-color: #94a3b8;
         }
 
-        .podium-cell.bronze {
-            background-color: #ffedd5;
-            border-color: #f97316;
-        }
-
         .podium-title {
-            font-size: 8pt;
+            font-size: 7.5pt;
             font-weight: bold;
             text-transform: uppercase;
             color: #64748b;
@@ -150,7 +153,7 @@
         }
 
         .podium-name {
-            font-size: 10pt;
+            font-size: 9.5pt;
             font-weight: 800;
             color: #0f172a;
         }
@@ -159,18 +162,18 @@
         .bracket-pdf-table {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 8px 4px;
-            margin-bottom: 16px;
+            border-spacing: 6px 3px;
+            margin-bottom: 12px;
         }
 
         .bracket-pdf-th {
             background-color: #002244;
             color: #f7a81b;
-            font-size: 8.5pt;
+            font-size: 8pt;
             font-weight: bold;
             text-transform: uppercase;
             text-align: center;
-            padding: 6px 8px;
+            padding: 5px 6px;
             border-radius: 4px;
         }
 
@@ -179,8 +182,8 @@
             border: 1px solid #94a3b8;
             border-radius: 4px;
             padding: 4px 6px;
-            font-size: 8pt;
-            margin-bottom: 6px;
+            font-size: 7.5pt;
+            margin-bottom: 5px;
         }
 
         .match-box-pdf.is-final {
@@ -189,17 +192,18 @@
         }
 
         .match-box-header {
-            font-size: 7pt;
+            font-size: 6.8pt;
             font-weight: bold;
             color: #64748b;
             border-bottom: 0.5px solid #e2e8f0;
             padding-bottom: 2px;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
         }
 
         .match-box-row {
             display: block;
             margin-bottom: 2px;
+            line-height: 1.25;
         }
 
         .match-box-row.winner {
@@ -210,30 +214,38 @@
             padding: 1px 3px;
         }
 
+        .balai-sub {
+            font-size: 6.8pt;
+            color: #64748b;
+            display: block;
+        }
+
         .match-score-badge {
             float: right;
             font-weight: bold;
+            font-size: 8.5pt;
+            color: #002244;
         }
 
         /* SCHEDULE & RESULTS TABLE */
         .results-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 16px;
-            font-size: 8pt;
+            margin-bottom: 12px;
+            font-size: 7.5pt;
         }
 
         .results-table th {
             background-color: #0b3c74;
             color: #ffffff;
             font-weight: bold;
-            padding: 6px 8px;
+            padding: 5px 6px;
             text-align: left;
             border: 1px solid #002244;
         }
 
         .results-table td {
-            padding: 5px 8px;
+            padding: 4px 6px;
             border: 1px solid #cbd5e1;
         }
 
@@ -244,14 +256,14 @@
         /* SIGNATURE SECTION */
         .signature-table {
             width: 100%;
-            margin-top: 14px;
+            margin-top: 10px;
             border-collapse: collapse;
         }
 
         .signature-table td {
             vertical-align: top;
             width: 50%;
-            font-size: 8.5pt;
+            font-size: 8pt;
         }
 
         .sig-box {
@@ -259,7 +271,7 @@
         }
 
         .sig-space {
-            height: 45px;
+            height: 40px;
         }
 
         .sig-name {
@@ -291,7 +303,9 @@
     <!-- JUDUL DOKUMEN -->
     <div class="doc-title-block">
         <h3>BAGAN PERTANDINGAN TURNAMEN TENIS MEJA SISTEM GUGUR</h3>
-        <p><?= esc($tournament['title'] ?? 'Turnamen Tenis Meja'); ?> • Kategori: <?= esc($tournament['category'] ?? 'Tunggal Putra'); ?></p>
+        <span class="category-tag <?= ($category ?? '') === 'putri' ? 'putri' : ''; ?>">
+            TURNAMEN <?= esc($categoryLabel ?? 'PUTRA'); ?>
+        </span>
     </div>
 
     <!-- METADATA TURNAMEN -->
@@ -300,11 +314,11 @@
             <td class="meta-label">Nama Turnamen:</td>
             <td class="meta-val"><?= esc($tournament['title'] ?? '-'); ?></td>
             <td class="meta-label">Total Peserta:</td>
-            <td class="meta-val"><?= (int) ($tournament['participant_count'] ?? 0); ?> Peserta / Balai</td>
+            <td class="meta-val"><?= (int) ($tournament['participant_count'] ?? 0); ?> Peserta</td>
         </tr>
         <tr>
-            <td class="meta-label">Kategori Laga:</td>
-            <td class="meta-val"><?= esc($tournament['category'] ?? 'Tunggal Putra'); ?></td>
+            <td class="meta-label">Kategori:</td>
+            <td class="meta-val">Turnamen Tenis Meja <?= esc($categoryLabel ?? 'Putra'); ?></td>
             <td class="meta-label">Status Turnamen:</td>
             <td class="meta-val"><?= ($tournament['status'] ?? '') === 'completed' ? 'SELESAI' : 'SEDANG BERLANGSUNG'; ?></td>
         </tr>
@@ -316,17 +330,26 @@
         $podium = $bracket['podium'] ?? [];
         $champion = $podium['champion'] ?? null;
         $runnerUp = $podium['runner_up'] ?? null;
-        $thirdPlace = $podium['third_place'] ?? null;
     ?>
     <table class="podium-pdf-table">
         <tr>
             <td class="podium-cell gold" style="width: 50%;">
                 <div class="podium-title">JUARA 1 (CHAMPION)</div>
-                <div class="podium-name"><?= esc($champion['name'] ?? '- Belum Ditentukan -'); ?></div>
+                <div class="podium-name">
+                    <?= esc($champion['name'] ?? '- Belum Ditentukan -'); ?>
+                    <?php if (! empty($champion['balai'])): ?>
+                        <span style="font-size: 7.5pt; font-weight: normal; color: #475569;">(<?= esc($champion['balai']); ?>)</span>
+                    <?php endif; ?>
+                </div>
             </td>
             <td class="podium-cell silver" style="width: 50%;">
                 <div class="podium-title">JUARA 2 (RUNNER-UP)</div>
-                <div class="podium-name"><?= esc($runnerUp['name'] ?? '- Belum Ditentukan -'); ?></div>
+                <div class="podium-name">
+                    <?= esc($runnerUp['name'] ?? '- Belum Ditentukan -'); ?>
+                    <?php if (! empty($runnerUp['balai'])): ?>
+                        <span style="font-size: 7.5pt; font-weight: normal; color: #475569;">(<?= esc($runnerUp['balai']); ?>)</span>
+                    <?php endif; ?>
+                </div>
             </td>
         </tr>
     </table>
@@ -364,17 +387,25 @@
                         <div class="match-box-pdf <?= $isFinal ? 'is-final' : ''; ?>">
                             <div class="match-box-header">Match #<?= esc($m['match_number']); ?></div>
 
+                            <!-- P1 -->
                             <div class="match-box-row <?= $isP1Winner ? 'winner' : ''; ?>">
-                                <?= esc($p1['name'] ?? '- Menunggu -'); ?>
+                                <span><?= esc($p1['name'] ?? '- Menunggu -'); ?></span>
                                 <?php if ($m['score1'] !== null): ?>
                                     <span class="match-score-badge"><?= (int) $m['score1']; ?></span>
                                 <?php endif; ?>
+                                <?php if (! empty($p1['balai']) && ! empty($p1['name']) && $p1['name'] !== $p1['balai']): ?>
+                                    <span class="balai-sub"><?= esc($p1['balai']); ?></span>
+                                <?php endif; ?>
                             </div>
 
+                            <!-- P2 -->
                             <div class="match-box-row <?= $isP2Winner ? 'winner' : ''; ?>">
-                                <?= esc($p2['name'] ?? '- Menunggu -'); ?>
+                                <span><?= esc($p2['name'] ?? '- Menunggu -'); ?></span>
                                 <?php if ($m['score2'] !== null): ?>
                                     <span class="match-score-badge"><?= (int) $m['score2']; ?></span>
+                                <?php endif; ?>
+                                <?php if (! empty($p2['balai']) && ! empty($p2['name']) && $p2['name'] !== $p2['balai'] && empty($p2['is_bye'])): ?>
+                                    <span class="balai-sub"><?= esc($p2['balai']); ?></span>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -386,18 +417,18 @@
     <?php endif; ?>
 
     <!-- JADWAL & REKAP PERTANDINGAN -->
-    <div style="font-size: 9.5pt; font-weight: bold; color: #002244; margin-bottom: 6px; text-transform: uppercase;">
-        Daftar Pertandingan & Hasil Pertandingan
+    <div style="font-size: 8.5pt; font-weight: bold; color: #002244; margin-bottom: 4px; text-transform: uppercase;">
+        Daftar Pertandingan &amp; Hasil Lengkap
     </div>
     <table class="results-table">
         <thead>
             <tr>
                 <th style="width: 5%; text-align: center;">No</th>
-                <th style="width: 18%;">Babak</th>
-                <th style="width: 27%;">Peserta 1</th>
+                <th style="width: 16%;">Babak</th>
+                <th style="width: 29%;">Peserta 1 (Nama &amp; Balai)</th>
                 <th style="width: 8%; text-align: center;">Skor</th>
-                <th style="width: 27%;">Peserta 2</th>
-                <th style="width: 15%;">Pemenang</th>
+                <th style="width: 29%;">Peserta 2 (Nama &amp; Balai)</th>
+                <th style="width: 13%;">Pemenang</th>
             </tr>
         </thead>
         <tbody>
@@ -405,18 +436,26 @@
                 $matchIdx = 1;
                 foreach ($rounds as $r => $roundData):
                     foreach ($roundData['matches'] as $m):
+                        $p1 = $m['player1'] ?? null;
+                        $p2 = $m['player2'] ?? null;
             ?>
             <tr>
                 <td style="text-align: center;"><?= $matchIdx++; ?></td>
                 <td><?= esc($roundData['name'] ?? ('Babak ' . $r)); ?></td>
                 <td>
-                    <strong><?= esc($m['player1']['name'] ?? '-'); ?></strong>
+                    <strong><?= esc($p1['name'] ?? '-'); ?></strong>
+                    <?php if (! empty($p1['balai']) && $p1['name'] !== $p1['balai']): ?>
+                        <span style="color:#64748b;">(<?= esc($p1['balai']); ?>)</span>
+                    <?php endif; ?>
                 </td>
                 <td style="text-align: center; font-weight: bold;">
                     <?= ($m['score1'] !== null && $m['score2'] !== null) ? ($m['score1'] . ' - ' . $m['score2']) : '-'; ?>
                 </td>
                 <td>
-                    <strong><?= esc($m['player2']['name'] ?? '-'); ?></strong>
+                    <strong><?= esc($p2['name'] ?? '-'); ?></strong>
+                    <?php if (! empty($p2['balai']) && $p2['name'] !== $p2['balai'] && empty($p2['is_bye'])): ?>
+                        <span style="color:#64748b;">(<?= esc($p2['balai']); ?>)</span>
+                    <?php endif; ?>
                 </td>
                 <td>
                     <?php if (! empty($m['winner'])): ?>

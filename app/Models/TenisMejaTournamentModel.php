@@ -66,7 +66,7 @@ class TenisMejaTournamentModel extends Model
                     'category' => [
                         'type'       => 'VARCHAR',
                         'constraint' => 50,
-                        'default'    => 'Tunggal Putra',
+                        'default'    => 'putra',
                     ],
                     'participant_count' => [
                         'type'       => 'INT',
@@ -102,7 +102,7 @@ class TenisMejaTournamentModel extends Model
                 ]);
 
                 $forge->addKey('id', true);
-                $forge->addKey('is_active');
+                $forge->addKey(['category', 'is_active']);
                 $forge->createTable($this->table, true);
             }
         } catch (\Throwable $e) {
@@ -111,18 +111,38 @@ class TenisMejaTournamentModel extends Model
     }
 
     /**
-     * Get the active tournament or latest
+     * Normalize category slug
      */
-    public function getActiveTournament(): ?array
+    public static function normalizeCategory(?string $category): string
+    {
+        $c = strtolower(trim((string) $category));
+        if ($c === 'putri' || str_contains($c, 'putri')) {
+            return 'putri';
+        }
+        return 'putra';
+    }
+
+    /**
+     * Get active tournament by category
+     */
+    public function getActiveTournament(?string $category = 'putra'): ?array
     {
         $this->ensureTable();
+        $cat = self::normalizeCategory($category);
 
-        $active = $this->where('is_active', 1)->orderBy('id', 'DESC')->first();
+        $active = $this->where('category', $cat)
+                       ->where('is_active', 1)
+                       ->orderBy('id', 'DESC')
+                       ->first();
+
         if ($active) {
             return $this->decodeJsonFields($active);
         }
 
-        $latest = $this->orderBy('id', 'DESC')->first();
+        $latest = $this->where('category', $cat)
+                       ->orderBy('id', 'DESC')
+                       ->first();
+
         return $latest ? $this->decodeJsonFields($latest) : null;
     }
 
@@ -130,25 +150,43 @@ class TenisMejaTournamentModel extends Model
      * Create and initialize a new tournament with single elimination bracket
      *
      * @param string $title
-     * @param string $category
-     * @param array $participantNames (list of string names / balai)
+     * @param string $category ('putra' or 'putri')
+     * @param array $participantList (list of ['name' => ..., 'balai' => ...])
      * @return int Tournament ID
      */
-    public function createTournament(string $title, string $category, array $participantNames): int
+    public function createTournament(string $title, string $category, array $participantList): int
     {
         $this->ensureTable();
+        $cat = self::normalizeCategory($category);
 
-        // Clean and filter participant names
+        // Clean and filter participant list
         $cleanedParticipants = [];
         $seed = 1;
-        foreach ($participantNames as $name) {
-            $trimmed = trim((string)$name);
-            if ($trimmed !== '') {
+
+        foreach ($participantList as $item) {
+            $name = '';
+            $balai = '';
+
+            if (is_array($item)) {
+                $name = trim((string) ($item['name'] ?? ''));
+                $balai = trim((string) ($item['balai'] ?? ''));
+            } else {
+                $name = trim((string) $item);
+            }
+
+            // If only balai or only name is given, populate sensibly
+            if ($name === '' && $balai !== '') {
+                $name = $balai;
+            } elseif ($name !== '' && $balai === '') {
+                $balai = $name;
+            }
+
+            if ($name !== '') {
                 $cleanedParticipants[] = [
                     'id'    => $seed,
                     'seed'  => $seed,
-                    'name'  => $trimmed,
-                    'balai' => $trimmed,
+                    'name'  => $name,
+                    'balai' => $balai,
                 ];
                 $seed++;
             }
@@ -161,13 +199,17 @@ class TenisMejaTournamentModel extends Model
         // Build the bracket structure
         $bracket = $this->buildSingleEliminationBracket($cleanedParticipants);
 
-        // Deactivate older tournaments
-        $this->where('is_active', 1)->set(['is_active' => 0])->update();
+        // Deactivate older tournaments in the same category
+        $this->where('category', $cat)
+             ->where('is_active', 1)
+             ->set(['is_active' => 0])
+             ->update();
 
+        $catLabel = ($cat === 'putri') ? 'Putri' : 'Putra';
         $now = date('Y-m-d H:i:s');
         $data = [
-            'title'             => $title ?: 'Turnamen Tenis Meja Sistem Gugur',
-            'category'          => $category ?: 'Tunggal Putra',
+            'title'             => $title ?: ('Turnamen Tenis Meja ' . $catLabel),
+            'category'          => $cat,
             'participant_count' => count($cleanedParticipants),
             'participants_json' => json_encode($cleanedParticipants, JSON_UNESCAPED_UNICODE),
             'bracket_json'      => json_encode($bracket, JSON_UNESCAPED_UNICODE),
@@ -201,32 +243,12 @@ class TenisMejaTournamentModel extends Model
         // Determine round names
         $roundNames = $this->getRoundNames($totalRounds);
 
-        // Prepare initial slots with participants and BYEs
-        // Distribute BYEs evenly so that no match has two BYEs
-        $slots = [];
-        for ($i = 0; $i < $P; $i++) {
-            $slots[$i] = null;
-        }
-
-        // Standard bracket placement
-        // If P == N, direct fill
-        // If P > N, number of byes is P - N.
         $byesCount = $P - $N;
         $matchesInR1 = $P / 2;
 
-        // Pair players: match i gets slot (2*i) and (2*i + 1)
-        // We assign players first, and if byesCount > 0, give bye to player2 of selected matches
-        $playerIdx = 0;
-        $assignedMatches = [];
-
-        // For each of the matches in R1:
-        // We decide if this match has a BYE.
-        // Spread BYEs across matches from the bottom or alternately
+        // Distribute BYEs across matches from the bottom
         $hasByeInMatch = array_fill(0, $matchesInR1, false);
         if ($byesCount > 0) {
-            // Give byes to matches starting from odd indexed or spread out
-            // E.g., for 6 players (P=8, 2 byes, 4 matches): matches 1 and 3 or 0 and 2
-            $step = max(1, (int) floor($matchesInR1 / $byesCount));
             $assignedByes = 0;
             for ($m = $matchesInR1 - 1; $m >= 0 && $assignedByes < $byesCount; $m--) {
                 $hasByeInMatch[$m] = true;
@@ -239,6 +261,7 @@ class TenisMejaTournamentModel extends Model
         // Round 1 matches
         $r1Matches = [];
         $matchNumber = 1;
+        $playerIdx = 0;
 
         for ($m = 0; $m < $matchesInR1; $m++) {
             $p1 = $participants[$playerIdx++] ?? null;
@@ -302,7 +325,6 @@ class TenisMejaTournamentModel extends Model
                 $nextMatchId = ($r < $totalRounds) ? ('R' . ($r + 1) . '_M' . (int) floor($m / 2)) : null;
                 $nextSlot = ($m % 2 === 0) ? 1 : 2;
 
-                // Check winners from previous round matches that feed into this
                 $parentMatch1 = $prevRoundMatches[$m * 2] ?? null;
                 $parentMatch2 = $prevRoundMatches[$m * 2 + 1] ?? null;
 
@@ -336,7 +358,6 @@ class TenisMejaTournamentModel extends Model
             ];
         }
 
-        // Calculate podium / champions
         $podium = $this->calculatePodium($rounds, $totalRounds);
 
         return [
@@ -391,7 +412,6 @@ class TenisMejaTournamentModel extends Model
             }
         }
 
-        // Semifinal losers for 3rd place / semifinalists
         if ($totalRounds > 1 && isset($rounds[$totalRounds - 1]['matches'])) {
             $semiMatches = $rounds[$totalRounds - 1]['matches'];
             $semiLosers = [];
@@ -441,7 +461,6 @@ class TenisMejaTournamentModel extends Model
         }
         unset($p);
 
-        // Rebuild bracket from shuffled participants
         $newBracket = $this->buildSingleEliminationBracket($participants);
 
         $now = date('Y-m-d H:i:s');
@@ -473,7 +492,6 @@ class TenisMejaTournamentModel extends Model
         $rounds = $bracket['rounds'] ?? [];
         $totalRounds = (int) ($bracket['total_rounds'] ?? count($rounds));
 
-        // Locate the target match
         $targetRound = null;
         $targetMatchIdx = null;
 
@@ -496,7 +514,6 @@ class TenisMejaTournamentModel extends Model
         $match['score1'] = $score1;
         $match['score2'] = $score2;
 
-        // Determine winner
         $selectedWinner = null;
         if ($winnerName !== null && $winnerName !== '') {
             if (! empty($match['player1']) && $match['player1']['name'] === $winnerName) {
@@ -515,7 +532,6 @@ class TenisMejaTournamentModel extends Model
         $match['winner'] = $selectedWinner;
         $match['status'] = $selectedWinner ? 'completed' : 'pending';
 
-        // Cascade winner to next round match
         $nextMatchId = $match['next_match_id'] ?? null;
         $nextSlot = $match['next_match_slot'] ?? 1;
 
@@ -525,14 +541,13 @@ class TenisMejaTournamentModel extends Model
                 foreach ($rounds[$nextRoundNum]['matches'] as &$nextM) {
                     if ($nextM['id'] === $nextMatchId) {
                         $oldPlayer = ($nextSlot === 1) ? ($nextM['player1'] ?? null) : ($nextM['player2'] ?? null);
-                        
+
                         if ($nextSlot === 1) {
                             $nextM['player1'] = $selectedWinner;
                         } else {
                             $nextM['player2'] = $selectedWinner;
                         }
 
-                        // If the participant changed and next match had a winner, reset next match
                         if ($oldPlayer !== null && ($selectedWinner === null || $oldPlayer['name'] !== $selectedWinner['name'])) {
                             $this->clearDownstreamMatches($rounds, $nextRoundNum, $nextM['id']);
                         }
@@ -543,11 +558,9 @@ class TenisMejaTournamentModel extends Model
             }
         }
 
-        // Recalculate podium
         $bracket['rounds'] = $rounds;
         $bracket['podium'] = $this->calculatePodium($rounds, $totalRounds);
 
-        // Check if tournament is fully completed
         $finalMatch = $rounds[$totalRounds]['matches'][0] ?? null;
         $newStatus = (! empty($finalMatch['winner'])) ? 'completed' : 'ongoing';
 

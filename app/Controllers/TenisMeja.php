@@ -34,22 +34,54 @@ class TenisMeja extends BaseController
     }
 
     /**
+     * Seed initial 5 participants for Putra and Putri if not already seeded
+     */
+    protected function ensureInitialTournaments(): void
+    {
+        $defaultBalais = [
+            'BWS Sumatera III',
+            'BPJN Riau',
+            'BPPW Riau',
+            'BP2JK Riau',
+            'Satker PPS Riau',
+        ];
+
+        // Ensure Putra tournament
+        $putra = $this->tournamentModel->getActiveTournament('putra');
+        if (! $putra) {
+            $putraParticipants = [];
+            foreach ($defaultBalais as $idx => $b) {
+                $putraParticipants[] = [
+                    'name'  => 'Peserta ' . ($idx + 1) . ' Putra',
+                    'balai' => $b,
+                ];
+            }
+            $this->tournamentModel->createTournament('Turnamen Tenis Meja Putra', 'putra', $putraParticipants);
+        }
+
+        // Ensure Putri tournament
+        $putri = $this->tournamentModel->getActiveTournament('putri');
+        if (! $putri) {
+            $putriParticipants = [];
+            foreach ($defaultBalais as $idx => $b) {
+                $putriParticipants[] = [
+                    'name'  => 'Peserta ' . ($idx + 1) . ' Putri',
+                    'balai' => $b,
+                ];
+            }
+            $this->tournamentModel->createTournament('Turnamen Tenis Meja Putri', 'putri', $putriParticipants);
+        }
+    }
+
+    /**
      * Display Tenis Meja Tournament Bracket Page (Public - No Login Required)
      */
     public function index()
     {
-        $tournament = $this->tournamentModel->getActiveTournament();
+        $this->ensureInitialTournaments();
 
-        // If no tournament exists yet, initialize a default 8-participant PUPR bracket so the page is ready
-        if (! $tournament) {
-            $defaultBalais = TenisMejaTournamentModel::$defaultBalais;
-            $tournamentId = $this->tournamentModel->createTournament(
-                'Turnamen Tenis Meja Antar Balai PUPR',
-                'Tunggal Putra',
-                $defaultBalais
-            );
-            $tournament = $this->tournamentModel->getActiveTournament();
-        }
+        $putraTournament = $this->tournamentModel->getActiveTournament('putra');
+        $putriTournament = $this->tournamentModel->getActiveTournament('putri');
 
         $homeSetting = [];
         try {
@@ -57,33 +89,37 @@ class TenisMeja extends BaseController
         } catch (\Throwable $e) {}
 
         $data = [
-            'title'         => 'Bagan Turnamen Tenis Meja - Sistem Gugur',
-            'logoUrl'       => $this->getBrandingLogo(),
-            'officialName'  => $homeSetting['official_name'] ?? 'Kementerian Pekerjaan Umum',
-            'subHeader'     => 'Satuan Kerja Pelaksanaan Prasarana Permukiman Provinsi Riau',
-            'tournament'    => $tournament,
-            'defaultBalais' => TenisMejaTournamentModel::$defaultBalais,
+            'title'           => 'Bagan Turnamen Tenis Meja - Sistem Gugur (Putra & Putri)',
+            'logoUrl'         => $this->getBrandingLogo(),
+            'officialName'    => $homeSetting['official_name'] ?? 'Kementerian Pekerjaan Umum',
+            'subHeader'       => 'Satuan Kerja Pelaksanaan Prasarana Permukiman Provinsi Riau',
+            'putraTournament' => $putraTournament,
+            'putriTournament' => $putriTournament,
+            'defaultBalais'   => TenisMejaTournamentModel::$defaultBalais,
         ];
 
         return view('public/tenismeja/index', $data);
     }
 
     /**
-     * API: Get tournament data (JSON)
+     * API: Get tournament data (JSON) for a specific category or both
      */
     public function apiData()
     {
-        $tournament = $this->tournamentModel->getActiveTournament();
-        if (! $tournament) {
-            return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
-                'status'  => 'error',
-                'message' => 'Belum ada turnamen yang aktif.',
+        $cat = $this->request->getGet('category');
+
+        if ($cat) {
+            $tournament = $this->tournamentModel->getActiveTournament($cat);
+            return $this->response->setJSON([
+                'status'     => 'success',
+                'tournament' => $tournament,
             ]);
         }
 
         return $this->response->setJSON([
-            'status'     => 'success',
-            'tournament' => $tournament,
+            'status' => 'success',
+            'putra'  => $this->tournamentModel->getActiveTournament('putra'),
+            'putri'  => $this->tournamentModel->getActiveTournament('putri'),
         ]);
     }
 
@@ -92,8 +128,8 @@ class TenisMeja extends BaseController
      */
     public function apiSetup()
     {
-        $title = trim((string) ($this->request->getPost('title') ?? 'Turnamen Tenis Meja'));
-        $category = trim((string) ($this->request->getPost('category') ?? 'Tunggal Putra'));
+        $title = trim((string) ($this->request->getPost('title') ?? ''));
+        $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
         $participantsRaw = $this->request->getPost('participants');
 
         $participantList = [];
@@ -103,29 +139,45 @@ class TenisMeja extends BaseController
             $decoded = json_decode($participantsRaw, true);
             if (is_array($decoded)) {
                 $participantList = $decoded;
-            } else {
-                $participantList = array_map('trim', explode("\n", $participantsRaw));
             }
         }
 
-        // Filter out empty lines
-        $participantList = array_values(array_filter(array_map('trim', $participantList), fn($p) => $p !== ''));
+        // Filter out empty items
+        $filtered = [];
+        foreach ($participantList as $p) {
+            $name = '';
+            $balai = '';
+            if (is_array($p)) {
+                $name = trim((string) ($p['name'] ?? ''));
+                $balai = trim((string) ($p['balai'] ?? ''));
+            } else {
+                $name = trim((string) $p);
+            }
 
-        if (count($participantList) < 2) {
+            if ($name !== '' || $balai !== '') {
+                $filtered[] = [
+                    'name'  => $name ?: $balai,
+                    'balai' => $balai ?: $name,
+                ];
+            }
+        }
+
+        if (count($filtered) < 2) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
                 'status'  => 'error',
-                'message' => 'Jumlah peserta minimal 2 orang atau balai.',
+                'message' => 'Jumlah peserta minimal 2 orang.',
             ]);
         }
 
         try {
-            $tournamentId = $this->tournamentModel->createTournament($title, $category, $participantList);
-            $tournament = $this->tournamentModel->getActiveTournament();
+            $tournamentId = $this->tournamentModel->createTournament($title, $category, $filtered);
+            $tournament = $this->tournamentModel->getActiveTournament($category);
 
             return $this->response->setJSON([
                 'status'     => 'success',
-                'message'    => 'Bagan turnamen berhasil dibuat dengan ' . count($participantList) . ' peserta.',
+                'message'    => 'Bagan turnamen ' . strtoupper($category) . ' berhasil dibuat dengan ' . count($filtered) . ' peserta.',
                 'tournament' => $tournament,
+                'category'   => $category,
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
@@ -141,6 +193,7 @@ class TenisMeja extends BaseController
     public function apiAcakPosisi()
     {
         $password = trim((string) ($this->request->getPost('password') ?? ''));
+        $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
 
         if ($password === '') {
             return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
@@ -157,22 +210,23 @@ class TenisMeja extends BaseController
             ]);
         }
 
-        $tournament = $this->tournamentModel->getActiveTournament();
+        $tournament = $this->tournamentModel->getActiveTournament($category);
         if (! $tournament) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
                 'status'  => 'error',
-                'message' => 'Turnamen aktif tidak ditemukan.',
+                'message' => 'Turnamen kategori ' . strtoupper($category) . ' tidak ditemukan.',
             ]);
         }
 
         try {
             $result = $this->tournamentModel->shuffleParticipants((int) $tournament['id']);
-            $updatedTournament = $this->tournamentModel->getActiveTournament();
+            $updatedTournament = $this->tournamentModel->getActiveTournament($category);
 
             return $this->response->setJSON([
                 'status'     => 'success',
-                'message'    => 'Posisi peserta turnamen tenis meja berhasil diacak!',
+                'message'    => 'Posisi peserta turnamen tenis meja ' . strtoupper($category) . ' berhasil diacak!',
                 'tournament' => $updatedTournament,
+                'category'   => $category,
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
@@ -187,7 +241,9 @@ class TenisMeja extends BaseController
      */
     public function apiUpdateMatch()
     {
-        $tournament = $this->tournamentModel->getActiveTournament();
+        $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
+        $tournament = $this->tournamentModel->getActiveTournament($category);
+
         if (! $tournament) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
                 'status'  => 'error',
@@ -219,12 +275,13 @@ class TenisMeja extends BaseController
                 $winnerName ?: null
             );
 
-            $updatedTournament = $this->tournamentModel->getActiveTournament();
+            $updatedTournament = $this->tournamentModel->getActiveTournament($category);
 
             return $this->response->setJSON([
                 'status'     => 'success',
                 'message'    => 'Hasil pertandingan berhasil disimpan.',
                 'tournament' => $updatedTournament,
+                'category'   => $category,
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
@@ -239,7 +296,9 @@ class TenisMeja extends BaseController
      */
     public function apiReset()
     {
-        $tournament = $this->tournamentModel->getActiveTournament();
+        $category = TenisMejaTournamentModel::normalizeCategory($this->request->getPost('category'));
+        $tournament = $this->tournamentModel->getActiveTournament($category);
+
         if (! $tournament) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_NOT_FOUND)->setJSON([
                 'status'  => 'error',
@@ -249,12 +308,13 @@ class TenisMeja extends BaseController
 
         try {
             $bracket = $this->tournamentModel->resetTournamentScores((int) $tournament['id']);
-            $updatedTournament = $this->tournamentModel->getActiveTournament();
+            $updatedTournament = $this->tournamentModel->getActiveTournament($category);
 
             return $this->response->setJSON([
                 'status'     => 'success',
-                'message'    => 'Seluruh skor dan bagan pertandingan berhasil direset.',
+                'message'    => 'Skor dan bagan turnamen ' . strtoupper($category) . ' berhasil direset.',
                 'tournament' => $updatedTournament,
+                'category'   => $category,
             ]);
         } catch (\Throwable $e) {
             return $this->response->setStatusCode(ResponseInterface::HTTP_INTERNAL_SERVER_ERROR)->setJSON([
@@ -269,7 +329,9 @@ class TenisMeja extends BaseController
      */
     public function exportPdf()
     {
-        $tournament = $this->tournamentModel->getActiveTournament();
+        $category = TenisMejaTournamentModel::normalizeCategory($this->request->getGet('category'));
+        $tournament = $this->tournamentModel->getActiveTournament($category);
+
         if (! $tournament) {
             throw PageNotFoundException::forPageNotFound('Data turnamen tenis meja belum tersedia untuk diekspor.');
         }
@@ -279,7 +341,6 @@ class TenisMeja extends BaseController
             $homeSetting = (new \App\Models\HomeSettingModel())->first() ?? [];
         } catch (\Throwable $e) {}
 
-        // Convert logo to base64 if needed for dompdf
         $logoUrl = $this->getBrandingLogo();
         $logoBase64 = '';
         $logoPath = FCPATH . 'uploads/branding/1774773296_62f922407f66fb004e77.jpg';
@@ -289,8 +350,12 @@ class TenisMeja extends BaseController
             $logoBase64 = 'data:image/' . $type . ';base64,' . base64_encode($imgData);
         }
 
+        $catLabel = ($category === 'putri') ? 'PUTRI' : 'PUTRA';
+
         $data = [
-            'title'        => $tournament['title'] ?? 'Bagan Turnamen Tenis Meja',
+            'title'        => $tournament['title'] ?? ('Bagan Turnamen Tenis Meja ' . $catLabel),
+            'category'     => $category,
+            'categoryLabel'=> $catLabel,
             'tournament'   => $tournament,
             'officialName' => $homeSetting['official_name'] ?? 'KEMENTERIAN PEKERJAAN UMUM',
             'subHeader'    => 'SATUAN KERJA PELAKSANAAN PRASARANA PERMUKIMAN PROVINSI RIAU',
@@ -311,7 +376,7 @@ class TenisMeja extends BaseController
         $dompdf->setPaper('A4', 'landscape');
         $dompdf->render();
 
-        $filename = 'Bagan_Turnamen_Tenis_Meja_' . date('Ymd_His') . '.pdf';
+        $filename = 'Bagan_Turnamen_Tenis_Meja_' . $catLabel . '_' . date('Ymd_His') . '.pdf';
 
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
@@ -342,7 +407,6 @@ class TenisMeja extends BaseController
                 'superadmin',
             ];
 
-            // Check active superadmin users
             $users = $db->table('users')
                 ->where('is_active', 1)
                 ->groupStart()
@@ -352,7 +416,6 @@ class TenisMeja extends BaseController
                 ->get()
                 ->getResultArray();
 
-            // Fallback if no user role explicitly has 'super', check admin role
             if (empty($users)) {
                 $users = $db->table('users')
                     ->where('is_active', 1)

@@ -19,6 +19,7 @@
             --pupr-gold: #d48b00;
             --accent-green: #10b981;
             --accent-red: #ef4444;
+            --accent-pink: #ec4899;
             --bg-canvas: #f8fafc;
             --card-bg: #ffffff;
             --border-color: #e2e8f0;
@@ -50,7 +51,7 @@
         .site-header {
             background: linear-gradient(135deg, #001f3f 0%, #002244 50%, #0b3c74 100%);
             color: #ffffff;
-            padding: 20px 24px;
+            padding: 18px 24px;
             box-shadow: 0 4px 20px rgba(0, 34, 68, 0.15);
             position: sticky;
             top: 0;
@@ -76,7 +77,7 @@
         }
 
         .header-logo {
-            height: 54px;
+            height: 52px;
             width: auto;
             border-radius: 8px;
             background: #ffffff;
@@ -87,7 +88,7 @@
 
         .header-titles h1 {
             font-family: 'Montserrat', sans-serif;
-            font-size: 1.35rem;
+            font-size: 1.3rem;
             font-weight: 800;
             letter-spacing: -0.5px;
             text-transform: uppercase;
@@ -102,7 +103,7 @@
         }
 
         .header-titles p {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             color: #94a3b8;
             margin-top: 2px;
             font-weight: 500;
@@ -119,9 +120,9 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 10px 18px;
+            padding: 9px 16px;
             border-radius: 8px;
-            font-size: 0.88rem;
+            font-size: 0.86rem;
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -169,6 +170,72 @@
             background-color: rgba(255, 255, 255, 0.22);
         }
 
+        /* CATEGORY TABS */
+        .category-nav-bar {
+            background: #ffffff;
+            border-bottom: 2px solid var(--border-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+
+        .category-nav-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 12px;
+        }
+
+        .category-tab-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .category-tab-btn:hover {
+            color: var(--pupr-blue);
+        }
+
+        .category-tab-btn.active.tab-putra {
+            color: var(--pupr-blue);
+            border-bottom-color: var(--pupr-blue);
+        }
+
+        .category-tab-btn.active.tab-putri {
+            color: var(--accent-pink);
+            border-bottom-color: var(--accent-pink);
+        }
+
+        .category-badge-count {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #e2e8f0;
+            color: #475569;
+            font-weight: 700;
+        }
+
+        .category-tab-btn.active.tab-putra .category-badge-count {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .category-tab-btn.active.tab-putri .category-badge-count {
+            background: #fce7f3;
+            color: #9d174d;
+        }
+
         /* MAIN WRAPPER */
         .main-wrapper {
             max-width: 1600px;
@@ -205,16 +272,15 @@
             align-items: center;
             gap: 8px;
             background: #f1f5f9;
-            padding: 8px 14px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 600;
             color: var(--text-dark);
         }
 
-        .meta-pill i {
-            color: var(--pupr-blue);
-        }
+        .meta-pill.pill-putra i { color: #2563eb; }
+        .meta-pill.pill-putri i { color: #ec4899; }
 
         .badge-status {
             padding: 6px 14px;
@@ -262,11 +328,6 @@
             border-color: #cbd5e1;
         }
 
-        .podium-item.third {
-            background: linear-gradient(135deg, #fed7aa 0%, #ffedd5 100%);
-            border-color: #fdba74;
-        }
-
         .podium-medal {
             font-size: 1.4rem;
         }
@@ -312,7 +373,7 @@
         .bracket-round-column {
             display: flex;
             flex-direction: column;
-            width: 320px;
+            width: 330px;
             flex-shrink: 0;
         }
 
@@ -449,6 +510,9 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
         }
 
         .player-name {
@@ -460,11 +524,17 @@
             white-space: nowrap;
         }
 
-        .player-balai-badge {
-            display: inline-block;
+        .balai-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
             font-size: 0.7rem;
-            color: var(--text-muted);
-            font-weight: 500;
+            color: #475569;
+            background: #f1f5f9;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            width: fit-content;
         }
 
         .player-score-ctrl {
@@ -568,7 +638,7 @@
             background: #ffffff;
             border-radius: 16px;
             width: 100%;
-            max-width: 640px;
+            max-width: 760px;
             max-height: 90vh;
             display: flex;
             flex-direction: column;
@@ -582,7 +652,7 @@
         }
 
         .modal-header {
-            padding: 20px 24px;
+            padding: 18px 24px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
             justify-content: space-between;
@@ -614,23 +684,23 @@
         }
 
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 16px;
         }
 
         .form-group label {
             display: block;
             font-size: 0.88rem;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: var(--text-dark);
         }
 
         .form-control {
             width: 100%;
-            padding: 10px 14px;
+            padding: 9px 12px;
             border-radius: 8px;
             border: 1.5px solid #cbd5e1;
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             font-family: inherit;
         }
         .form-control:focus {
@@ -642,15 +712,17 @@
         .participant-count-buttons {
             display: flex;
             gap: 8px;
-            margin-bottom: 14px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
         }
 
         .btn-count-opt {
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 8px;
             border: 1.5px solid #cbd5e1;
             background: #f8fafc;
             font-weight: 700;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.2s ease;
         }
@@ -665,13 +737,13 @@
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
-            margin-top: 6px;
+            margin-top: 4px;
             margin-bottom: 12px;
         }
 
         .quick-chip {
             font-size: 0.74rem;
-            padding: 4px 10px;
+            padding: 3px 9px;
             border-radius: 20px;
             background: #e2e8f0;
             color: #334155;
@@ -688,25 +760,69 @@
         .participant-inputs-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            max-height: 280px;
+            gap: 8px;
+            max-height: 320px;
             overflow-y: auto;
             padding-right: 4px;
         }
 
         .participant-input-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 32px 1fr 1fr 34px;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            background: #f8fafc;
+            padding: 6px 8px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
 
         .participant-num {
-            width: 32px;
             font-size: 0.82rem;
             font-weight: 800;
             color: var(--text-muted);
-            text-align: right;
-            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .btn-del-participant {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+        }
+        .btn-del-participant:hover {
+            background: #ef4444;
+            color: #ffffff;
+        }
+
+        .btn-add-participant-row {
+            margin-top: 10px;
+            background: #f1f5f9;
+            color: var(--pupr-blue);
+            border: 1.5px dashed #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.86rem;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn-add-participant-row:hover {
+            background: #e2e8f0;
+            border-color: var(--pupr-blue);
         }
 
         .modal-footer {
@@ -733,7 +849,11 @@
             .header-titles h1 { font-size: 1.1rem; }
             .tournament-banner { flex-direction: column; align-items: flex-start; }
             .bracket-tree { gap: 28px; }
-            .bracket-round-column { width: 280px; }
+            .bracket-round-column { width: 290px; }
+            .participant-input-row {
+                grid-template-columns: 24px 1fr 1fr 30px;
+                gap: 4px;
+            }
         }
     </style>
 </head>
@@ -743,7 +863,7 @@
     <header class="site-header">
         <div class="header-container">
             <div class="header-brand">
-                <img src="<?= esc($logoUrl); ?>" alt="Logo Satker PPS" class="header-logo" onerror="this.src='https://via.placeholder.com/54?text=PUPR'">
+                <img src="<?= esc($logoUrl); ?>" alt="Logo Satker PPS" class="header-logo" onerror="this.src='https://via.placeholder.com/52?text=PUPR'">
                 <div class="header-titles">
                     <h1><i class="fas fa-table-tennis-paddle-ball text-warning mr-1"></i> TURNAMEN <span>TENIS MEJA</span></h1>
                     <p><?= esc($officialName); ?> • <?= esc($subHeader); ?></p>
@@ -760,7 +880,7 @@
                 </button>
 
                 <!-- EKSPOR PDF -->
-                <a href="<?= site_url('tenismeja/pdf'); ?>" target="_blank" class="btn-action btn-action-pdf" id="btnEksporPdf">
+                <a href="<?= site_url('tenismeja/pdf?category=putra'); ?>" target="_blank" class="btn-action btn-action-pdf" id="btnEksporPdf">
                     <i class="fas fa-file-pdf"></i> Ekspor PDF
                 </a>
 
@@ -777,6 +897,20 @@
         </div>
     </header>
 
+    <!-- CATEGORY TABS (PUTRA & PUTRI) -->
+    <nav class="category-nav-bar">
+        <div class="category-nav-container">
+            <button type="button" class="category-tab-btn tab-putra active" id="tabBtnPutra" onclick="switchCategory('putra')">
+                <i class="fas fa-mars text-primary"></i> Turnamen Putra
+                <span class="category-badge-count" id="countBadgePutra"><?= (int) ($putraTournament['participant_count'] ?? 5); ?> Peserta</span>
+            </button>
+            <button type="button" class="category-tab-btn tab-putri" id="tabBtnPutri" onclick="switchCategory('putri')">
+                <i class="fas fa-venus" style="color: #ec4899;"></i> Turnamen Putri
+                <span class="category-badge-count" id="countBadgePutri"><?= (int) ($putriTournament['participant_count'] ?? 5); ?> Peserta</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- MAIN BODY -->
     <main class="main-wrapper">
 
@@ -785,20 +919,19 @@
             <div class="tournament-meta">
                 <div>
                     <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--pupr-navy);" id="tournamentTitle">
-                        <?= esc($tournament['title'] ?? 'Turnamen Tenis Meja Sistem Gugur'); ?>
+                        Turnamen Tenis Meja Putra
                     </h2>
                     <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
-                        <span class="meta-pill">
-                            <i class="fas fa-trophy"></i>
-                            <span id="tournamentCategory"><?= esc($tournament['category'] ?? 'Tunggal Putra'); ?></span>
+                        <span class="meta-pill pill-putra" id="metaCategoryPill">
+                            <i class="fas fa-mars"></i>
+                            <span id="tournamentCategoryLabel">Kategori Putra</span>
                         </span>
                         <span class="meta-pill">
                             <i class="fas fa-users"></i>
-                            <span id="tournamentCount"><?= (int) ($tournament['participant_count'] ?? 0); ?> Peserta</span>
+                            <span id="tournamentCount">5 Peserta</span>
                         </span>
-                        <span class="badge-status <?= ($tournament['status'] ?? 'ongoing') === 'completed' ? 'badge-completed' : 'badge-ongoing'; ?>" id="tournamentStatusBadge">
-                            <i class="fas <?= ($tournament['status'] ?? 'ongoing') === 'completed' ? 'fa-check-circle' : 'fa-clock'; ?> mr-1"></i>
-                            <?= ($tournament['status'] ?? 'ongoing') === 'completed' ? 'Turnamen Selesai' : 'Sedang Berlangsung'; ?>
+                        <span class="badge-status badge-ongoing" id="tournamentStatusBadge">
+                            <i class="fas fa-clock mr-1"></i> Sedang Berlangsung
                         </span>
                     </div>
                 </div>
@@ -811,7 +944,7 @@
                     <div class="podium-medal">🥇</div>
                     <div class="podium-details">
                         <h4>Juara 1 (Champion)</h4>
-                        <p id="podiumChampion"><?= esc($tournament['bracket_json']['podium']['champion']['name'] ?? '- Menunggu Final -'); ?></p>
+                        <p id="podiumChampion">- Menunggu Final -</p>
                     </div>
                 </div>
 
@@ -820,7 +953,7 @@
                     <div class="podium-medal">🥈</div>
                     <div class="podium-details">
                         <h4>Juara 2 (Runner-Up)</h4>
-                        <p id="podiumRunnerUp"><?= esc($tournament['bracket_json']['podium']['runner_up']['name'] ?? '- Menunggu Final -'); ?></p>
+                        <p id="podiumRunnerUp">- Menunggu Final -</p>
                     </div>
                 </div>
             </div>
@@ -829,7 +962,7 @@
         <!-- INTERACTIVE BRACKET SECTION -->
         <section class="bracket-scroll-container">
             <div class="bracket-tree" id="bracketTree">
-                <!-- RENDERED BY JAVASCRIPT / PHP -->
+                <!-- RENDERED DYNAMICALLY BY JAVASCRIPT -->
             </div>
         </section>
 
@@ -850,46 +983,49 @@
             <div class="modal-body">
                 <form id="setupForm">
                     <div class="form-group">
-                        <label for="formTitle">Nama Turnamen</label>
-                        <input type="text" id="formTitle" class="form-control" value="<?= esc($tournament['title'] ?? 'Turnamen Tenis Meja Antar Balai PUPR'); ?>" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="formCategory">Kategori</label>
-                        <select id="formCategory" class="form-control">
-                            <option value="Tunggal Putra" <?= ($tournament['category'] ?? '') === 'Tunggal Putra' ? 'selected' : ''; ?>>Tunggal Putra</option>
-                            <option value="Tunggal Putri" <?= ($tournament['category'] ?? '') === 'Tunggal Putri' ? 'selected' : ''; ?>>Tunggal Putri</option>
-                            <option value="Ganda Putra" <?= ($tournament['category'] ?? '') === 'Ganda Putra' ? 'selected' : ''; ?>>Ganda Putra</option>
-                            <option value="Ganda Campuran" <?= ($tournament['category'] ?? '') === 'Ganda Campuran' ? 'selected' : ''; ?>>Ganda Campuran</option>
-                            <option value="Beregu Antar Balai" <?= ($tournament['category'] ?? '') === 'Beregu Antar Balai' ? 'selected' : ''; ?>>Beregu Antar Balai</option>
+                        <label for="formCategory">Kategori Turnamen</label>
+                        <select id="formCategory" class="form-control" onchange="onModalCategoryChange(this.value)">
+                            <option value="putra">Turnamen Putra</option>
+                            <option value="putri">Turnamen Putri</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label>Jumlah Peserta</label>
-                        <div class="participant-count-buttons">
-                            <button type="button" class="btn-count-opt" data-count="4">4 Peserta</button>
-                            <button type="button" class="btn-count-opt active" data-count="8">8 Peserta</button>
-                            <button type="button" class="btn-count-opt" data-count="16">16 Peserta</button>
-                            <button type="button" class="btn-count-opt" data-count="32">32 Peserta</button>
-                        </div>
-                        <input type="number" id="customCount" class="form-control" placeholder="Atau ketik jumlah peserta bebas (min 2, max 32)" min="2" max="32" value="<?= (int) ($tournament['participant_count'] ?? 8); ?>">
+                        <label for="formTitle">Judul Turnamen</label>
+                        <input type="text" id="formTitle" class="form-control" value="Turnamen Tenis Meja Antar Balai PUPR" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Klik Cepat Pilihan Balai PUPR (Opsional untuk Mengisi Nama Peserta):</label>
+                        <label>Pilihan Cepat Jumlah Peserta</label>
+                        <div class="participant-count-buttons">
+                            <button type="button" class="btn-count-opt active" data-count="5">5 Peserta (Saat Ini)</button>
+                            <button type="button" class="btn-count-opt" data-count="4">4 Peserta</button>
+                            <button type="button" class="btn-count-opt" data-count="8">8 Peserta</button>
+                            <button type="button" class="btn-count-opt" data-count="16">16 Peserta</button>
+                            <button type="button" class="btn-count-opt" data-count="32">32 Peserta</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Klik Cepat Asal Balai (Untuk Mengisi Kolom Balai):</label>
                         <div class="quick-chips-wrap">
                             <?php foreach ($defaultBalais as $b): ?>
-                                <span class="quick-chip" onclick="fillNextEmptyParticipant('<?= esc($b); ?>')"><?= esc($b); ?></span>
+                                <span class="quick-chip" onclick="fillNextEmptyBalai('<?= esc($b); ?>')"><?= esc($b); ?></span>
                             <?php endforeach; ?>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>Daftar Nama Peserta / Asal Balai:</label>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="margin: 0;">Daftar Peserta (Nama Peserta &amp; Asal Balai):</label>
+                            <span style="font-size: 0.76rem; color: #64748b;">(1 Balai bisa memiliki lebih dari 1 nama peserta)</span>
+                        </div>
                         <div class="participant-inputs-container" id="participantInputs">
                             <!-- Injected dynamically -->
                         </div>
+                        <button type="button" class="btn-add-participant-row" id="btnAddParticipantRow">
+                            <i class="fas fa-plus-circle"></i> Tambah Peserta Baru
+                        </button>
                     </div>
                 </form>
             </div>
@@ -912,34 +1048,89 @@
         const API_UPDATE_MATCH = '<?= site_url("tenismeja/api/update-match"); ?>';
         const API_RESET = '<?= site_url("tenismeja/api/reset"); ?>';
         const API_DATA = '<?= site_url("tenismeja/api/data"); ?>';
+        const PDF_BASE_URL = '<?= site_url("tenismeja/pdf"); ?>';
 
         // Initial Data injected from PHP
-        let tournamentData = <?= json_encode($tournament ?? null, JSON_UNESCAPED_UNICODE); ?>;
+        let allTournaments = {
+            putra: <?= json_encode($putraTournament ?? null, JSON_UNESCAPED_UNICODE); ?>,
+            putri: <?= json_encode($putriTournament ?? null, JSON_UNESCAPED_UNICODE); ?>
+        };
+
+        // Active Category: 'putra' or 'putri'
+        let currentCategory = 'putra';
 
         document.addEventListener('DOMContentLoaded', function () {
-            if (tournamentData) {
-                renderBracket(tournamentData);
+            // Check hash in URL (#putra or #putri)
+            if (window.location.hash === '#putri') {
+                currentCategory = 'putri';
+            } else {
+                currentCategory = 'putra';
             }
 
+            updateCategoryTabUI(currentCategory);
+            renderBracket(allTournaments[currentCategory]);
             initEventHandlers();
         });
 
+        // SWITCH CATEGORY (PUTRA / PUTRI)
+        function switchCategory(cat) {
+            currentCategory = cat;
+            window.location.hash = cat;
+            updateCategoryTabUI(cat);
+            renderBracket(allTournaments[cat]);
+        }
+
+        function updateCategoryTabUI(cat) {
+            const tabPutra = document.getElementById('tabBtnPutra');
+            const tabPutri = document.getElementById('tabBtnPutri');
+            const pdfBtn = document.getElementById('btnEksporPdf');
+
+            if (cat === 'putri') {
+                tabPutri.classList.add('active');
+                tabPutra.classList.remove('active');
+                pdfBtn.href = `${PDF_BASE_URL}?category=putri`;
+            } else {
+                tabPutra.classList.add('active');
+                tabPutri.classList.remove('active');
+                pdfBtn.href = `${PDF_BASE_URL}?category=putra`;
+            }
+
+            // Update tab badge counts
+            const putraCount = allTournaments.putra ? (allTournaments.putra.participant_count || 0) : 0;
+            const putriCount = allTournaments.putri ? (allTournaments.putri.participant_count || 0) : 0;
+            document.getElementById('countBadgePutra').textContent = `${putraCount} Peserta`;
+            document.getElementById('countBadgePutri').textContent = `${putriCount} Peserta`;
+        }
+
         // RENDER BRACKET FUNCTION
         function renderBracket(data) {
+            const container = document.getElementById('bracketTree');
+            const catLabel = (currentCategory === 'putri') ? 'Putri' : 'Putra';
+
             if (!data || !data.bracket_json || !data.bracket_json.rounds) {
-                document.getElementById('bracketTree').innerHTML = `
+                container.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #64748b; width: 100%;">
                         <i class="fas fa-sitemap" style="font-size: 3rem; margin-bottom: 12px; color: #94a3b8;"></i>
-                        <p style="font-weight: 700; font-size: 1.1rem;">Belum ada bagan pertandingan yang aktif.</p>
-                        <p style="font-size: 0.9rem;">Klik tombol "Atur Peserta" di atas untuk membuat bagan turnamen sistem gugur.</p>
+                        <p style="font-weight: 700; font-size: 1.1rem;">Belum ada bagan turnamen ${catLabel} yang aktif.</p>
+                        <p style="font-size: 0.9rem;">Klik tombol "Atur Peserta" di atas untuk membuat bagan turnamen tenis meja ${catLabel}.</p>
                     </div>
                 `;
                 return;
             }
 
             // Update Header Meta
-            document.getElementById('tournamentTitle').textContent = data.title || 'Turnamen Tenis Meja';
-            document.getElementById('tournamentCategory').textContent = data.category || 'Tunggal Putra';
+            document.getElementById('tournamentTitle').textContent = data.title || `Turnamen Tenis Meja ${catLabel}`;
+            const pill = document.getElementById('metaCategoryPill');
+            const pillLabel = document.getElementById('tournamentCategoryLabel');
+
+            if (currentCategory === 'putri') {
+                pill.className = 'meta-pill pill-putri';
+                pill.innerHTML = '<i class="fas fa-venus" style="color:#ec4899;"></i> <span>Kategori Putri</span>';
+            } else {
+                pill.className = 'meta-pill pill-putra';
+                pill.innerHTML = '<i class="fas fa-mars" style="color:#2563eb;"></i> <span>Kategori Putra</span>';
+            }
+
             document.getElementById('tournamentCount').textContent = (data.participant_count || 0) + ' Peserta';
 
             const statusBadge = document.getElementById('tournamentStatusBadge');
@@ -953,13 +1144,12 @@
 
             // Update Podium
             const podium = data.bracket_json.podium || {};
-            document.getElementById('podiumChampion').textContent = podium.champion ? podium.champion.name : '- Menunggu Final -';
-            document.getElementById('podiumRunnerUp').textContent = podium.runner_up ? podium.runner_up.name : '- Menunggu Final -';
+            document.getElementById('podiumChampion').textContent = podium.champion ? `${podium.champion.name} (${podium.champion.balai || '-'})` : '- Menunggu Final -';
+            document.getElementById('podiumRunnerUp').textContent = podium.runner_up ? `${podium.runner_up.name} (${podium.runner_up.balai || '-'})` : '- Menunggu Final -';
 
             // Render Round Columns
             const rounds = data.bracket_json.rounds;
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
-            const container = document.getElementById('bracketTree');
             container.innerHTML = '';
 
             for (let r = 1; r <= totalRounds; r++) {
@@ -1017,6 +1207,7 @@
                         <div class="player-seed">${p1 ? (p1.seed || '•') : '-'}</div>
                         <div class="player-name-wrap">
                             <div class="player-name">${p1 ? escapeHtml(p1.name) : '<em style="color:#94a3b8">Menunggu Pemenang</em>'}</div>
+                            ${p1 && p1.balai ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(p1.balai)}</span>` : ''}
                         </div>
                     </div>
                     <div class="player-score-ctrl">
@@ -1033,6 +1224,7 @@
                         <div class="player-seed">${p2 ? (p2.seed || '•') : '-'}</div>
                         <div class="player-name-wrap">
                             <div class="player-name">${p2 ? escapeHtml(p2.name) : '<em style="color:#94a3b8">Menunggu Pemenang</em>'}</div>
+                            ${p2 && p2.balai && !p2.is_bye ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(p2.balai)}</span>` : ''}
                         </div>
                     </div>
                     <div class="player-score-ctrl">
@@ -1064,6 +1256,7 @@
             const s2 = score2Input ? score2Input.value.trim() : '';
 
             const formData = new FormData();
+            formData.append('category', currentCategory);
             formData.append('match_id', matchId);
             formData.append('score1', s1);
             formData.append('score2', s2);
@@ -1076,8 +1269,8 @@
                 const res = await response.json();
 
                 if (res.status === 'success') {
-                    tournamentData = res.tournament;
-                    renderBracket(tournamentData);
+                    allTournaments[currentCategory] = res.tournament;
+                    renderBracket(allTournaments[currentCategory]);
                     showToast('success', res.message || 'Skor pertandingan berhasil disimpan.');
                 } else {
                     showToast('error', res.message || 'Gagal menyimpan skor pertandingan.');
@@ -1098,6 +1291,7 @@
             const s2 = score2Input ? score2Input.value.trim() : '';
 
             const formData = new FormData();
+            formData.append('category', currentCategory);
             formData.append('match_id', matchId);
             formData.append('winner', winnerName);
             formData.append('score1', s1);
@@ -1111,8 +1305,8 @@
                 const res = await response.json();
 
                 if (res.status === 'success') {
-                    tournamentData = res.tournament;
-                    renderBracket(tournamentData);
+                    allTournaments[currentCategory] = res.tournament;
+                    renderBracket(allTournaments[currentCategory]);
                     showToast('success', `${winnerName} memenangkan pertandingan!`);
                 } else {
                     showToast('error', res.message || 'Gagal menandai pemenang.');
@@ -1144,11 +1338,13 @@
             // ACAK POSISI DENGAN PASSWORD SUPERADMINISTRATOR
             const btnAcak = document.getElementById('btnAcakPosisi');
             btnAcak.addEventListener('click', function () {
+                const catLabel = (currentCategory === 'putri') ? 'Putri' : 'Putra';
+
                 Swal.fire({
-                    title: '<span style="color:#002244; font-family: Montserrat, sans-serif; font-size:1.25rem;"><i class="fas fa-shield-halved text-danger mr-2"></i> Verifikasi Superadministrator</span>',
+                    title: `<span style="color:#002244; font-family: Montserrat, sans-serif; font-size:1.25rem;"><i class="fas fa-shield-halved text-danger mr-2"></i> Verifikasi Superadministrator</span>`,
                     html: `
                         <p style="font-size:0.88rem; color:#64748b; margin-bottom:14px;">
-                            Fitur pengacakan posisi bagan hanya dapat dilakukan oleh <strong>Superadministrator</strong>.<br>Silakan masukkan password akun superadministrator:
+                            Fitur pengacakan posisi bagan turnamen <strong>${catLabel}</strong> hanya dapat dilakukan oleh <strong>Superadministrator</strong>.<br>Silakan masukkan password akun superadministrator:
                         </p>
                         <div style="position:relative; width:100%; max-width:320px; margin:0 auto;">
                             <input type="password" id="swal_admin_pwd" class="swal2-input" placeholder="Password Superadministrator" style="width:100%; margin:0; padding-right:40px;">
@@ -1158,7 +1354,7 @@
                     showCancelButton: true,
                     confirmButtonColor: '#ef4444',
                     cancelButtonColor: '#64748b',
-                    confirmButtonText: '<i class="fas fa-shuffle mr-1"></i> Verifikasi & Acak Posisi',
+                    confirmButtonText: `<i class="fas fa-shuffle mr-1"></i> Verifikasi & Acak Posisi (${catLabel})`,
                     cancelButtonText: 'Batal',
                     didOpen: () => {
                         const input = document.getElementById('swal_admin_pwd');
@@ -1202,6 +1398,7 @@
 
                         const formData = new FormData();
                         formData.append('password', pwd);
+                        formData.append('category', currentCategory);
 
                         try {
                             const response = await fetch(API_ACAK, {
@@ -1211,12 +1408,12 @@
                             const res = await response.json();
 
                             if (res.status === 'success') {
-                                tournamentData = res.tournament;
-                                renderBracket(tournamentData);
+                                allTournaments[currentCategory] = res.tournament;
+                                renderBracket(allTournaments[currentCategory]);
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'Berhasil Diacak!',
-                                    text: res.message || 'Posisi peserta turnamen tenis meja berhasil diacak.',
+                                    text: res.message || `Posisi peserta turnamen tenis meja ${catLabel} berhasil diacak.`,
                                     timer: 2000,
                                     showConfirmButton: false
                                 });
@@ -1243,8 +1440,10 @@
             // RESET SKOR
             const btnReset = document.getElementById('btnResetSkor');
             btnReset.addEventListener('click', function () {
+                const catLabel = (currentCategory === 'putri') ? 'Putri' : 'Putra';
+
                 Swal.fire({
-                    title: 'Reset Skor Pertandingan?',
+                    title: `Reset Skor Turnamen ${catLabel}?`,
                     text: 'Seluruh skor dan pemenang babak akan diatur ulang kembali ke posisi awal. Nama dan posisi peserta tetap dipertahankan.',
                     icon: 'warning',
                     showCancelButton: true,
@@ -1255,12 +1454,18 @@
                 }).then(async (result) => {
                     if (result.isConfirmed) {
                         try {
-                            const response = await fetch(API_RESET, { method: 'POST' });
+                            const formData = new FormData();
+                            formData.append('category', currentCategory);
+
+                            const response = await fetch(API_RESET, {
+                                method: 'POST',
+                                body: formData
+                            });
                             const res = await response.json();
 
                             if (res.status === 'success') {
-                                tournamentData = res.tournament;
-                                renderBracket(tournamentData);
+                                allTournaments[currentCategory] = res.tournament;
+                                renderBracket(allTournaments[currentCategory]);
                                 showToast('success', res.message || 'Skor pertandingan berhasil direset.');
                             } else {
                                 showToast('error', res.message || 'Gagal mereset skor.');
@@ -1279,7 +1484,8 @@
             const btnCancelSetup = document.getElementById('btnCancelSetup');
 
             btnOpenSetup.addEventListener('click', () => {
-                populateParticipantInputs();
+                document.getElementById('formCategory').value = currentCategory;
+                populateParticipantInputs(currentCategory);
                 modal.classList.add('active');
             });
 
@@ -1288,43 +1494,43 @@
 
             // PARTICIPANT COUNT BUTTONS
             const countButtons = document.querySelectorAll('.btn-count-opt');
-            const customCountInput = document.getElementById('customCount');
-
             countButtons.forEach(btn => {
                 btn.addEventListener('click', function () {
                     countButtons.forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     const c = parseInt(this.dataset.count);
-                    customCountInput.value = c;
-                    generateInputFields(c);
+                    adjustParticipantRowsCount(c);
                 });
             });
 
-            customCountInput.addEventListener('input', function () {
-                let val = parseInt(this.value);
-                if (val && val >= 2 && val <= 32) {
-                    countButtons.forEach(b => {
-                        if (parseInt(b.dataset.count) === val) {
-                            b.classList.add('active');
-                        } else {
-                            b.classList.remove('active');
-                        }
-                    });
-                    generateInputFields(val);
-                }
+            // ADD PARTICIPANT ROW BUTTON
+            document.getElementById('btnAddParticipantRow').addEventListener('click', function () {
+                const container = document.getElementById('participantInputs');
+                const nextNum = container.children.length + 1;
+                addParticipantRow(nextNum, '', '');
+                container.scrollTop = container.scrollHeight;
             });
 
             // SUBMIT SETUP FORM
             document.getElementById('btnSubmitSetup').addEventListener('click', async function () {
-                const title = document.getElementById('formTitle').value.trim();
                 const category = document.getElementById('formCategory').value;
+                const title = document.getElementById('formTitle').value.trim();
 
-                const inputs = document.querySelectorAll('.participant-name-input');
+                const rows = document.querySelectorAll('.participant-input-row');
                 const participantList = [];
 
-                inputs.forEach(inp => {
-                    const v = inp.value.trim();
-                    if (v) participantList.push(v);
+                rows.forEach(r => {
+                    const nameInp = r.querySelector('.participant-name-field');
+                    const balaiInp = r.querySelector('.participant-balai-field');
+                    const nameVal = nameInp ? nameInp.value.trim() : '';
+                    const balaiVal = balaiInp ? balaiInp.value.trim() : '';
+
+                    if (nameVal || balaiVal) {
+                        participantList.push({
+                            name: nameVal || balaiVal,
+                            balai: balaiVal || nameVal
+                        });
+                    }
                 });
 
                 if (participantList.length < 2) {
@@ -1358,8 +1564,9 @@
                     const res = await response.json();
 
                     if (res.status === 'success') {
-                        tournamentData = res.tournament;
-                        renderBracket(tournamentData);
+                        allTournaments[category] = res.tournament;
+                        currentCategory = category;
+                        switchCategory(category);
                         Swal.fire({
                             icon: 'success',
                             title: 'Bagan Berhasil Dibuat!',
@@ -1386,56 +1593,118 @@
             });
         }
 
-        // GENERATE INPUT FIELDS FOR MODAL
-        function generateInputFields(count, existingNames = []) {
+        // ON MODAL CATEGORY CHANGE
+        function onModalCategoryChange(selectedCat) {
+            populateParticipantInputs(selectedCat);
+        }
+
+        // POPULATE PARTICIPANTS IN MODAL
+        function populateParticipantInputs(cat) {
+            const data = allTournaments[cat];
             const container = document.getElementById('participantInputs');
             container.innerHTML = '';
 
-            for (let i = 1; i <= count; i++) {
-                const val = existingNames[i - 1] || '';
-                const row = document.createElement('div');
-                row.className = 'participant-input-row';
-                row.innerHTML = `
-                    <div class="participant-num">#${i}</div>
-                    <input type="text" class="form-control participant-name-input" id="partInput_${i}" placeholder="Nama Peserta atau Balai #${i}" value="${escapeHtml(val)}">
-                `;
-                container.appendChild(row);
+            const catLabel = (cat === 'putri') ? 'Putri' : 'Putra';
+            document.getElementById('formTitle').value = data ? (data.title || `Turnamen Tenis Meja ${catLabel}`) : `Turnamen Tenis Meja ${catLabel}`;
+
+            let list = (data && data.participants_json && Array.isArray(data.participants_json)) ? data.participants_json : [];
+
+            if (list.length === 0) {
+                // Default 5 participants
+                list = [
+                    { name: `Peserta 1 ${catLabel}`, balai: 'BWS Sumatera III' },
+                    { name: `Peserta 2 ${catLabel}`, balai: 'BPJN Riau' },
+                    { name: `Peserta 3 ${catLabel}`, balai: 'BPPW Riau' },
+                    { name: `Peserta 4 ${catLabel}`, balai: 'BP2JK Riau' },
+                    { name: `Peserta 5 ${catLabel}`, balai: 'Satker PPS Riau' },
+                ];
             }
+
+            list.forEach((item, idx) => {
+                addParticipantRow(idx + 1, item.name || '', item.balai || '');
+            });
         }
 
-        // POPULATE PARTICIPANT INPUTS ON MODAL OPEN
-        function populateParticipantInputs() {
-            let names = [];
-            if (tournamentData && tournamentData.participants_json && Array.isArray(tournamentData.participants_json)) {
-                names = tournamentData.participants_json.map(p => p.name);
-            }
-            const count = Math.max(names.length || 8, 4);
-            document.getElementById('customCount').value = count;
-            generateInputFields(count, names);
+        // ADD SINGLE ROW TO MODAL INPUTS
+        function addParticipantRow(num, nameVal = '', balaiVal = '') {
+            const container = document.getElementById('participantInputs');
+            const row = document.createElement('div');
+            row.className = 'participant-input-row';
+            row.innerHTML = `
+                <div class="participant-num">#${num}</div>
+                <div>
+                    <input type="text" class="form-control participant-name-field" placeholder="Nama Peserta #${num}" value="${escapeHtml(nameVal)}">
+                </div>
+                <div>
+                    <input type="text" class="form-control participant-balai-field" placeholder="Asal Balai #${num}" value="${escapeHtml(balaiVal)}">
+                </div>
+                <div>
+                    <button type="button" class="btn-del-participant" title="Hapus Baris" onclick="removeParticipantRow(this)">
+                        <i class="fas fa-trash-can"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(row);
         }
 
-        // FILL NEXT EMPTY PARTICIPANT CHIP CLICK
-        function fillNextEmptyParticipant(name) {
-            const inputs = document.querySelectorAll('.participant-name-input');
-            for (let inp of inputs) {
+        // REMOVE PARTICIPANT ROW
+        function removeParticipantRow(btn) {
+            const container = document.getElementById('participantInputs');
+            if (container.children.length <= 2) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Minimal 2 Peserta',
+                    text: 'Turnamen sistem gugur memerlukan minimal 2 peserta.',
+                    confirmButtonColor: '#0b3c74'
+                });
+                return;
+            }
+            const row = btn.closest('.participant-input-row');
+            row.remove();
+            renumberParticipantRows();
+        }
+
+        function renumberParticipantRows() {
+            const container = document.getElementById('participantInputs');
+            Array.from(container.children).forEach((row, idx) => {
+                const numEl = row.querySelector('.participant-num');
+                if (numEl) numEl.textContent = `#${idx + 1}`;
+            });
+        }
+
+        // ADJUST PARTICIPANT ROWS COUNT ACCORDING TO QUICK BUTTONS
+        function adjustParticipantRowsCount(targetCount) {
+            const container = document.getElementById('participantInputs');
+            const currentRows = container.children.length;
+
+            if (currentRows < targetCount) {
+                for (let i = currentRows + 1; i <= targetCount; i++) {
+                    addParticipantRow(i, '', '');
+                }
+            } else if (currentRows > targetCount) {
+                while (container.children.length > targetCount && container.children.length > 2) {
+                    container.lastElementChild.remove();
+                }
+            }
+            renumberParticipantRows();
+        }
+
+        // FILL NEXT EMPTY BALAI INPUT
+        function fillNextEmptyBalai(balaiName) {
+            const balaiInputs = document.querySelectorAll('.participant-balai-field');
+            for (let inp of balaiInputs) {
                 if (!inp.value.trim()) {
-                    inp.value = name;
+                    inp.value = balaiName;
                     inp.focus();
                     return;
                 }
             }
-            // If none empty, set the last one or append
-            if (inputs.length > 0) {
-                const countInput = document.getElementById('customCount');
-                let count = parseInt(countInput.value) || inputs.length;
-                if (count < 32) {
-                    count++;
-                    countInput.value = count;
-                    const existing = Array.from(inputs).map(inp => inp.value);
-                    existing.push(name);
-                    generateInputFields(count, existing);
-                }
-            }
+
+            // If all balai inputs filled, add a new row and fill
+            const container = document.getElementById('participantInputs');
+            const nextNum = container.children.length + 1;
+            addParticipantRow(nextNum, '', balaiName);
+            renumberParticipantRows();
         }
 
         // ESCAPE HTML HELPER
