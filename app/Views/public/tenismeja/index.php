@@ -1445,9 +1445,6 @@
             return card;
         }
 
-            return card;
-        }
-
         // SAVE MATCH SCORES
         async function saveMatchScores(matchId) {
             const score1Input = document.getElementById(`score1_${matchId}`);
