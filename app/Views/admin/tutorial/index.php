@@ -638,7 +638,7 @@ graph TD
     D --> E["Form Input Berpasangan: Nama Peserta &amp; Asal Balai (1 Balai Bisa 2 Nama atau Lebih)"]
     E --> F["Klik 'Tambah Peserta Baru' untuk Menambah Peserta ke-6, ke-7, dst."]
     F --> G["Klik 'Generate Bagan Turnamen' (Sistem Gugur Standar Otomatis &amp; Resolusi BYE)"]
-    C --> H["Bagan Interaktif Tampil: Babak 1, Perempat Final, Semi Final, Final &amp; Juara"]
+    C --> H["Bagan Interaktif Tampil: Ronde 1 (Babak I), Ronde 2 (Semi Final), Ronde 3 (Final: Bye vs Pemenang Semifinal)"]
     G --> H
     H --> I1["Input Skor Pertandingan &amp; Simpan Skor"]
     H --> I2["Klik Tombol Pemenang (Pemenang Lolos Otomatis ke Babak Selanjutnya)"]
@@ -2034,7 +2034,7 @@ graph TD
                                     <li>Secara bawaan sistem telah memuat 5 peserta awal Putra dan 5 peserta awal Putri dari Balai PUPR (BWS Sumatera III, BPJN Riau, BPPW Riau, BP2JK Riau, dan Satker PPS Riau).</li>
                                     <li><strong>Input Peserta &amp; Balai (1 Balai Bisa 2 Nama):</strong> Klik tombol <strong>Atur Peserta</strong>. Pada setiap baris peserta terdapat kolom terpisah untuk <strong>Nama Peserta</strong> dan <strong>Asal Balai</strong>, sehingga satu balai dapat mendaftarkan dua nama peserta atau lebih (misal: <em>Budi Santoso - BPJN Riau</em> dan <em>Hendri Gunawan - BPJN Riau</em>).</li>
                                     <li><strong>Penambahan Peserta Dinamis:</strong> Jika jumlah peserta bertambah, klik tombol <strong>+ Tambah Peserta Baru</strong> untuk menambahkan slot peserta ke-6, ke-7, ke-8, dst.</li>
-                                    <li>Klik <strong>Generate Bagan Turnamen</strong> untuk menyusun bagan sistem gugur bersih tanpa kartu kosong. Pada skema 5 peserta: <strong>Babak 1</strong> mempertandingkan <em>A vs B</em> (pemenang menang Bye langsung ke Final) dan <em>C vs D</em>, sementara <em>E menang Bye</em> ke Semifinal; <strong>Semi Final</strong> mempertandingkan <em>Pemenang (C vs D) melawan E</em>; dan <strong>Final</strong> mempertemukan <em>Pemenang (A vs B) melawan Pemenang Semi Final</em>.</li>
+                                    <li>Klik <strong>Generate Bagan Turnamen</strong> untuk menyusun bagan sistem gugur bersih tanpa kartu dummy. Pada skema 5 peserta: <strong>Ronde 1 (Babak I)</strong> mempertandingkan <em>A vs B</em> (pemenang berstatus Menang Bye di Ronde 2 dan lolos ke Final) dan <em>C vs D</em>, sementara <em>E menang Bye</em> ke Semi Final; <strong>Ronde 2 (Semi Final)</strong> mempertandingkan <em>Pemenang (C vs D) melawan E</em> (sementara pemenang A vs B berstatus Menang Bye); dan <strong>Ronde 3 (Final: Bye vs Pemenang Semifinal)</strong> mempertemukan <em>Pemenang Bye (A/B) melawan Pemenang Semi Final</em> untuk penentuan Juara 1 dan Runner-Up.</li>
                                 </ol>
                             </div>
                         </div>

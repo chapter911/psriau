@@ -383,6 +383,25 @@
                     $isFinal = ($r === $totalRounds);
                 ?>
                 <td style="vertical-align: top; width: <?= round(100 / $totalRounds); ?>%;">
+                    <?php if ((int)($tournament['participant_count'] ?? 0) === 5 && $r === 2): ?>
+                        <?php
+                            $m1 = $rounds[1]['matches'][0] ?? null;
+                            $m1Winner = $m1['winner'] ?? null;
+                        ?>
+                        <div class="match-box-pdf" style="background-color: #f0fdf4; border-style: dashed; border-color: #86efac; margin-bottom: 6px;">
+                            <div class="match-box-header" style="background-color: #dcfce7; color: #166534;">
+                                Menang Bye Ronde 2
+                                <span style="float: right; color: #15803d; font-weight: bold;">Lolos &rarr; FINAL</span>
+                            </div>
+                            <div class="match-box-row" style="font-weight: bold; color: #166534;">
+                                <span><?= esc($m1Winner['name'] ?? 'Pemenang Match #1 (A vs B)'); ?></span>
+                                <?php if (! empty($m1Winner['balai'])): ?>
+                                    <span class="balai-sub"><?= esc($m1Winner['balai']); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
                     <?php foreach ($matches as $m): ?>
                         <?php
                             $p1 = $m['player1'] ?? null;
@@ -433,6 +452,22 @@
                             <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
+
+                    <?php if ((int)($tournament['participant_count'] ?? 0) === 5 && $r === 1 && ! empty($tournament['participants_json'][4])): ?>
+                        <?php $p5 = $tournament['participants_json'][4]; ?>
+                        <div class="match-box-pdf" style="background-color: #fefce8; border-style: dashed; border-color: #fde047; margin-top: 6px;">
+                            <div class="match-box-header" style="background-color: #fef9c3; color: #854d0e;">
+                                Menang Bye Ronde 1
+                                <span style="float: right; color: #a16207; font-weight: bold;">Lolos &rarr; SEMI FINAL</span>
+                            </div>
+                            <div class="match-box-row" style="font-weight: bold; color: #854d0e;">
+                                <span><?= esc($p5['name'] ?? 'Peserta 5'); ?></span>
+                                <?php if (! empty($p5['balai'])): ?>
+                                    <span class="balai-sub"><?= esc($p5['balai']); ?></span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </td>
             <?php endfor; ?>
         </tr>

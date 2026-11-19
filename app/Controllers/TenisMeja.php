@@ -48,7 +48,7 @@ class TenisMeja extends BaseController
 
         // Ensure Putra tournament
         $putra = $this->tournamentModel->getActiveTournament('putra');
-        $needsRecreatePutra = (! $putra) || ((int)($putra['participant_count'] ?? 0) === 5 && count($putra['bracket_json']['rounds'][1]['matches'] ?? []) !== 2);
+        $needsRecreatePutra = (! $putra) || ((int)($putra['participant_count'] ?? 0) === 5 && (($putra['bracket_json']['rounds'][1]['name'] ?? '') !== 'Babak I' || count($putra['bracket_json']['rounds'][1]['matches'] ?? []) !== 2));
         if ($needsRecreatePutra) {
             $putraParticipants = (! empty($putra['participants_json']) && count($putra['participants_json']) === 5)
                 ? $putra['participants_json']
@@ -66,7 +66,7 @@ class TenisMeja extends BaseController
 
         // Ensure Putri tournament
         $putri = $this->tournamentModel->getActiveTournament('putri');
-        $needsRecreatePutri = (! $putri) || ((int)($putri['participant_count'] ?? 0) === 5 && count($putri['bracket_json']['rounds'][1]['matches'] ?? []) !== 2);
+        $needsRecreatePutri = (! $putri) || ((int)($putri['participant_count'] ?? 0) === 5 && (($putri['bracket_json']['rounds'][1]['name'] ?? '') !== 'Babak I' || count($putri['bracket_json']['rounds'][1]['matches'] ?? []) !== 2));
         if ($needsRecreatePutri) {
             $putriParticipants = (! empty($putri['participants_json']) && count($putri['participants_json']) === 5)
                 ? $putri['participants_json']

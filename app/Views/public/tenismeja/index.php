@@ -460,8 +460,39 @@
             box-shadow: 0 6px 16px rgba(11, 60, 116, 0.12);
             transform: translateY(-2px);
         }
-            box-shadow: 0 6px 16px rgba(11, 60, 116, 0.12);
-            transform: translateY(-2px);
+
+        /* BYE STATUS CARDS */
+        .bye-slot-card {
+            background: #ffffff;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .bye-slot-card:hover {
+            border-color: #94a3b8;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        }
+
+        .bye-slot-card.bye-slot-finalist {
+            background: #f0fdf4;
+            border: 1.5px dashed #86efac;
+        }
+
+        .bye-slot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bye-slot-body {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
         .match-card.is-final {
@@ -1236,10 +1267,53 @@
 
                 const matchesList = col.querySelector(`#roundMatchesList_${r}`);
 
+                // In 5-participant tournament, show "A/B Menang Bye" at top of Round 2 (Semi Final)
+                if (data.participant_count === 5 && r === 2) {
+                    const m1 = (rounds[1] && rounds[1].matches) ? rounds[1].matches[0] : null;
+                    const m1Winner = (m1 && m1.winner) ? m1.winner : null;
+                    const byeCard = document.createElement('div');
+                    byeCard.className = 'bye-slot-card bye-slot-finalist';
+                    byeCard.innerHTML = `
+                        <div class="bye-slot-header">
+                            <span class="badge-bye-pill" style="background:#ecfdf5; color:#065f46;"><i class="fas fa-bolt text-success"></i> Menang Bye Ronde 2</span>
+                            <span style="font-size: 0.72rem; color: #065f46; font-weight: 700;">Lolos ke Final</span>
+                        </div>
+                        <div class="bye-slot-body">
+                            <div class="player-seed">${m1Winner ? (m1Winner.seed || '•') : '1/2'}</div>
+                            <div class="player-name-wrap">
+                                <div class="player-name">${m1Winner ? escapeHtml(m1Winner.name) : '<em style="color:#64748b">Pemenang Match #1 (A vs B)</em>'}</div>
+                                ${m1Winner && m1Winner.balai ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(m1Winner.balai)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    matchesList.appendChild(byeCard);
+                }
+
                 roundData.matches.forEach((m) => {
                     const matchCard = createMatchCardElement(m, isFinalRound);
                     matchesList.appendChild(matchCard);
                 });
+
+                // In 5-participant tournament, show "E Menang Bye" at bottom of Round 1 (Babak I)
+                if (data.participant_count === 5 && r === 1 && data.participants_json && data.participants_json.length >= 5) {
+                    const p5 = data.participants_json[4];
+                    const byeCard = document.createElement('div');
+                    byeCard.className = 'bye-slot-card';
+                    byeCard.innerHTML = `
+                        <div class="bye-slot-header">
+                            <span class="badge-bye-pill"><i class="fas fa-bolt text-warning"></i> Menang Bye Ronde 1</span>
+                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">Lolos ke Semi Final</span>
+                        </div>
+                        <div class="bye-slot-body">
+                            <div class="player-seed">5</div>
+                            <div class="player-name-wrap">
+                                <div class="player-name">${escapeHtml(p5.name)}</div>
+                                ${p5.balai ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(p5.balai)}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    matchesList.appendChild(byeCard);
+                }
             }
 
             // Draw visible SVG connector lines between matches

@@ -384,12 +384,12 @@ class TenisMejaTournamentModel extends Model
             $rounds = [
                 1 => [
                     'round'   => 1,
-                    'name'    => 'Babak Penyisihan',
+                    'name'    => 'Babak I',
                     'matches' => [
                         [
                             'id'              => 'R1_M0',
                             'round'           => 1,
-                            'round_name'      => 'Babak Penyisihan',
+                            'round_name'      => 'Babak I',
                             'match_number'    => 1,
                             'player1'         => $participants[0],
                             'player2'         => $participants[1],
@@ -399,12 +399,12 @@ class TenisMejaTournamentModel extends Model
                             'status'          => 'pending',
                             'next_match_id'   => 'R3_M0',
                             'next_match_slot' => 1,
-                            'note'            => 'Pemenang Lolos Langsung ke Final (Bye di Semifinal)',
+                            'note'            => 'Pemenang Menang Bye di Ronde 2 & Lolos ke Final',
                         ],
                         [
                             'id'              => 'R1_M1',
                             'round'           => 1,
-                            'round_name'      => 'Babak Penyisihan',
+                            'round_name'      => 'Babak I',
                             'match_number'    => 2,
                             'player1'         => $participants[2],
                             'player2'         => $participants[3],
@@ -414,7 +414,7 @@ class TenisMejaTournamentModel extends Model
                             'status'          => 'pending',
                             'next_match_id'   => 'R2_M0',
                             'next_match_slot' => 1,
-                            'note'            => 'Pemenang Melawan ' . ($participants[4]['name'] ?? 'Peserta 5') . ' di Semifinal',
+                            'note'            => 'Pemenang Melawan ' . ($participants[4]['name'] ?? 'Peserta 5') . ' di Semi Final',
                         ]
                     ]
                 ],
@@ -435,35 +435,35 @@ class TenisMejaTournamentModel extends Model
                             'status'          => 'pending',
                             'next_match_id'   => 'R3_M0',
                             'next_match_slot' => 2,
-                            'note'            => 'Memperebutkan Tiket Final',
+                            'note'            => 'Pemenang Lolos ke Final melawan Pemenang Bye (A/B)',
                         ]
                     ]
                 ],
                 3 => [
                     'round'   => 3,
-                    'name'    => 'Final',
+                    'name'    => 'Final (Bye vs Pemenang Semifinal)',
                     'matches' => [
                         [
                             'id'              => 'R3_M0',
                             'round'           => 3,
-                            'round_name'      => 'Final',
+                            'round_name'      => 'Final (Bye vs Pemenang Semifinal)',
                             'match_number'    => 4,
-                            'player1'         => null, // Winner of R1_M0 (Bye di semifinal)
-                            'player2'         => null, // Winner of R2_M0
+                            'player1'         => null, // Winner of R1_M0 (Menang Bye di semifinal)
+                            'player2'         => null, // Winner of R2_M0 (Pemenang Semifinal)
                             'score1'          => null,
                             'score2'          => null,
                             'winner'          => null,
                             'status'          => 'pending',
                             'next_match_id'   => null,
                             'next_match_slot' => null,
-                            'note'            => 'Perebutan Juara 1 & 2',
+                            'note'            => 'Perebutan Juara 1 & 2 (Pemenang Bye vs Pemenang Semifinal)',
                         ]
                     ]
                 ]
             ];
             return [
                 'total_rounds' => 3,
-                'bracket_size' => 8,
+                'bracket_size' => 5,
                 'rounds'       => $rounds,
                 'podium'       => ['champion' => null, 'runner_up' => null],
             ];
