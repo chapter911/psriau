@@ -634,7 +634,7 @@ graph TD
 graph TD
     A["Akses Portal /tenismeja (Publik Tanpa Perlu Login)"] --> B["Pilih Tab Kategori: Putra, Putri, Ganda Putra, atau Ganda Putri"]
     B --> C["Tinjau Bagan Interaktif: Mode 'Pas Layar' (Tanpa Geser) atau Skala Penuh"]
-    C --> D1["Fitur Publik: 'Cetak Bagan' / 'Ekspor PDF' (Pilihan Landscape / Portrait Pas 1 Halaman A4)"]
+    C --> D1["Fitur Publik Terpadu: Tombol 'Cetak / Ekspor PDF' (Pilihan Landscape / Portrait 1 Halaman A4 Penuh Identik Web)"]
     C --> E{"Status Autentikasi Pengguna"}
     E -- "Belum Login (Pengunjung Publik)" --> F1["Tampilan Read-Only: Skor &amp; Pemenang Berupa Badge Statis, Tombol Kelola Disembunyikan"]
     F1 --> F2["Klik Tombol 'Masuk' di Header -> Arahkan ke Halaman Login (/masuk)"]
@@ -644,7 +644,7 @@ graph TD
     G1 --> G4["Tandai Pemenang Pertandingan (Lolos Otomatis ke Babak Selanjutnya hingga Juara)"]
     G1 --> G5["Tombol 'Reset Skor': Kembalikan Skor ke Awal tanpa Menghapus Peserta"]
     G1 --> G6["Tombol 'Acak Posisi': Verifikasi Password Superadmin -> Pengacakan Posisi Adil"]
-    G2 --> H["Bagan Diperbarui Otomatis dengan Garis Alir SVG Presisi Bebas Distorsi"]
+    G2 --> H["Bagan Diperbarui Otomatis dengan Penyejajaran Kartu Antar Babak &amp; Garis Alir SVG Presisi"]
     G3 --> H
     G4 --> H
     G5 --> H
@@ -2055,7 +2055,7 @@ graph TD
                                     <li><strong>Acak Posisi Peserta (Shuffle Bracket):</strong> Klik tombol merah <strong>Acak Posisi</strong> pada toolbar atas (hanya muncul saat login). Untuk menjaga sportivitas dan integritas pengundian, sistem meminta verifikasi dengan <strong>memasukkan password akun Superadministrator</strong> sebelum bagan diacak secara adil.</li>
                                     <li><strong>Reset Skor:</strong> Tersedia tombol <strong>Reset Skor</strong> (hanya muncul saat login) untuk mengulang skor pertandingan kembali ke posisi awal tanpa menghapus daftar peserta.</li>
                                     <li><strong>Tampilan Pas Layar (Tanpa Geser):</strong> Tersedia tombol <strong>Pas Layar</strong> pada toolbar yang secara otomatis menyesuaikan ukuran bagan agar pas dan terlihat penuh di layar monitor/laptop tanpa perlu menggeser horizontal maupun vertikal. Pengguna dapat mengklik tombol tersebut kapan saja untuk beralih antara mode Pas Layar atau Skala Penuh.</li>
-                                    <li><strong>Ekspor Dokumen PDF &amp; Cetak Bagan (Pilihan Landscape / Portrait):</strong> Klik tombol <strong>Cetak Bagan</strong> atau <strong>Ekspor PDF</strong> untuk membuka dialog pilihan orientasi halaman (<strong>Landscape</strong> mendatar atau <strong>Portrait</strong> tegak). Seluruh output secara otomatis dihitung dan disesuaikan sehingga <strong>pas dalam 1 halaman A4</strong> dengan desain visual yang <strong>identik dan selaras penuh dengan tampilan portal web</strong> (Top Bar biru tua PUPR, kartu pertandingan dengan seed badge, balai badge, dan box skor, banner podium juara tanpa kolom tanda tangan, serta konektor garis alir orthogonal SVG yang presisi tanpa terputus). Tata letak cetak peramban telah dioptimalkan agar bagan terisi penuh secara proporsional dan membatasi pencetakan tepat 1 halaman tunggal (tanpa halaman kedua yang kosong).</li>
+                                    <li><strong>Cetak &amp; Ekspor PDF Terpadu (Pilihan Landscape / Portrait 1 Halaman Penuh):</strong> Tombol cetak bagan dan ekspor PDF kini telah digabungkan menjadi satu tombol <strong>Cetak / Ekspor PDF</strong> untuk membuka dialog pilihan orientasi kertas (<strong>Landscape</strong> mendatar atau <strong>Portrait</strong> tegak). Seluruh tampilan cetak maupun PDF diratakan dan diskalakan secara otomatis agar <strong>pas dalam 1 halaman A4 tunggal</strong>, <strong>memanfaatkan seluruh lebar dan tinggi kertas hingga terisi penuh</strong>, serta menampilkan desain visual yang <strong>sama persis dengan tampilan web</strong> (header, banner turnamen, podium juara, kartu pertandingan, badge balai, catatan alur, serta garis alir bagan SVG yang sejajar sempurna dan tidak teracak-acak).</li>
                                 </ol>
                             </div>
                         </div>

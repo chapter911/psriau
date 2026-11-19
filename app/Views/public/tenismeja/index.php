@@ -515,25 +515,34 @@
             font-size: 0.72rem;
         }
 
-        /* PRINT PREVIEW MODE STYLES (DIAPLIKASIKAN SEBELUM DIALOG CETAK TERBUKA) */
+        /* PRINT STAGE CONTAINERS (TRANSPARAN PADA MODE WEB NORMAL) */
+        .print-stage-wrapper,
+        .print-stage-inner {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            width: 100%;
+        }
+
+        /* PRINT PREVIEW & CETAK/PDF 1 HALAMAN PENUH (IDENTIK TAMPILAN WEB) */
         body.print-preview-mode,
         body.print-preview-mode html {
             background: #ffffff !important;
             margin: 0 !important;
             padding: 0 !important;
             min-height: 0 !important;
-            max-height: 100% !important;
-            height: auto !important;
             overflow: hidden !important;
             page-break-after: avoid !important;
+            page-break-inside: avoid !important;
             break-after: avoid !important;
+            break-inside: avoid !important;
         }
 
         body.print-preview-mode {
             display: block !important;
         }
 
-        body.print-preview-mode > *:not(.site-header):not(.main-wrapper) {
+        body.print-preview-mode > *:not(.print-stage-wrapper) {
             display: none !important;
         }
 
@@ -544,8 +553,7 @@
         body.print-preview-mode .btn-pick-winner,
         body.print-preview-mode .score-input,
         body.print-preview-mode .modal-overlay,
-        body.print-preview-mode .match-actions-footer,
-        body.print-preview-mode .match-note-banner {
+        body.print-preview-mode .match-actions-footer {
             display: none !important;
         }
 
@@ -554,24 +562,31 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            width: 18px !important;
-            height: 15px !important;
-            line-height: 15px !important;
-            border: 1px solid #cbd5e1 !important;
-            border-radius: 2px !important;
+            min-width: 38px !important;
+            height: 32px !important;
+            padding: 0 6px !important;
+            text-align: center !important;
+            font-size: 1rem !important;
             font-weight: 800 !important;
-            font-size: 0.68rem !important;
-            color: #0f172a !important;
+            color: #1e293b !important;
             background: #f8fafc !important;
-            padding: 0 !important;
-            min-width: 18px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+        }
+
+        body.print-preview-mode .bracket-tree.is-10p .score-display-static,
+        body.print-preview-mode .bracket-tree.is-10p .score-print-display {
+            min-width: 30px !important;
+            height: 26px !important;
+            font-size: 0.88rem !important;
+            padding: 0 4px !important;
         }
 
         body.print-preview-mode .score-display-static.is-winner,
         body.print-preview-mode .score-print-display.is-winner {
-            background: #d1fae5 !important;
-            border-color: #10b981 !important;
-            color: #065f46 !important;
+            background: #dcfce7 !important;
+            color: #15803d !important;
+            border-color: #86efac !important;
         }
 
         body.print-preview-mode .winner-check-badge,
@@ -579,198 +594,200 @@
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
-            width: 12px !important;
-            height: 12px !important;
-            line-height: 12px !important;
+            width: 22px !important;
+            height: 22px !important;
             border-radius: 50% !important;
             background: #10b981 !important;
             color: #ffffff !important;
-            font-size: 0.52rem !important;
+            font-size: 0.72rem !important;
             margin-left: 2px !important;
             flex-shrink: 0 !important;
         }
 
-        body.print-preview-mode .site-header {
-            padding: 4px 10px !important;
-            background: #002244 !important;
-            border-radius: 4px !important;
-            margin-bottom: 3px !important;
-            position: static !important;
+        body.print-preview-mode .bracket-tree.is-10p .winner-check-badge,
+        body.print-preview-mode .bracket-tree.is-10p .winner-print-check {
+            width: 20px !important;
+            height: 20px !important;
+            font-size: 0.65rem !important;
         }
 
-        body.print-preview-mode .site-header .header-logo {
-            width: 22px !important;
-            height: 22px !important;
-        }
-
-        body.print-preview-mode .site-header h1 {
-            font-size: 0.85rem !important;
-            margin: 0 !important;
-        }
-
-        body.print-preview-mode .tournament-banner {
-            box-shadow: none !important;
-            border: 1px solid #cbd5e1 !important;
-            border-radius: 4px !important;
-            margin-bottom: 4px !important;
-            padding: 4px 10px !important;
-        }
-
-        body.print-preview-mode .tournament-banner h2 {
-            font-size: 0.85rem !important;
-            margin: 0 !important;
-        }
-
-        body.print-preview-mode .tournament-banner .podium-mini-card {
-            padding: 2px 6px !important;
-            font-size: 0.6rem !important;
-        }
-
-        body.print-preview-mode .tournament-banner .meta-item {
-            font-size: 0.62rem !important;
-        }
-
-        body.print-preview-mode .main-wrapper,
-        body.print-preview-mode .bracket-scroll-container,
-        body.print-preview-mode .bracket-tree-wrapper {
-            overflow: visible !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border: none !important;
-            height: auto !important;
-            min-height: auto !important;
-            display: block !important;
-            flex: none !important;
-        }
-
-        body.print-preview-mode .bracket-tree {
-            transform: none !important;
-            zoom: 1 !important;
-            min-width: 100% !important;
-            padding: 0 !important;
+        body.print-preview-mode .print-stage-inner {
             display: flex !important;
-            align-items: stretch !important;
+            flex-direction: column !important;
+            background-color: var(--bg-canvas) !important;
+            background-image:
+                radial-gradient(#cbd5e1 1px, transparent 1px),
+                radial-gradient(#cbd5e1 1px, #f8fafc 1px) !important;
+            background-size: 32px 32px !important;
+            background-position: 0 0, 16px 16px !important;
+            padding: 10px 14px !important;
+            box-sizing: border-box !important;
         }
 
-        /* CARD STYLES UNTUK PRINT */
-        body.print-preview-mode .bracket-tree.is-10p .match-card {
-            border-radius: 4px !important;
-            margin: 0 !important;
-            box-shadow: none !important;
-            border-width: 1px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .match-card-header {
-            padding: 2px 5px !important;
-            font-size: 0.62rem !important;
-            border-bottom: 1px solid #f1f5f9 !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .match-num-badge {
-            font-size: 0.6rem !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .match-status-badge {
-            font-size: 0.52rem !important;
-            padding: 1px 3px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .group-mini-pill {
-            font-size: 0.5rem !important;
-            padding: 0.5px 3px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .player-slot {
-            padding: 2px 4px !important;
-            min-height: auto !important;
-            gap: 2px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .player-seed {
-            width: 13px !important;
-            height: 13px !important;
-            line-height: 13px !important;
-            font-size: 0.55rem !important;
-            border-radius: 2px !important;
+        body.print-preview-mode .site-header {
+            position: static !important;
+            width: 100% !important;
+            border-radius: 12px !important;
+            padding: 12px 20px !important;
+            margin-bottom: 10px !important;
             flex-shrink: 0 !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .player-name {
-            font-size: 0.68rem !important;
-            line-height: 1.15 !important;
-            font-weight: 700 !important;
+        body.print-preview-mode .header-container {
+            max-width: 100% !important;
+            width: 100% !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .balai-badge-pill {
-            font-size: 0.52rem !important;
-            padding: 0.5px 3px !important;
-            border-radius: 2px !important;
-            line-height: 1 !important;
-            margin-top: 1px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .bye-slot-card {
-            padding: 2px 4px !important;
-            border-radius: 4px !important;
-            gap: 2px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .round-header {
-            padding: 3px 6px !important;
-            margin-bottom: 3px !important;
-            border-radius: 4px !important;
-        }
-
-        body.print-preview-mode .bracket-tree.is-10p .round-header h3 {
-            font-size: 0.72rem !important;
+        body.print-preview-mode .main-wrapper {
+            max-width: 100% !important;
+            width: 100% !important;
             margin: 0 !important;
+            padding: 0 !important;
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            min-height: 0 !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .round-header span {
-            font-size: 0.55rem !important;
+        body.print-preview-mode .tournament-banner {
+            width: 100% !important;
+            margin-bottom: 10px !important;
+            padding: 14px 20px !important;
+            flex-shrink: 0 !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .round-matches-list {
-            gap: 4px !important;
+        body.print-preview-mode .bracket-scroll-container {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            width: 100% !important;
+            min-height: 0 !important;
+            padding: 16px 20px !important;
+            margin: 0 !important;
+            overflow: visible !important;
         }
 
-        body.print-preview-mode .bracket-tree.is-10p .bracket-group-section-title {
-            padding: 1px 4px !important;
-            margin: 2px 0 !important;
-            font-size: 0.58rem !important;
-            border-radius: 3px !important;
+        body.print-preview-mode .bracket-tree {
+            flex: 1 !important;
+            width: 100% !important;
+            min-width: 100% !important;
+            height: 100% !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: stretch !important;
+            padding: 4px 0 !important;
+            transform: none !important;
+            zoom: 1 !important;
+            gap: 48px !important;
         }
 
-        /* LANDSCAPE PRINT MODE (1 HALAMAN A4 MELEBAR) */
-        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p {
-            gap: 14px !important;
+        body.print-preview-mode .bracket-tree.is-10p {
+            gap: 30px !important;
         }
 
-        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p .bracket-round-column {
-            width: 210px !important;
+        body.print-preview-mode.print-portrait-mode .bracket-tree {
+            gap: 32px !important;
         }
 
-        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) {
-            gap: 36px !important;
+        body.print-preview-mode.print-portrait-mode .bracket-tree.is-10p {
+            gap: 22px !important;
         }
 
-        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) .bracket-round-column {
-            width: 260px !important;
+        body.print-preview-mode .bracket-round-column {
+            flex: 1 !important;
+            width: auto !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
         }
 
-        /* PORTRAIT PRINT MODE (1 HALAMAN A4 TEGAK) */
-        body.print-portrait-mode .bracket-tree.is-10p {
+        body.print-preview-mode .round-matches-list {
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            position: relative !important;
+        }
+
+        /* PENYESUAIAN PROPORSIONAL PORTRAIT AGAR KERTAS TERISI PENUH ATAS-BAWAH */
+        body.print-preview-mode.print-portrait-mode .site-header {
+            padding: 16px 22px !important;
+            margin-bottom: 12px !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .tournament-banner {
+            padding: 16px 22px !important;
+            margin-bottom: 12px !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-scroll-container {
+            padding: 20px 22px !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree:not(.is-10p) .round-header {
+            padding: 16px 14px !important;
+            margin-bottom: 24px !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree:not(.is-10p) .match-card-header {
+            padding: 10px 14px !important;
+            font-size: 0.82rem !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree:not(.is-10p) .player-slot {
+            padding: 18px 14px !important;
+            gap: 12px !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree:not(.is-10p) .player-seed {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 0.84rem !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree:not(.is-10p) .player-name {
+            font-size: 1rem !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree:not(.is-10p) .balai-badge-pill {
+            font-size: 0.76rem !important;
+            padding: 2px 8px !important;
+            margin-top: 2px !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree:not(.is-10p) .match-note-banner {
+            padding: 9px 14px !important;
+            font-size: 0.78rem !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree.is-10p .round-header {
+            padding: 11px 12px !important;
+            margin-bottom: 16px !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree.is-10p .match-card-header {
+            padding: 6px 10px !important;
+            font-size: 0.74rem !important;
+        }
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree.is-10p .player-slot {
+            padding: 9px 10px !important;
             gap: 8px !important;
         }
-        body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
-            width: 158px !important;
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree.is-10p .player-name {
+            font-size: 0.86rem !important;
         }
-        body.print-portrait-mode .bracket-tree:not(.is-10p) {
-            gap: 20px !important;
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree.is-10p .balai-badge-pill {
+            font-size: 0.66rem !important;
+            padding: 2px 6px !important;
         }
-        body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
-            width: 205px !important;
+
+        body.print-preview-mode.print-portrait-mode .bracket-tree.is-10p .match-note-banner {
+            padding: 5px 10px !important;
+            font-size: 0.72rem !important;
         }
 
         /* MODAL ORIENTATION SELECT CARDS */
@@ -842,8 +859,14 @@
             color: #ffffff;
             padding: 12px 16px;
             border-radius: 10px;
-            margin-bottom: 24px;
+            margin-bottom: 18px;
             box-shadow: 0 3px 8px rgba(0, 34, 68, 0.15);
+            min-height: 58px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
         }
 
         .round-header h3 {
@@ -864,9 +887,20 @@
         .round-matches-list {
             display: flex;
             flex-direction: column;
-            justify-content: space-around;
+            justify-content: space-between;
             flex-grow: 1;
-            gap: 28px;
+            gap: 18px;
+            position: relative;
+        }
+
+        .match-unit-wrap {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .match-unit-wrap.group-bawah-first-wrap {
+            margin-top: 10px;
         }
 
         /* MATCH CARD */
@@ -967,7 +1001,6 @@
             background: #ecfdf5;
             color: #047857;
             border: 1px solid #a7f3d0;
-            margin-top: 14px;
         }
 
         .bracket-group-section-title.group-grand-final {
@@ -1506,10 +1539,7 @@
                 background: #ffffff !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                width: 100% !important;
-                height: auto !important;
                 min-height: 0 !important;
-                max-height: 100% !important;
                 overflow: hidden !important;
                 page-break-after: avoid !important;
                 page-break-inside: avoid !important;
@@ -1521,7 +1551,7 @@
                 display: block !important;
             }
 
-            body > *:not(.site-header):not(.main-wrapper) {
+            body > *:not(.print-stage-wrapper) {
                 display: none !important;
             }
 
@@ -1532,8 +1562,7 @@
             .btn-pick-winner,
             .score-input,
             .modal-overlay,
-            .match-actions-footer,
-            .match-note-banner {
+            .match-actions-footer {
                 display: none !important;
             }
 
@@ -1542,24 +1571,31 @@
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                width: 18px !important;
-                height: 15px !important;
-                line-height: 15px !important;
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 2px !important;
+                min-width: 38px !important;
+                height: 32px !important;
+                padding: 0 6px !important;
+                text-align: center !important;
+                font-size: 1rem !important;
                 font-weight: 800 !important;
-                font-size: 0.68rem !important;
-                color: #0f172a !important;
+                color: #1e293b !important;
                 background: #f8fafc !important;
-                padding: 0 !important;
-                min-width: 18px !important;
+                border: 1.5px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+            }
+
+            .bracket-tree.is-10p .score-display-static,
+            .bracket-tree.is-10p .score-print-display {
+                min-width: 30px !important;
+                height: 26px !important;
+                font-size: 0.88rem !important;
+                padding: 0 4px !important;
             }
 
             .score-display-static.is-winner,
             .score-print-display.is-winner {
-                background: #d1fae5 !important;
-                border-color: #10b981 !important;
-                color: #065f46 !important;
+                background: #dcfce7 !important;
+                color: #15803d !important;
+                border-color: #86efac !important;
             }
 
             .winner-check-badge,
@@ -1567,242 +1603,134 @@
                 display: inline-flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                width: 12px !important;
-                height: 12px !important;
-                line-height: 12px !important;
+                width: 22px !important;
+                height: 22px !important;
                 border-radius: 50% !important;
                 background: #10b981 !important;
                 color: #ffffff !important;
-                font-size: 0.52rem !important;
+                font-size: 0.72rem !important;
                 margin-left: 2px !important;
                 flex-shrink: 0 !important;
             }
 
-            .main-wrapper {
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: 100% !important;
-                display: block !important;
-                flex: none !important;
-                min-height: 0 !important;
-                height: auto !important;
-                overflow: visible !important;
+            .bracket-tree.is-10p .winner-check-badge,
+            .bracket-tree.is-10p .winner-print-check {
+                width: 20px !important;
+                height: 20px !important;
+                font-size: 0.65rem !important;
+            }
+
+            .print-stage-inner {
+                display: flex !important;
+                flex-direction: column !important;
+                background-color: var(--bg-canvas) !important;
+                background-image:
+                    radial-gradient(#cbd5e1 1px, transparent 1px),
+                    radial-gradient(#cbd5e1 1px, #f8fafc 1px) !important;
+                background-size: 32px 32px !important;
+                background-position: 0 0, 16px 16px !important;
+                padding: 10px 14px !important;
+                box-sizing: border-box !important;
             }
 
             .site-header {
-                padding: 4px 10px !important;
-                background: #002244 !important;
-                border-radius: 4px !important;
-                margin-bottom: 3px !important;
                 position: static !important;
-            }
-
-            .site-header .header-logo {
-                width: 22px !important;
-                height: 22px !important;
-            }
-
-            .site-header h1 {
-                font-size: 0.85rem !important;
-                margin: 0 !important;
-            }
-
-            .tournament-banner {
-                box-shadow: none !important;
-                border: 1px solid #cbd5e1 !important;
-                border-radius: 4px !important;
-                margin-bottom: 4px !important;
-                padding: 4px 10px !important;
-            }
-
-            .tournament-banner h2 {
-                font-size: 0.85rem !important;
-                margin: 0 !important;
-            }
-
-            .tournament-banner .podium-mini-card {
-                padding: 2px 6px !important;
-                font-size: 0.6rem !important;
-            }
-
-            .tournament-banner .meta-item {
-                font-size: 0.62rem !important;
-            }
-
-            .bracket-scroll-container,
-            .bracket-tree-wrapper {
-                overflow: visible !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                border: none !important;
-                min-height: auto !important;
-                height: auto !important;
-                display: block !important;
-                flex: none !important;
-            }
-
-            .bracket-tree {
-                min-width: 100% !important;
-                padding: 0 !important;
-                transform: none !important;
-                zoom: 1 !important;
-                display: flex !important;
-                align-items: stretch !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            /* CARD STYLES UNTUK PRINT */
-            .bracket-tree.is-10p .match-card {
-                border-radius: 4px !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                border-width: 1px !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            .bracket-tree.is-10p .match-card-header {
-                padding: 2px 5px !important;
-                font-size: 0.62rem !important;
-                border-bottom: 1px solid #f1f5f9 !important;
-            }
-
-            .bracket-tree.is-10p .match-num-badge {
-                font-size: 0.6rem !important;
-            }
-
-            .bracket-tree.is-10p .match-status-badge {
-                font-size: 0.52rem !important;
-                padding: 1px 3px !important;
-            }
-
-            .bracket-tree.is-10p .group-mini-pill {
-                font-size: 0.5rem !important;
-                padding: 0.5px 3px !important;
-            }
-
-            .bracket-tree.is-10p .player-slot {
-                padding: 2px 4px !important;
-                min-height: auto !important;
-                gap: 2px !important;
-            }
-
-            .bracket-tree.is-10p .player-seed {
-                width: 13px !important;
-                height: 13px !important;
-                line-height: 13px !important;
-                font-size: 0.55rem !important;
-                border-radius: 2px !important;
+                width: 100% !important;
+                border-radius: 12px !important;
+                padding: 12px 20px !important;
+                margin-bottom: 10px !important;
                 flex-shrink: 0 !important;
             }
 
-            .bracket-tree.is-10p .player-name {
-                font-size: 0.68rem !important;
-                line-height: 1.15 !important;
-                font-weight: 700 !important;
+            .header-container {
+                max-width: 100% !important;
+                width: 100% !important;
             }
 
-            .bracket-tree.is-10p .balai-badge-pill {
-                font-size: 0.52rem !important;
-                padding: 0.5px 3px !important;
-                border-radius: 2px !important;
-                line-height: 1 !important;
-                margin-top: 1px !important;
-            }
-
-            .bracket-tree.is-10p .bye-slot-card {
-                padding: 2px 4px !important;
-                border-radius: 4px !important;
-                gap: 2px !important;
-                page-break-inside: avoid !important;
-                break-inside: avoid !important;
-            }
-
-            .bracket-tree.is-10p .round-header {
-                padding: 3px 6px !important;
-                margin-bottom: 3px !important;
-                border-radius: 4px !important;
-            }
-
-            .bracket-tree.is-10p .round-header h3 {
-                font-size: 0.72rem !important;
+            .main-wrapper {
+                max-width: 100% !important;
+                width: 100% !important;
                 margin: 0 !important;
+                padding: 0 !important;
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                min-height: 0 !important;
             }
 
-            .bracket-tree.is-10p .round-header span {
-                font-size: 0.55rem !important;
+            .tournament-banner {
+                width: 100% !important;
+                margin-bottom: 10px !important;
+                padding: 14px 20px !important;
+                flex-shrink: 0 !important;
             }
 
-            .bracket-tree.is-10p .round-matches-list {
-                gap: 4px !important;
+            .bracket-scroll-container {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                width: 100% !important;
+                min-height: 0 !important;
+                padding: 16px 20px !important;
+                margin: 0 !important;
+                overflow: visible !important;
             }
 
-            .bracket-tree.is-10p .bracket-group-section-title {
-                padding: 1px 4px !important;
-                margin: 2px 0 !important;
-                font-size: 0.58rem !important;
-                border-radius: 3px !important;
-            }
-
-            .bracket-round-column {
+            .bracket-tree {
+                flex: 1 !important;
+                width: 100% !important;
+                min-width: 100% !important;
+                height: 100% !important;
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: stretch !important;
+                padding: 4px 0 !important;
+                transform: none !important;
+                zoom: 1 !important;
+                gap: 48px !important;
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
             }
 
-            /* DEFAULT LANDSCAPE PRINT WIDTHS */
             .bracket-tree.is-10p {
-                gap: 14px !important;
+                gap: 30px !important;
             }
 
-            .bracket-tree.is-10p .bracket-round-column {
-                width: 210px !important;
-            }
-
-            .bracket-tree:not(.is-10p) {
-                gap: 36px !important;
-            }
-
-            .bracket-tree:not(.is-10p) .bracket-round-column {
-                width: 260px !important;
-            }
-
-            /* PORTRAIT PRINT STYLES */
-            @media (orientation: portrait) {
-                .bracket-tree.is-10p {
-                    gap: 8px !important;
-                }
-                .bracket-tree.is-10p .bracket-round-column {
-                    width: 158px !important;
-                }
-                .bracket-tree:not(.is-10p) {
-                    gap: 20px !important;
-                }
-                .bracket-tree:not(.is-10p) .bracket-round-column {
-                    width: 205px !important;
-                }
+            body.print-portrait-mode .bracket-tree {
+                gap: 32px !important;
             }
 
             body.print-portrait-mode .bracket-tree.is-10p {
-                gap: 8px !important;
+                gap: 22px !important;
             }
 
-            body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
-                width: 158px !important;
+            .bracket-round-column {
+                flex: 1 !important;
+                width: auto !important;
+                min-width: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                height: 100% !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
 
-            body.print-portrait-mode .bracket-tree:not(.is-10p) {
-                gap: 20px !important;
+            .round-matches-list {
+                flex: 1 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                position: relative !important;
             }
 
-            body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
-                width: 205px !important;
+            .match-card {
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
 
             @page {
                 size: A4 landscape;
-                margin: 4mm 6mm;
+                margin: 4mm;
             }
         }
     </style>
@@ -1811,146 +1739,147 @@
 </head>
 <body>
 
-    <!-- TOP HEADER -->
-    <header class="site-header">
-        <div class="header-container">
-            <div class="header-brand">
-                <img src="<?= esc($logoUrl); ?>" alt="Logo Satker PPS" class="header-logo" onerror="this.src='https://via.placeholder.com/52?text=PUPR'">
-                <div class="header-titles">
-                    <h1><i class="fas fa-table-tennis-paddle-ball text-warning mr-1"></i> TURNAMEN <span>TENIS MEJA</span></h1>
+    <div id="printStageWrapper" class="print-stage-wrapper">
+        <div id="printStageInner" class="print-stage-inner">
+
+            <!-- TOP HEADER -->
+            <header class="site-header">
+                <div class="header-container">
+                    <div class="header-brand">
+                        <img src="<?= esc($logoUrl); ?>" alt="Logo Satker PPS" class="header-logo" onerror="this.src='https://via.placeholder.com/52?text=PUPR'">
+                        <div class="header-titles">
+                            <h1><i class="fas fa-table-tennis-paddle-ball text-warning mr-1"></i> TURNAMEN <span>TENIS MEJA</span></h1>
+                        </div>
+                    </div>
+
+                    <div class="header-actions">
+                        <?php if (! empty($isLoggedIn)): ?>
+                            <!-- ACAK POSISI (SUPERADMINISTRATOR ONLY - HANYA KETIKA LOGIN) -->
+                            <button type="button" class="btn-action btn-action-shuffle" id="btnAcakPosisi">
+                                <i class="fas fa-shuffle"></i> Acak Posisi
+                                <span style="font-size: 0.7rem; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; margin-left: 2px;">
+                                    <i class="fas fa-lock"></i> Superadmin
+                                </span>
+                            </button>
+
+                            <!-- ATUR PESERTA (HANYA KETIKA LOGIN) -->
+                            <button type="button" class="btn-action btn-action-primary" id="btnOpenSetup">
+                                <i class="fas fa-users-gear"></i> Atur Peserta
+                            </button>
+
+                            <!-- RESET SKOR (HANYA KETIKA LOGIN) -->
+                            <button type="button" class="btn-action btn-action-light" id="btnResetSkor" title="Reset Skor Pertandingan">
+                                <i class="fas fa-rotate-left"></i>
+                            </button>
+                        <?php else: ?>
+                            <!-- TOMBOL MASUK UNTUK PENGELOLA TURNAMEN -->
+                            <a href="<?= site_url('masuk'); ?>" class="btn-action btn-action-primary" title="Masuk (Login) untuk mengelola skor, pemenang, dan bagan turnamen">
+                                <i class="fas fa-right-to-bracket"></i> Masuk
+                            </a>
+                        <?php endif; ?>
+
+                        <!-- PAS LAYAR (TANPA PERLU GESER-GESER) -->
+                        <button type="button" class="btn-action btn-action-fit active" id="btnFitScreen" onclick="toggleFitScreen()" title="Mode Pas Layar (Otomatis menyesuaikan layar tanpa perlu menggeser)">
+                            <i class="fas fa-compress"></i> Pas Layar
+                        </button>
+
+                        <!-- CETAK & EKSPOR PDF (DIGABUNGKAN - PILIHAN LANDSCAPE / PORTRAIT) -->
+                        <button type="button" class="btn-action btn-action-print" id="btnCetakPdf" onclick="openPrintModal()" title="Cetak Bagan atau Ekspor PDF 1 Halaman Penuh (Pilihan Landscape / Portrait)">
+                            <i class="fas fa-print"></i> <i class="fas fa-file-pdf" style="margin-left: -2px;"></i> Cetak / Ekspor PDF
+                        </button>
+
+                        <?php if (! empty($isLoggedIn)): ?>
+                            <!-- SHORTCUT DASHBOARD ADMIN -->
+                            <a href="<?= site_url('admin/dashboard'); ?>" class="btn-action btn-action-light" title="Buka Dashboard Admin Satker PPS">
+                                <i class="fas fa-gauge-high"></i> Dashboard
+                            </a>
+                        <?php endif; ?>
+                    </div>
                 </div>
-            </div>
+            </header>
 
-            <div class="header-actions">
-                <?php if (! empty($isLoggedIn)): ?>
-                    <!-- ACAK POSISI (SUPERADMINISTRATOR ONLY - HANYA KETIKA LOGIN) -->
-                    <button type="button" class="btn-action btn-action-shuffle" id="btnAcakPosisi">
-                        <i class="fas fa-shuffle"></i> Acak Posisi
-                        <span style="font-size: 0.7rem; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; margin-left: 2px;">
-                            <i class="fas fa-lock"></i> Superadmin
-                        </span>
+            <!-- CATEGORY TABS (PUTRA, PUTRI, GANDA PUTRA, GANDA PUTRI) -->
+            <nav class="category-nav-bar">
+                <div class="category-nav-container">
+                    <button type="button" class="category-tab-btn tab-putra active" id="tabBtnPutra" onclick="switchCategory('putra')">
+                        <i class="fas fa-mars text-primary"></i> Putra
+                        <span class="category-badge-count" id="countBadgePutra"><?= (int) ($putraTournament['participant_count'] ?? 5); ?> Peserta</span>
                     </button>
-
-                    <!-- ATUR PESERTA (HANYA KETIKA LOGIN) -->
-                    <button type="button" class="btn-action btn-action-primary" id="btnOpenSetup">
-                        <i class="fas fa-users-gear"></i> Atur Peserta
+                    <button type="button" class="category-tab-btn tab-putri" id="tabBtnPutri" onclick="switchCategory('putri')">
+                        <i class="fas fa-venus" style="color: #ec4899;"></i> Putri
+                        <span class="category-badge-count" id="countBadgePutri"><?= (int) ($putriTournament['participant_count'] ?? 5); ?> Peserta</span>
                     </button>
-
-                    <!-- RESET SKOR (HANYA KETIKA LOGIN) -->
-                    <button type="button" class="btn-action btn-action-light" id="btnResetSkor" title="Reset Skor Pertandingan">
-                        <i class="fas fa-rotate-left"></i>
+                    <button type="button" class="category-tab-btn tab-ganda-putra" id="tabBtnGandaPutra" onclick="switchCategory('ganda_putra')">
+                        <i class="fas fa-user-group text-primary"></i> Ganda Putra
+                        <span class="category-badge-count" id="countBadgeGandaPutra"><?= (int) ($gandaPutraTournament['participant_count'] ?? 5); ?> Peserta</span>
                     </button>
-                <?php else: ?>
-                    <!-- TOMBOL MASUK UNTUK PENGELOLA TURNAMEN -->
-                    <a href="<?= site_url('masuk'); ?>" class="btn-action btn-action-primary" title="Masuk (Login) untuk mengelola skor, pemenang, dan bagan turnamen">
-                        <i class="fas fa-right-to-bracket"></i> Masuk
-                    </a>
-                <?php endif; ?>
+                    <button type="button" class="category-tab-btn tab-ganda-putri" id="tabBtnGandaPutri" onclick="switchCategory('ganda_putri')">
+                        <i class="fas fa-user-group" style="color: #ec4899;"></i> Ganda Putri
+                        <span class="category-badge-count" id="countBadgeGandaPutri"><?= (int) ($gandaPutriTournament['participant_count'] ?? 5); ?> Peserta</span>
+                    </button>
+                </div>
+            </nav>
 
-                <!-- PAS LAYAR (TANPA PERLU GESER-GESER) -->
-                <button type="button" class="btn-action btn-action-fit active" id="btnFitScreen" onclick="toggleFitScreen()" title="Mode Pas Layar (Otomatis menyesuaikan layar tanpa perlu menggeser)">
-                    <i class="fas fa-compress"></i> Pas Layar
-                </button>
+            <!-- MAIN BODY -->
+            <main class="main-wrapper">
 
-                <!-- CETAK BAGAN (PILIHAN LANDSCAPE / PORTRAIT) -->
-                <button type="button" class="btn-action btn-action-print" onclick="openPrintModal()" title="Cetak / Simpan PDF langsung dari peramban (Pilihan Landscape / Portrait)">
-                    <i class="fas fa-print"></i> Cetak Bagan
-                </button>
+                <!-- TOURNAMENT INFO & PODIUM -->
+                <section class="tournament-banner">
+                    <div class="tournament-meta">
+                        <div>
+                            <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--pupr-navy);" id="tournamentTitle">
+                                Turnamen Tenis Meja Putra
+                            </h2>
+                            <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
+                                <span class="meta-pill pill-putra" id="metaCategoryPill">
+                                    <i class="fas fa-mars"></i>
+                                    <span id="tournamentCategoryLabel">Kategori Putra</span>
+                                </span>
+                                <span class="meta-pill">
+                                    <i class="fas fa-users"></i>
+                                    <span id="tournamentCount">5 Peserta</span>
+                                </span>
+                                <span class="badge-status badge-ongoing" id="tournamentStatusBadge">
+                                    <i class="fas fa-clock mr-1"></i> Sedang Berlangsung
+                                </span>
+                            </div>
+                        </div>
+                    </div>
 
-                <!-- EKSPOR PDF (PILIHAN LANDSCAPE / PORTRAIT) -->
-                <button type="button" class="btn-action btn-action-pdf" onclick="openExportPdfModal()" title="Ekspor Dokumen PDF Bagan (Pilihan Landscape / Portrait)" id="btnEksporPdf">
-                    <i class="fas fa-file-pdf"></i> Ekspor PDF
-                </button>
+                    <!-- PODIUM CARDS -->
+                    <div class="podium-box" id="podiumContainer">
+                        <!-- JUARA 1 -->
+                        <div class="podium-item champion">
+                            <div class="podium-medal">🥇</div>
+                            <div class="podium-details">
+                                <h4>Juara 1 (Champion)</h4>
+                                <p id="podiumChampion">- Menunggu Final -</p>
+                            </div>
+                        </div>
 
-                <?php if (! empty($isLoggedIn)): ?>
-                    <!-- SHORTCUT DASHBOARD ADMIN -->
-                    <a href="<?= site_url('admin/dashboard'); ?>" class="btn-action btn-action-light" title="Buka Dashboard Admin Satker PPS">
-                        <i class="fas fa-gauge-high"></i> Dashboard
-                    </a>
-                <?php endif; ?>
-            </div>
+                        <!-- JUARA 2 -->
+                        <div class="podium-item runner-up">
+                            <div class="podium-medal">🥈</div>
+                            <div class="podium-details">
+                                <h4>Juara 2 (Runner-Up)</h4>
+                                <p id="podiumRunnerUp">- Menunggu Final -</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- INTERACTIVE BRACKET SECTION -->
+                <section class="bracket-scroll-container" id="bracketScrollContainer">
+                    <div class="bracket-tree" id="bracketTree">
+                        <svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>
+                        <!-- RENDERED DYNAMICALLY BY JAVASCRIPT -->
+                    </div>
+                </section>
+
+            </main>
+
         </div>
-    </header>
-
-    <!-- CATEGORY TABS (PUTRA, PUTRI, GANDA PUTRA, GANDA PUTRI) -->
-    <nav class="category-nav-bar">
-        <div class="category-nav-container">
-            <button type="button" class="category-tab-btn tab-putra active" id="tabBtnPutra" onclick="switchCategory('putra')">
-                <i class="fas fa-mars text-primary"></i> Putra
-                <span class="category-badge-count" id="countBadgePutra"><?= (int) ($putraTournament['participant_count'] ?? 5); ?> Peserta</span>
-            </button>
-            <button type="button" class="category-tab-btn tab-putri" id="tabBtnPutri" onclick="switchCategory('putri')">
-                <i class="fas fa-venus" style="color: #ec4899;"></i> Putri
-                <span class="category-badge-count" id="countBadgePutri"><?= (int) ($putriTournament['participant_count'] ?? 5); ?> Peserta</span>
-            </button>
-            <button type="button" class="category-tab-btn tab-ganda-putra" id="tabBtnGandaPutra" onclick="switchCategory('ganda_putra')">
-                <i class="fas fa-user-group text-primary"></i> Ganda Putra
-                <span class="category-badge-count" id="countBadgeGandaPutra"><?= (int) ($gandaPutraTournament['participant_count'] ?? 5); ?> Peserta</span>
-            </button>
-            <button type="button" class="category-tab-btn tab-ganda-putri" id="tabBtnGandaPutri" onclick="switchCategory('ganda_putri')">
-                <i class="fas fa-user-group" style="color: #ec4899;"></i> Ganda Putri
-                <span class="category-badge-count" id="countBadgeGandaPutri"><?= (int) ($gandaPutriTournament['participant_count'] ?? 5); ?> Peserta</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- MAIN BODY -->
-    <main class="main-wrapper">
-
-        <!-- TOURNAMENT INFO & PODIUM -->
-        <section class="tournament-banner">
-            <div class="tournament-meta">
-                <div>
-                    <h2 style="font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 800; color: var(--pupr-navy);" id="tournamentTitle">
-                        Turnamen Tenis Meja Putra
-                    </h2>
-                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 6px; flex-wrap: wrap;">
-                        <span class="meta-pill pill-putra" id="metaCategoryPill">
-                            <i class="fas fa-mars"></i>
-                            <span id="tournamentCategoryLabel">Kategori Putra</span>
-                        </span>
-                        <span class="meta-pill">
-                            <i class="fas fa-users"></i>
-                            <span id="tournamentCount">5 Peserta</span>
-                        </span>
-                        <span class="badge-status badge-ongoing" id="tournamentStatusBadge">
-                            <i class="fas fa-clock mr-1"></i> Sedang Berlangsung
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- PODIUM CARDS -->
-            <div class="podium-box" id="podiumContainer">
-                <!-- JUARA 1 -->
-                <div class="podium-item champion">
-                    <div class="podium-medal">🥇</div>
-                    <div class="podium-details">
-                        <h4>Juara 1 (Champion)</h4>
-                        <p id="podiumChampion">- Menunggu Final -</p>
-                    </div>
-                </div>
-
-                <!-- JUARA 2 -->
-                <div class="podium-item runner-up">
-                    <div class="podium-medal">🥈</div>
-                    <div class="podium-details">
-                        <h4>Juara 2 (Runner-Up)</h4>
-                        <p id="podiumRunnerUp">- Menunggu Final -</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- INTERACTIVE BRACKET SECTION -->
-        <section class="bracket-scroll-container" id="bracketScrollContainer">
-            <div class="bracket-tree" id="bracketTree">
-                <svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>
-                <!-- RENDERED DYNAMICALLY BY JAVASCRIPT -->
-            </div>
-        </section>
-
-    </main>
+    </div>
 
     <!-- MODAL: ATUR / BUAT BAGAN TURNAMEN -->
     <div class="modal-overlay" id="setupModal">
@@ -2019,92 +1948,49 @@
         </div>
     </div>
 
-    <!-- MODAL: PILIH ORIENTASI CETAK BAGAN -->
+    <!-- MODAL GABUNGAN: PILIH ORIENTASI CETAK & EKSPOR PDF BAGAN (LANDSCAPE / PORTRAIT 1 HALAMAN PENUH) -->
     <div class="modal-overlay" id="printModal">
-        <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-card" style="max-width: 540px;">
             <div class="modal-header">
-                <h3><i class="fas fa-print text-primary mr-1"></i> Cetak Bagan Turnamen</h3>
+                <h3><i class="fas fa-print text-primary mr-1"></i> <i class="fas fa-file-pdf text-danger mr-1"></i> Cetak &amp; Ekspor PDF Bagan</h3>
                 <button type="button" class="modal-close" onclick="closePrintModal()">&times;</button>
             </div>
             <div class="modal-body" style="padding: 20px;">
                 <p style="font-size: 0.88rem; color: #475569; margin-bottom: 16px;">
-                    Silakan tentukan orientasi cetak untuk bagan turnamen:
+                    Pilih orientasi kertas (<strong>Landscape</strong> atau <strong>Portrait</strong>) untuk mencetak langsung ke printer atau menyimpan sebagai dokumen <strong>PDF 1 Halaman Penuh</strong> dengan tampilan persis seperti web:
                 </p>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
                     <!-- LANDSCAPE CARD -->
                     <div class="orientation-select-card" onclick="executePrint('landscape')">
-                        <div class="orient-icon-box text-primary">
+                        <div class="orient-icon-box" style="color: #0b3c74;">
                             <i class="fas fa-image"></i>
                         </div>
-                        <div class="orient-card-title">Landscape</div>
-                        <div class="orient-card-sub">Mendatar (Sangat cocok untuk bagan melebar)</div>
+                        <div class="orient-card-title">Landscape (Mendatar)</div>
+                        <div class="orient-card-sub">1 Halaman A4 Penuh Mendatar (Memenuhi seluruh lebar &amp; tinggi kertas)</div>
                         <button type="button" class="btn-action btn-action-primary" style="margin-top: 12px; width: 100%; justify-content: center;">
-                            <i class="fas fa-print"></i> Cetak Landscape
+                            <i class="fas fa-print"></i> <i class="fas fa-file-pdf"></i> Cetak / PDF Landscape
                         </button>
                     </div>
 
                     <!-- PORTRAIT CARD -->
                     <div class="orientation-select-card" onclick="executePrint('portrait')">
-                        <div class="orient-icon-box text-primary">
+                        <div class="orient-icon-box" style="color: #0b3c74;">
                             <i class="fas fa-file-lines"></i>
                         </div>
-                        <div class="orient-card-title">Portrait</div>
-                        <div class="orient-card-sub">Tegak (Format A4 standar vertikal)</div>
+                        <div class="orient-card-title">Portrait (Tegak)</div>
+                        <div class="orient-card-sub">1 Halaman A4 Penuh Tegak (Memenuhi seluruh lebar &amp; tinggi kertas)</div>
                         <button type="button" class="btn-action btn-action-fit" style="margin-top: 12px; width: 100%; justify-content: center; background: #0b3c74; color: white;">
-                            <i class="fas fa-print"></i> Cetak Portrait
+                            <i class="fas fa-print"></i> <i class="fas fa-file-pdf"></i> Cetak / PDF Portrait
                         </button>
                     </div>
                 </div>
                 <div style="margin-top: 14px; padding: 10px 12px; background: #f0f7ff; border: 1px solid #bfdbfe; border-radius: 8px; font-size: 0.78rem; color: #1e40af;">
-                    <i class="fas fa-circle-info mr-1"></i> <strong>Tips Cetak 1 Halaman Rapi:</strong><br>
-                    Pada dialog cetak peramban (browser), pastikan opsi <strong>Layout</strong> disesuaikan (Landscape / Portrait) dan <strong>Margins</strong> diatur ke <em>Default</em> atau <em>Minimum</em> agar seluruh bagan pas dalam 1 lembar tanpa terpotong.
+                    <i class="fas fa-circle-info mr-1"></i> <strong>Panduan Cetak &amp; Simpan PDF 1 Halaman Penuh:</strong><br>
+                    Pada dialog yang terbuka, pilih <strong>Printer</strong> untuk mencetak langsung atau pilih <strong>Save as PDF / Simpan sebagai PDF</strong> untuk mengunduh file PDF. Pastikan <strong>Layout</strong> sesuai pilihan (Landscape / Portrait) dan <strong>Margins</strong> diatur ke <em>Default</em> atau <em>Minimum</em>.
                 </div>
             </div>
             <div class="modal-footer" style="justify-content: flex-end;">
-                <button type="button" class="btn-action btn-action-light" onclick="closePrintModal()">Tutup</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL: PILIH ORIENTASI EKSPOR PDF -->
-    <div class="modal-overlay" id="exportPdfModal">
-        <div class="modal-card" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3><i class="fas fa-file-pdf text-danger mr-1"></i> Unduh Dokumen PDF Bagan</h3>
-                <button type="button" class="modal-close" onclick="closeExportPdfModal()">&times;</button>
-            </div>
-            <div class="modal-body" style="padding: 20px;">
-                <p style="font-size: 0.88rem; color: #475569; margin-bottom: 16px;">
-                    Pilih format orientasi halaman PDF yang ingin diunduh:
-                </p>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
-                    <!-- LANDSCAPE PDF -->
-                    <a id="linkPdfLandscape" href="#" target="_blank" class="orientation-select-card" onclick="closeExportPdfModal()" style="text-decoration: none; color: inherit;">
-                        <div class="orient-icon-box text-danger">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div class="orient-card-title">PDF Landscape</div>
-                        <div class="orient-card-sub">Mendatar (Bagan terlihat lapang dan rapi)</div>
-                        <div class="btn-action btn-action-primary" style="margin-top: 12px; width: 100%; justify-content: center;">
-                            <i class="fas fa-download"></i> Unduh Landscape
-                        </div>
-                    </a>
-
-                    <!-- PORTRAIT PDF -->
-                    <a id="linkPdfPortrait" href="#" target="_blank" class="orientation-select-card" onclick="closeExportPdfModal()" style="text-decoration: none; color: inherit;">
-                        <div class="orient-icon-box text-danger">
-                            <i class="fas fa-file-pdf"></i>
-                        </div>
-                        <div class="orient-card-title">PDF Portrait</div>
-                        <div class="orient-card-sub">Tegak (Format vertikal 1 halaman)</div>
-                        <div class="btn-action btn-action-fit" style="margin-top: 12px; width: 100%; justify-content: center; background: #dc2626; color: white;">
-                            <i class="fas fa-download"></i> Unduh Portrait
-                        </div>
-                    </a>
-                </div>
-            </div>
-            <div class="modal-footer" style="justify-content: flex-end;">
-                <button type="button" class="btn-action btn-action-light" onclick="closeExportPdfModal()">Tutup</button>
+                <button type="button" class="btn-action btn-action-light" onclick="closePrintModal()" style="color: #475569;">Tutup</button>
             </div>
         </div>
     </div>
@@ -2144,9 +2030,13 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            // Check hash in URL (#putra, #putri, #ganda_putra, #ganda_putri)
+            const urlParams = new URLSearchParams(window.location.search);
+            const catParam = urlParams.get('category');
             const hash = window.location.hash.replace('#', '');
-            if (['putra', 'putri', 'ganda_putra', 'ganda_putri'].includes(hash)) {
+
+            if (catParam && ['putra', 'putri', 'ganda_putra', 'ganda_putri'].includes(catParam)) {
+                currentCategory = catParam;
+            } else if (['putra', 'putri', 'ganda_putra', 'ganda_putri'].includes(hash)) {
                 currentCategory = hash;
             } else {
                 currentCategory = 'putra';
@@ -2155,6 +2045,13 @@
             updateCategoryTabUI(currentCategory);
             renderBracket(allTournaments[currentCategory]);
             initEventHandlers();
+
+            const autoPrintOrient = urlParams.get('print');
+            if (autoPrintOrient && ['landscape', 'portrait'].includes(autoPrintOrient.toLowerCase())) {
+                setTimeout(() => {
+                    executePrint(autoPrintOrient.toLowerCase());
+                }, 250);
+            }
         });
 
         // SWITCH CATEGORY
@@ -2172,7 +2069,6 @@
                 ganda_putra: document.getElementById('tabBtnGandaPutra'),
                 ganda_putri: document.getElementById('tabBtnGandaPutri')
             };
-            const pdfBtn = document.getElementById('btnEksporPdf');
 
             Object.keys(tabs).forEach(k => {
                 if (tabs[k]) {
@@ -2180,10 +2076,6 @@
                     else tabs[k].classList.remove('active');
                 }
             });
-
-            if (pdfBtn) {
-                pdfBtn.href = `${PDF_BASE_URL}?category=${cat}`;
-            }
 
             // Update tab badge counts
             const updateCount = (key, elemId) => {
@@ -2269,6 +2161,7 @@
                 const isFinalRound = (r === totalRounds);
                 const col = document.createElement('div');
                 col.className = 'bracket-round-column';
+                col.id = `roundCol_${r}`;
 
                 let roundSub = (r === totalRounds) ? 'Perebutan Juara 1 & 2' : (roundData.matches.length + ' Pertandingan');
 
@@ -2285,7 +2178,11 @@
                 const matchesList = col.querySelector(`#roundMatchesList_${r}`);
 
                 let currentGroup = null;
-                roundData.matches.forEach((m) => {
+                roundData.matches.forEach((m, mIdx) => {
+                    const unitWrap = document.createElement('div');
+                    unitWrap.className = 'match-unit-wrap';
+                    unitWrap.id = `wrap_${m.id}`;
+
                     if (data.participant_count === 10 && m.group && m.group !== currentGroup) {
                         currentGroup = m.group;
                         const groupTitle = document.createElement('div');
@@ -2295,57 +2192,56 @@
                         } else if (currentGroup === 'bawah') {
                             groupTitle.className = 'bracket-group-section-title group-bawah';
                             groupTitle.innerHTML = '<i class="fas fa-arrow-down"></i> Bagan Bawah';
+                            if (r === 1 && mIdx > 0) {
+                                unitWrap.classList.add('group-bawah-first-wrap');
+                            }
                         } else if (currentGroup === 'grand_final') {
                             groupTitle.className = 'bracket-group-section-title group-grand-final';
                             groupTitle.innerHTML = '<i class="fas fa-trophy"></i> Grand Final (Juara Utama)';
                         }
-                        matchesList.appendChild(groupTitle);
+                        unitWrap.appendChild(groupTitle);
                     }
+
                     const matchCard = createMatchCardElement(m, isFinalRound);
-                    matchesList.appendChild(matchCard);
+                    unitWrap.appendChild(matchCard);
+                    matchesList.appendChild(unitWrap);
                 });
             }
 
-            // Draw visible SVG connector lines between matches & auto-fit
+            // Align bracket cards across rounds & draw visible SVG connector lines
             requestAnimationFrame(() => {
-                drawBracketLines(data);
                 if (isFitScreenMode) {
                     applyScreenFit();
+                } else {
+                    alignBracketCardsAndDrawLines(data);
                 }
             });
             setTimeout(() => {
-                drawBracketLines(data);
                 if (isFitScreenMode) {
                     applyScreenFit();
+                } else {
+                    alignBracketCardsAndDrawLines(data);
                 }
             }, 60);
         }
 
-        // FUNGSI HITUNG POSISI ELEMEN RELATIF TERHADAP ROOT BRACKET TREE
+        // FUNGSI HITUNG POSISI ELEMEN RELATIF TERHADAP ELEMEN ROOT (BEBAS DISTORSI TRANSFORM)
         function getCardLocalPos(el, root) {
             if (!el || !root) {
                 return { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
             }
 
-            // Ambil skala transform aktif jika root sedang discale (misal: mode Pas Layar)
-            let currentTransformScale = 1;
-            if (root.style.transform && root.style.transform.includes('scale(')) {
-                const match = root.style.transform.match(/scale\(([^)]+)\)/);
-                if (match && match[1]) {
-                    const parsed = parseFloat(match[1]);
-                    if (!isNaN(parsed) && parsed > 0.01) {
-                        currentTransformScale = parsed;
-                    }
-                }
-            }
-
             const elRect = el.getBoundingClientRect();
             const rootRect = root.getBoundingClientRect();
 
-            const left = (elRect.left - rootRect.left) / currentTransformScale;
-            const top = (elRect.top - rootRect.top) / currentTransformScale;
-            const width = elRect.width / currentTransformScale;
-            const height = elRect.height / currentTransformScale;
+            // Hitung rasio skala visual aktual terhadap ukuran layout CSS (offsetWidth / offsetHeight)
+            const scaleX = (root.offsetWidth > 0 && rootRect.width > 0) ? (rootRect.width / root.offsetWidth) : 1;
+            const scaleY = (root.offsetHeight > 0 && rootRect.height > 0) ? (rootRect.height / root.offsetHeight) : 1;
+
+            const left = (elRect.left - rootRect.left) / scaleX;
+            const top = (elRect.top - rootRect.top) / scaleY;
+            const width = elRect.width / scaleX;
+            const height = elRect.height / scaleY;
 
             return {
                 left: left,
@@ -2355,6 +2251,134 @@
                 width: width,
                 height: height
             };
+        }
+
+        // SEJAJARKAN POSISI VERTIKAL KARTU ANTAR BABAK & GAMBAR GARIS ALIR SVG PRESISI 100%
+        function alignBracketCardsAndDrawLines(data) {
+            if (!data || !data.bracket_json || !data.bracket_json.rounds) {
+                return;
+            }
+
+            const rounds = data.bracket_json.rounds;
+            const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
+
+            // 1. Reset posisi inline agar Babak 1 menentukan tinggi kolom secara natural / flex
+            for (let r = 1; r <= totalRounds; r++) {
+                const listEl = document.getElementById('roundMatchesList_' + r);
+                if (!listEl) continue;
+                listEl.style.minHeight = '';
+                const wraps = listEl.querySelectorAll('.match-unit-wrap');
+                wraps.forEach(w => {
+                    w.style.position = '';
+                    w.style.top = '';
+                    w.style.left = '';
+                    w.style.right = '';
+                    w.style.width = '';
+                });
+            }
+
+            const list1 = document.getElementById('roundMatchesList_1');
+            if (list1) {
+                const r1Count = (rounds[1] && rounds[1].matches) ? rounds[1].matches.length : 0;
+                list1.style.justifyContent = (r1Count <= 1) ? 'center' : 'space-between';
+                void list1.offsetHeight;
+            }
+
+            const baseListHeight = list1 ? list1.offsetHeight : 0;
+
+            // 2. Untuk Babak 2 s/d Final, sejajarkan setiap kartu tepat di titik tengah (atau slot) kartu pengumpannya
+            for (let r = 2; r <= totalRounds; r++) {
+                const listEl = document.getElementById('roundMatchesList_' + r);
+                if (!listEl) continue;
+
+                listEl.style.position = 'relative';
+                if (baseListHeight > 0) {
+                    listEl.style.minHeight = baseListHeight + 'px';
+                }
+                void listEl.offsetHeight;
+
+                const prevMatches = (rounds[r - 1] && rounds[r - 1].matches) ? rounds[r - 1].matches : [];
+                const currMatches = (rounds[r] && rounds[r].matches) ? rounds[r].matches : [];
+
+                const placements = [];
+                currMatches.forEach((m) => {
+                    const wrapEl = document.getElementById('wrap_' + m.id);
+                    const cardEl = document.getElementById('card_' + m.id);
+                    if (!wrapEl || !cardEl) return;
+
+                    const wrapPos = getCardLocalPos(wrapEl, listEl);
+                    const cardPos = getCardLocalPos(cardEl, listEl);
+                    const slots = cardEl.querySelectorAll('.player-slot');
+
+                    const slot0Pos = (slots && slots[0]) ? getCardLocalPos(slots[0], listEl) : null;
+                    const slot1Pos = (slots && slots[1]) ? getCardLocalPos(slots[1], listEl) : null;
+
+                    const slot0Offset = slot0Pos
+                        ? ((slot0Pos.top + slot0Pos.height / 2) - wrapPos.top)
+                        : ((cardPos.top - wrapPos.top) + cardPos.height * 0.35);
+                    const slot1Offset = slot1Pos
+                        ? ((slot1Pos.top + slot1Pos.height / 2) - wrapPos.top)
+                        : ((cardPos.top - wrapPos.top) + cardPos.height * 0.70);
+                    const slotsMidOffset = (slot0Offset + slot1Offset) / 2;
+
+                    const feeders = prevMatches.filter(pm => pm.next_match_id === m.id);
+                    let idealTop = wrapPos.top;
+
+                    if (feeders.length === 1) {
+                        const f = feeders[0];
+                        const fCard = document.getElementById('card_' + f.id);
+                        if (fCard) {
+                            const fPos = getCardLocalPos(fCard, listEl);
+                            const fCenterY = fPos.top + (fPos.height / 2);
+                            const targetSlotOffset = (f.next_match_slot === 1) ? slot0Offset : slot1Offset;
+                            idealTop = fCenterY - targetSlotOffset;
+                        }
+                    } else if (feeders.length >= 2) {
+                        const fCenters = [];
+                        feeders.forEach(f => {
+                            const fCard = document.getElementById('card_' + f.id);
+                            if (fCard) {
+                                const fPos = getCardLocalPos(fCard, listEl);
+                                fCenters.push(fPos.top + (fPos.height / 2));
+                            }
+                        });
+                        if (fCenters.length > 0) {
+                            const avgCenterY = fCenters.reduce((a, b) => a + b, 0) / fCenters.length;
+                            idealTop = avgCenterY - slotsMidOffset;
+                        }
+                    }
+
+                    placements.push({
+                        wrapEl: wrapEl,
+                        height: wrapPos.height,
+                        idealTop: idealTop
+                    });
+                });
+
+                // Cegah tumpang tindih antar kartu pada babak yang sama
+                const minGap = 8;
+                let cursorBottom = 0;
+                placements.forEach((p, idx) => {
+                    let top = Math.max(0, p.idealTop);
+                    if (idx > 0 && top < cursorBottom + minGap) {
+                        top = cursorBottom + minGap;
+                    }
+                    p.finalTop = top;
+                    cursorBottom = top + p.height;
+                });
+
+                placements.forEach(p => {
+                    p.wrapEl.style.position = 'absolute';
+                    p.wrapEl.style.left = '0';
+                    p.wrapEl.style.right = '0';
+                    p.wrapEl.style.width = '100%';
+                    p.wrapEl.style.top = Math.round(p.finalTop) + 'px';
+                });
+
+                void listEl.offsetHeight;
+            }
+
+            drawBracketLines(data);
         }
 
         // DRAW VISIBLE BRACKET CONNECTOR LINES VIA SVG (PRESISI 100% BEBAS DARI DISTORSI ZOOM)
@@ -2376,8 +2400,8 @@
                 return;
             }
 
-            const scrollW = tree.scrollWidth;
-            const scrollH = tree.scrollHeight;
+            const scrollW = Math.max(tree.scrollWidth, tree.offsetWidth);
+            const scrollH = Math.max(tree.scrollHeight, tree.offsetHeight);
 
             svg.setAttribute('width', scrollW);
             svg.setAttribute('height', scrollH);
@@ -2386,6 +2410,9 @@
 
             const rounds = data.bracket_json.rounds;
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
+
+            const normalElements = [];
+            const winnerElements = [];
 
             for (let r = 1; r < totalRounds; r++) {
                 const roundData = rounds[r];
@@ -2402,45 +2429,62 @@
                     const posA = getCardLocalPos(cardA, tree);
                     const posB = getCardLocalPos(cardB, tree);
 
-                    const x1 = posA.right;
-                    const y1 = posA.top + (posA.height / 2);
+                    const x1 = Math.round(posA.right);
+                    let y1 = Math.round(posA.top + (posA.height / 2));
 
-                    const x2 = posB.left;
-                    
+                    const x2 = Math.round(posB.left);
+
                     // Pinpoint target slot in card B
                     const slotsB = cardB.querySelectorAll('.player-slot');
                     const targetSlotIdx = (m.next_match_slot === 1) ? 0 : 1;
                     let y2;
                     if (slotsB && slotsB[targetSlotIdx]) {
                         const slotPos = getCardLocalPos(slotsB[targetSlotIdx], tree);
-                        y2 = slotPos.top + (slotPos.height / 2);
+                        y2 = Math.round(slotPos.top + (slotPos.height / 2));
                     } else {
-                        const slotRatio = (m.next_match_slot === 1) ? 0.32 : 0.68;
-                        y2 = posB.top + (posB.height * slotRatio);
+                        const slotRatio = (m.next_match_slot === 1) ? 0.35 : 0.70;
+                        y2 = Math.round(posB.top + (posB.height * slotRatio));
                     }
 
-                    const midX = x1 + (x2 - x1) * 0.5;
+                    // Jika selisih vertikal sangat kecil (<= 2px), ratakan agar menjadi garis lurus sempurna
+                    if (Math.abs(y1 - y2) <= 2) {
+                        y1 = y2;
+                    }
+
+                    const midX = Math.round(x1 + (x2 - x1) * 0.5);
 
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    const d = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
+                    const d = (y1 === y2)
+                        ? `M ${x1} ${y2} H ${x2}`
+                        : `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
                     path.setAttribute('d', d);
 
                     const isWinner = !!(m.winner && m.status === 'completed');
                     path.setAttribute('class', 'bracket-line' + (isWinner ? ' winner' : ''));
-                    svg.appendChild(path);
 
                     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                     circle.setAttribute('cx', x2);
                     circle.setAttribute('cy', y2);
                     circle.setAttribute('r', isWinner ? '4.5' : '3.5');
                     circle.setAttribute('class', 'bracket-dot' + (isWinner ? ' winner' : ''));
-                    svg.appendChild(circle);
+
+                    if (isWinner) {
+                        winnerElements.push(path, circle);
+                    } else {
+                        normalElements.push(path, circle);
+                    }
                 });
             }
+
+            // Render garis biasa terlebih dahulu, lalu garis pemenang di atasnya agar tidak tertutup
+            normalElements.forEach(el => svg.appendChild(el));
+            winnerElements.forEach(el => svg.appendChild(el));
         }
 
         // FIT LAYAR / PAS LAYAR (OTOMATIS TANPA PERLU MENGGESER-GESER LAYAR)
         let isFitScreenMode = true;
+        let isExecutingCustomPrint = false;
+        let currentPrintOrientation = 'landscape';
 
         function toggleFitScreen() {
             isFitScreenMode = !isFitScreenMode;
@@ -2458,6 +2502,10 @@
         }
 
         function applyScreenFit() {
+            if (isExecutingCustomPrint || document.body.classList.contains('print-preview-mode')) {
+                return;
+            }
+
             const tree = document.getElementById('bracketTree');
             const scrollContainer = document.querySelector('.bracket-scroll-container');
             if (!tree || !scrollContainer) return;
@@ -2469,14 +2517,19 @@
                 scrollContainer.style.overflowY = 'visible';
                 scrollContainer.style.height = '';
                 if (allTournaments[currentCategory]) {
-                    drawBracketLines(allTournaments[currentCategory]);
+                    alignBracketCardsAndDrawLines(allTournaments[currentCategory]);
                 }
                 return;
             }
 
-            // Reset sejenak untuk kalkulasi dimensi aktual kontainer
+            // Reset sejenak untuk kalkulasi dimensi aktual kontainer & sejajarkan kartu
             tree.style.transform = '';
             tree.style.zoom = '';
+            scrollContainer.style.height = '';
+
+            if (allTournaments[currentCategory]) {
+                alignBracketCardsAndDrawLines(allTournaments[currentCategory]);
+            }
 
             const containerW = scrollContainer.clientWidth - 20;
             const contentW = tree.scrollWidth;
@@ -2494,21 +2547,20 @@
                 scrollContainer.style.overflowY = 'hidden';
                 scrollContainer.style.height = '';
             }
-
-            if (allTournaments[currentCategory]) {
-                drawBracketLines(allTournaments[currentCategory]);
-            }
         }
 
         window.addEventListener('resize', () => {
+            if (isExecutingCustomPrint || document.body.classList.contains('print-preview-mode')) {
+                return;
+            }
             if (isFitScreenMode) {
                 applyScreenFit();
             } else if (allTournaments[currentCategory]) {
-                drawBracketLines(allTournaments[currentCategory]);
+                alignBracketCardsAndDrawLines(allTournaments[currentCategory]);
             }
         });
 
-        // CETAK & EKSPOR PDF MODAL CONTROLS (PILIHAN LANDSCAPE & PORTRAIT)
+        // CETAK & EKSPOR PDF MODAL CONTROLS (DIGABUNGKAN - PILIHAN LANDSCAPE & PORTRAIT 1 HALAMAN PENUH)
         function openPrintModal() {
             document.getElementById('printModal').classList.add('active');
         }
@@ -2517,24 +2569,21 @@
             document.getElementById('printModal').classList.remove('active');
         }
 
-        function openExportPdfModal() {
-            const linkL = document.getElementById('linkPdfLandscape');
-            const linkP = document.getElementById('linkPdfPortrait');
-            if (linkL) linkL.href = `${PDF_BASE_URL}?category=${encodeURIComponent(currentCategory)}&orientation=landscape`;
-            if (linkP) linkP.href = `${PDF_BASE_URL}?category=${encodeURIComponent(currentCategory)}&orientation=portrait`;
-            document.getElementById('exportPdfModal').classList.add('active');
-        }
-
-        function closeExportPdfModal() {
-            document.getElementById('exportPdfModal').classList.remove('active');
-        }
-
         function printBracket() {
             openPrintModal();
         }
 
-        function executePrint(orientation) {
-            closePrintModal();
+        function preparePrintStage(orientation) {
+            const orient = (orientation === 'portrait') ? 'portrait' : 'landscape';
+            currentPrintOrientation = orient;
+            isExecutingCustomPrint = true;
+
+            // Ukuran area cetak bersih 1 halaman A4 (margin 4mm) pada 96 DPI:
+            // Landscape: 289mm x 202mm -> 1080px x 754px
+            // Portrait : 202mm x 289mm -> 754px x 1080px
+            const PAGE_W = (orient === 'portrait') ? 754 : 1080;
+            const PAGE_H = (orient === 'portrait') ? 1080 : 754;
+            const pageAspect = PAGE_W / PAGE_H;
 
             let styleTag = document.getElementById('printOrientationStyle');
             if (!styleTag) {
@@ -2543,24 +2592,45 @@
                 document.head.appendChild(styleTag);
             }
 
-            if (orientation === 'portrait') {
-                styleTag.textContent = '@page { size: A4 portrait; margin: 3mm 4mm; } html, body { max-height: 100% !important; overflow: hidden !important; }';
+            styleTag.textContent = `
+                @page {
+                    size: A4 ${orient};
+                    margin: 4mm;
+                }
+                @media print {
+                    html, body {
+                        width: ${PAGE_W}px !important;
+                        height: ${PAGE_H}px !important;
+                        max-height: ${PAGE_H}px !important;
+                        overflow: hidden !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: #ffffff !important;
+                    }
+                }
+            `;
+
+            document.body.classList.add('print-preview-mode');
+            if (orient === 'portrait') {
                 document.body.classList.add('print-portrait-mode');
+                document.body.classList.remove('print-landscape-mode');
             } else {
-                styleTag.textContent = '@page { size: A4 landscape; margin: 3mm 4mm; } html, body { max-height: 100% !important; overflow: hidden !important; }';
+                document.body.classList.add('print-landscape-mode');
                 document.body.classList.remove('print-portrait-mode');
             }
 
-            // Aktifkan stylesheet preview cetak
-            document.body.classList.add('print-preview-mode');
-
+            const stageWrapper = document.getElementById('printStageWrapper');
+            const stageInner = document.getElementById('printStageInner');
             const tree = document.getElementById('bracketTree');
             const scrollContainer = document.querySelector('.bracket-scroll-container');
-            if (!tree) {
-                window.print();
+
+            if (!stageWrapper || !stageInner || !tree) {
                 return;
             }
 
+            // Reset gaya inline sebelum kalkulasi
+            stageWrapper.removeAttribute('style');
+            stageInner.removeAttribute('style');
             tree.style.transform = 'none';
             tree.style.zoom = '1';
             if (scrollContainer) {
@@ -2568,57 +2638,128 @@
                 scrollContainer.style.overflow = 'visible';
             }
 
-            // Paksa reflow layout DOM sehingga semua aturan print-preview-mode aktif 100%
-            void document.body.offsetHeight;
-            void tree.offsetHeight;
-
-            // Gambar ulang garis SVG agar koordinatnya 100% tepat pada dimensi cetak
             const currentData = allTournaments[currentCategory];
-            if (currentData) {
-                drawBracketLines(currentData);
+            const rounds = (currentData && currentData.bracket_json && currentData.bracket_json.rounds) ? currentData.bracket_json.rounds : {};
+            const totalRounds = parseInt((currentData && currentData.bracket_json && currentData.bracket_json.total_rounds) || Object.keys(rounds).length || 3);
+            const pCount = (currentData && currentData.participant_count) ? parseInt(currentData.participant_count) : 5;
+
+            // Reset posisi kartu agar tinggi natural Babak 1 dapat diukur akurat
+            for (let r = 1; r <= totalRounds; r++) {
+                const listEl = document.getElementById('roundMatchesList_' + r);
+                if (!listEl) continue;
+                listEl.style.minHeight = '';
+                const wraps = listEl.querySelectorAll('.match-unit-wrap');
+                wraps.forEach(w => {
+                    w.style.position = '';
+                    w.style.top = '';
+                    w.style.left = '';
+                    w.style.right = '';
+                    w.style.width = '';
+                });
             }
 
-            // Panggil dialog cetak; jangan gunakan setTimeout untuk menghapus class
-            // karena class harus tetap aktif selama dialog cetak browser terbuka!
-            requestAnimationFrame(() => {
-                setTimeout(() => {
-                    window.print();
-                }, 120);
-            });
+            // Tentukan lebar desain minimum (W_min) agar kartu memiliki proporsi ideal seperti di web
+            let W_min;
+            if (orient === 'portrait') {
+                if (totalRounds <= 2) W_min = 780;
+                else if (totalRounds === 3) W_min = 900;
+                else if (totalRounds === 4) W_min = (pCount === 10) ? 1040 : 1080;
+                else W_min = totalRounds * 265;
+            } else {
+                if (totalRounds <= 2) W_min = 1080;
+                else if (totalRounds === 3) W_min = 1220;
+                else if (totalRounds === 4) W_min = (pCount === 10) ? 1420 : 1440;
+                else W_min = totalRounds * 330;
+            }
+
+            // Ukur tinggi natural konten pada lebar W_min
+            stageInner.style.width = W_min + 'px';
+            stageInner.style.height = 'auto';
+            void stageInner.offsetHeight;
+
+            let H_min = stageInner.scrollHeight + 4;
+
+            // Sesuaikan W_canvas dan H_canvas agar rasio aspeknya sama persis dengan kertas A4 (terisi 100% penuh lebar & tinggi)
+            let W_canvas = Math.max(W_min, Math.ceil(H_min * pageAspect));
+            let H_canvas = Math.max(H_min, Math.ceil(W_canvas / pageAspect));
+
+            stageInner.style.width = W_canvas + 'px';
+            stageInner.style.height = H_canvas + 'px';
+            void stageInner.offsetHeight;
+
+            if (stageInner.scrollHeight > H_canvas) {
+                H_canvas = stageInner.scrollHeight + 4;
+                W_canvas = Math.ceil(H_canvas * pageAspect);
+                stageInner.style.width = W_canvas + 'px';
+                stageInner.style.height = H_canvas + 'px';
+                void stageInner.offsetHeight;
+            }
+
+            // Sejajarkan kartu setiap babak & gambar garis SVG pada dimensi final (W_canvas x H_canvas)
+            if (currentData) {
+                alignBracketCardsAndDrawLines(currentData);
+            }
+
+            // Skala penuh (100% lebar & tinggi kertas) tepat dalam 1 halaman A4
+            const scaleX = PAGE_W / W_canvas;
+            const scaleY = PAGE_H / H_canvas;
+
+            stageWrapper.style.width = PAGE_W + 'px';
+            stageWrapper.style.height = PAGE_H + 'px';
+            stageWrapper.style.maxHeight = PAGE_H + 'px';
+            stageWrapper.style.overflow = 'hidden';
+            stageWrapper.style.position = 'relative';
+            stageWrapper.style.margin = '0 auto';
+
+            stageInner.style.position = 'absolute';
+            stageInner.style.top = '0';
+            stageInner.style.left = '0';
+            stageInner.style.transformOrigin = 'top left';
+            stageInner.style.transform = `scale(${scaleX}, ${scaleY})`;
         }
 
-        window.addEventListener('beforeprint', () => {
-            const currentData = allTournaments[currentCategory];
-            const tree = document.getElementById('bracketTree');
-            const scrollContainer = document.querySelector('.bracket-scroll-container');
-            document.body.classList.add('print-preview-mode');
-            if (tree) {
-                tree.style.transform = 'none';
-                tree.style.zoom = '1';
-            }
-            if (scrollContainer) {
-                scrollContainer.style.height = '';
-                scrollContainer.style.overflow = 'visible';
-            }
-            void document.body.offsetHeight;
-            void (tree ? tree.offsetHeight : 0);
-            if (currentData) {
-                drawBracketLines(currentData);
-            }
-        });
-
-        window.addEventListener('afterprint', () => {
+        function restoreAfterPrint() {
+            isExecutingCustomPrint = false;
             document.body.classList.remove('print-preview-mode');
             document.body.classList.remove('print-portrait-mode');
+            document.body.classList.remove('print-landscape-mode');
+
             const styleTag = document.getElementById('printOrientationStyle');
             if (styleTag) {
                 styleTag.textContent = '';
             }
+
+            const stageWrapper = document.getElementById('printStageWrapper');
+            const stageInner = document.getElementById('printStageInner');
+            if (stageWrapper) stageWrapper.removeAttribute('style');
+            if (stageInner) stageInner.removeAttribute('style');
+
             if (isFitScreenMode) {
                 applyScreenFit();
             } else if (allTournaments[currentCategory]) {
-                drawBracketLines(allTournaments[currentCategory]);
+                alignBracketCardsAndDrawLines(allTournaments[currentCategory]);
             }
+        }
+
+        function executePrint(orientation) {
+            closePrintModal();
+            preparePrintStage(orientation);
+
+            requestAnimationFrame(() => {
+                setTimeout(() => {
+                    window.print();
+                }, 100);
+            });
+        }
+
+        window.addEventListener('beforeprint', () => {
+            if (!isExecutingCustomPrint) {
+                preparePrintStage(currentPrintOrientation || 'landscape');
+            }
+        });
+
+        window.addEventListener('afterprint', () => {
+            restoreAfterPrint();
         });
 
         // CREATE SINGLE MATCH CARD
@@ -2961,7 +3102,7 @@
             const btnReset = document.getElementById('btnResetSkor');
             if (btnReset) {
                 btnReset.addEventListener('click', function () {
-                const catLabel = (currentCategory === 'putri') ? 'Putri' : 'Putra';
+                const catLabel = getCategoryName(currentCategory);
 
                 Swal.fire({
                     title: `Reset Skor Turnamen ${catLabel}?`,
@@ -3139,13 +3280,6 @@
                 }
             });
         }
-
-            // REDRAW BRACKET CONNECTOR LINES ON RESIZE
-            window.addEventListener('resize', () => {
-                if (allTournaments[currentCategory]) {
-                    drawBracketLines(allTournaments[currentCategory]);
-                }
-            });
         }
 
         // ON MODAL CATEGORY CHANGE
