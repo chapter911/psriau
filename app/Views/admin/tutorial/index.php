@@ -647,7 +647,7 @@ graph TD
     H --> I1["Input Skor Pertandingan &amp; Simpan Skor"]
     H --> I2["Klik Tombol Pemenang (Pemenang Lolos Otomatis ke Babak Selanjutnya)"]
     I2 --> J1["Babak Final / Grand Final: Pemenang Dinobatkan sebagai Juara 1 &amp; Runner-Up"]
-    H --> K1["Klik Tombol 'Ekspor PDF' -> Unduh PDF Resmi A4 Landscape Kop Satker PPS &amp; Bagan Autentik"]
+    H --> K1["Klik 'Ekspor PDF' / 'Cetak Bagan' -> Dokumen PDF / Cetak A4 Landscape Berdesain Identik Portal Web"]
     H --> L1["Klik Tombol 'Acak Posisi' (Shuffle Bracket)"]
     L1 --> M1["Modal Input Password Akun Superadministrator"]
     M1 --> N1{"Verifikasi Password Superadmin"}
@@ -2058,7 +2058,7 @@ graph TD
                                     <li><strong>Acak Posisi Peserta (Shuffle Bracket):</strong> Klik tombol merah <strong>Acak Posisi</strong> pada toolbar atas. Untuk menjaga sportivitas dan integritas pengundian, sistem meminta verifikasi dengan <strong>memasukkan password akun Superadministrator</strong>.</li>
                                     <li>Setelah password terverifikasi, posisi peserta pada bagan kategori yang aktif (Putra/Putri) akan diacak secara adil dan bagan otomatis diperbarui secara instan dengan notifikasi tunggal (bebas double alert).</li>
                                     <li><strong>Catat Skor &amp; Tentukan Pemenang:</strong> Masukkan skor pada kartu pertandingan dan klik tombol simpan atau klik tanda centang pemenang. Pemenang otomatis melaju ke babak berikutnya hingga babak Final dan podium juara.</li>
-                                    <li><strong>Ekspor Dokumen PDF:</strong> Klik tombol biru <strong>Ekspor PDF</strong> untuk mengunduh berkas PDF resmi berukuran A4 Landscape sesuai kategori aktif (Putra, Putri, Ganda Putra, atau Ganda Putri). Halaman 1 menyajikan bagan pohon turnamen autentik dengan garis alir orthogonal rapi, kartu pertandingan proporsional (termasuk kartu Menang Bye dan Final), kop resmi Satker PPS Riau, banner podium juara tanpa kolom tanda tangan. Halaman 2 menyajikan lembar daftar pertandingan dan rekapitulasi skor lengkap.</li>
+                                    <li><strong>Ekspor Dokumen PDF &amp; Cetak Bagan:</strong> Klik tombol biru <strong>Ekspor PDF</strong> untuk mengunduh berkas PDF resmi berukuran A4 Landscape dengan desain visual yang <strong>identik dan selaras penuh dengan tampilan portal web</strong> (Top Bar biru tua PUPR, kartu pertandingan dengan seed badge, balai badge, dan box skor, banner podium juara tanpa kolom tanda tangan, serta lembar rekapitulasi hasil lengkap di halaman 2). Tersedia juga tombol <strong>Cetak Bagan</strong> untuk mencetak langsung atau menyimpan PDF dari peramban (Chrome/Edge/Safari).</li>
                                     <li>Tersedia tombol <strong>Reset Skor</strong> untuk mengulang skor pertandingan tanpa menghapus data peserta yang telah diinput.</li>
                                 </ol>
                             </div>

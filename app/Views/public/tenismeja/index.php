@@ -151,6 +151,16 @@
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
         }
 
+        .btn-action-print {
+            background-color: #0284c7;
+            color: #ffffff;
+        }
+        .btn-action-print:hover {
+            background-color: #0369a1;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+        }
+
         .btn-action-pdf {
             background-color: #3b82f6;
             color: #ffffff;
@@ -1034,6 +1044,58 @@
                 gap: 4px;
             }
         }
+        @media print {
+            .header-actions,
+            .category-nav-bar,
+            .site-footer,
+            .btn-save-match,
+            .btn-pick-winner,
+            .score-input,
+            .modal-overlay,
+            .match-actions-footer {
+                display: none !important;
+            }
+
+            body {
+                background: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .main-wrapper {
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+
+            .site-header {
+                padding: 10px 16px !important;
+                background: #002244 !important;
+            }
+
+            .tournament-banner {
+                box-shadow: none !important;
+                border: 1px solid #cbd5e1 !important;
+                margin-bottom: 12px !important;
+            }
+
+            .bracket-tree-wrapper {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                overflow: visible !important;
+            }
+
+            .bracket-tree {
+                min-width: 100% !important;
+            }
+
+            @page {
+                size: A4 landscape;
+                margin: 6mm 10mm;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1056,6 +1118,11 @@
                     <span style="font-size: 0.7rem; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; margin-left: 2px;">
                         <i class="fas fa-lock"></i> Superadmin
                     </span>
+                </button>
+
+                <!-- CETAK BAGAN (TAMPILAN WEB) -->
+                <button type="button" class="btn-action btn-action-print" onclick="window.print()" title="Cetak / Simpan PDF langsung dari peramban">
+                    <i class="fas fa-print"></i> Cetak Bagan
                 </button>
 
                 <!-- EKSPOR PDF -->
