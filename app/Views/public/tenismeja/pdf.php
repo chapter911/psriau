@@ -255,7 +255,7 @@ if (! function_exists('renderPdfMatchBox10')) {
     }
 }
 
-$lineCol = '#94a3b8';
+$lineCol = '#0b3c74';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -497,21 +497,25 @@ $lineCol = '#94a3b8';
         
         .line-h {
             position: absolute;
-            height: 0px;
-            border-top: 2px solid <?= $lineCol; ?>;
+            height: 2px;
+            background-color: #0b3c74;
+            font-size: 1px;
+            line-height: 1px;
         }
         
         .line-v {
             position: absolute;
-            width: 0px;
-            border-left: 2px solid <?= $lineCol; ?>;
+            width: 2px;
+            background-color: #0b3c74;
+            font-size: 1px;
+            line-height: 1px;
         }
         
         .dot {
             position: absolute;
-            width: 5px;
-            height: 5px;
-            background: #64748b;
+            width: 6px;
+            height: 6px;
+            background-color: #0b3c74;
             border-radius: 50%;
         }
 
@@ -578,21 +582,25 @@ $lineCol = '#94a3b8';
 
         .line-h-10p {
             position: absolute;
-            height: 0px;
-            border-top: 1.5px solid <?= $lineCol; ?>;
+            height: 2px;
+            background-color: #0b3c74;
+            font-size: 1px;
+            line-height: 1px;
         }
 
         .line-v-10p {
             position: absolute;
-            width: 0px;
-            border-left: 1.5px solid <?= $lineCol; ?>;
+            width: 2px;
+            background-color: #0b3c74;
+            font-size: 1px;
+            line-height: 1px;
         }
 
         .dot-10p {
             position: absolute;
-            width: 4px;
-            height: 4px;
-            background: #64748b;
+            width: 5px;
+            height: 5px;
+            background-color: #0b3c74;
             border-radius: 50%;
         }
 
@@ -666,7 +674,6 @@ $lineCol = '#94a3b8';
                 </td>
                 <td class="topbar-title-td">
                     <h1>PORTAL TURNAMEN <span>TENIS MEJA</span></h1>
-                    <p><?= esc($officialName); ?> &bull; <?= esc($subHeader); ?></p>
                 </td>
                 <td class="topbar-info-td">
                     <div class="tagline">Bagan Turnamen &amp; Live Score Antar Balai PUPR Riau</div>
@@ -1022,7 +1029,6 @@ $lineCol = '#94a3b8';
                 </td>
                 <td class="topbar-title-td">
                     <h1>REKAPITULASI SKOR PERTANDINGAN &bull; <span><?= esc($categoryLabel ?? 'PUTRA'); ?></span></h1>
-                    <p><?= esc($officialName); ?> &bull; <?= esc($subHeader); ?></p>
                 </td>
                 <td class="topbar-info-td">
                     <div class="tagline">Lembar Hasil &amp; Jadwal Turnamen Tenis Meja</div>

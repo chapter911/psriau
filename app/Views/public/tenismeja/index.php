@@ -405,7 +405,7 @@
 
         .bracket-line {
             fill: none;
-            stroke: #94a3b8;
+            stroke: #0b3c74;
             stroke-width: 3px;
             stroke-linecap: round;
             stroke-linejoin: round;
@@ -419,7 +419,7 @@
         }
 
         .bracket-dot {
-            fill: #64748b;
+            fill: #0b3c74;
             transition: all 0.25s ease;
         }
 
@@ -1107,7 +1107,6 @@
                 <img src="<?= esc($logoUrl); ?>" alt="Logo Satker PPS" class="header-logo" onerror="this.src='https://via.placeholder.com/52?text=PUPR'">
                 <div class="header-titles">
                     <h1><i class="fas fa-table-tennis-paddle-ball text-warning mr-1"></i> TURNAMEN <span>TENIS MEJA</span></h1>
-                    <p><?= esc($officialName); ?> • <?= esc($subHeader); ?></p>
                 </div>
             </div>
 
@@ -1438,7 +1437,7 @@
             // Render Round Columns
             const rounds = data.bracket_json.rounds;
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
-            container.innerHTML = '';
+            container.innerHTML = '<svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>';
 
             for (let r = 1; r <= totalRounds; r++) {
                 const roundData = rounds[r];
@@ -1495,9 +1494,16 @@
 
         // DRAW VISIBLE BRACKET CONNECTOR LINES VIA SVG
         function drawBracketLines(data) {
-            const svg = document.getElementById('bracketSvgCanvas');
             const tree = document.getElementById('bracketTree');
-            if (!svg || !tree) return;
+            if (!tree) return;
+
+            let svg = document.getElementById('bracketSvgCanvas');
+            if (!svg) {
+                svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.id = 'bracketSvgCanvas';
+                svg.className = 'bracket-svg-canvas';
+                tree.insertBefore(svg, tree.firstChild);
+            }
 
             svg.innerHTML = '';
 
