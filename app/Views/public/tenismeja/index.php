@@ -525,6 +525,13 @@
         }
 
         /* PRINT PREVIEW & CETAK/PDF 1 HALAMAN PENUH (IDENTIK TAMPILAN WEB) */
+        body.print-preview-mode *,
+        body.print-preview-mode *::before,
+        body.print-preview-mode *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+
         body.print-preview-mode,
         body.print-preview-mode html {
             background: #ffffff !important;
@@ -614,6 +621,7 @@
         body.print-preview-mode .print-stage-inner {
             display: flex !important;
             flex-direction: column !important;
+            flex: none !important;
             background-color: var(--bg-canvas) !important;
             background-image:
                 radial-gradient(#cbd5e1 1px, transparent 1px),
@@ -1530,9 +1538,13 @@
             }
         }
         @media print {
-            * {
+            *,
+            *::before,
+            *::after {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                transition: none !important;
+                animation: none !important;
             }
 
             html, body {
@@ -1623,6 +1635,7 @@
             .print-stage-inner {
                 display: flex !important;
                 flex-direction: column !important;
+                flex: none !important;
                 background-color: var(--bg-canvas) !important;
                 background-image:
                     radial-gradient(#cbd5e1 1px, transparent 1px),
@@ -2148,7 +2161,7 @@
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
             container.innerHTML = '<svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>';
 
-            if (data.participant_count === 10) {
+            if (parseInt(data.participant_count) === 10) {
                 container.classList.add('is-10p');
             } else {
                 container.classList.remove('is-10p');
@@ -2183,23 +2196,11 @@
                     unitWrap.className = 'match-unit-wrap';
                     unitWrap.id = `wrap_${m.id}`;
 
-                    if (data.participant_count === 10 && m.group && m.group !== currentGroup) {
+                    if (parseInt(data.participant_count) === 10 && m.group && m.group !== currentGroup) {
                         currentGroup = m.group;
-                        const groupTitle = document.createElement('div');
-                        if (currentGroup === 'atas') {
-                            groupTitle.className = 'bracket-group-section-title group-atas';
-                            groupTitle.innerHTML = '<i class="fas fa-arrow-up"></i> Bagan Atas';
-                        } else if (currentGroup === 'bawah') {
-                            groupTitle.className = 'bracket-group-section-title group-bawah';
-                            groupTitle.innerHTML = '<i class="fas fa-arrow-down"></i> Bagan Bawah';
-                            if (r === 1 && mIdx > 0) {
-                                unitWrap.classList.add('group-bawah-first-wrap');
-                            }
-                        } else if (currentGroup === 'grand_final') {
-                            groupTitle.className = 'bracket-group-section-title group-grand-final';
-                            groupTitle.innerHTML = '<i class="fas fa-trophy"></i> Grand Final (Juara Utama)';
+                        if (currentGroup === 'bawah' && r === 1 && mIdx > 0) {
+                            unitWrap.classList.add('group-bawah-first-wrap');
                         }
-                        unitWrap.appendChild(groupTitle);
                     }
 
                     const matchCard = createMatchCardElement(m, isFinalRound);
@@ -2262,11 +2263,22 @@
             const rounds = data.bracket_json.rounds;
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
 
+            // Reset ukuran SVG terlebih dahulu agar tidak mempengaruhi kalkulasi tinggi kontainer
+            const svg = document.getElementById('bracketSvgCanvas');
+            if (svg) {
+                svg.innerHTML = '';
+                svg.setAttribute('width', '0');
+                svg.setAttribute('height', '0');
+                svg.style.width = '0px';
+                svg.style.height = '0px';
+            }
+
             // 1. Reset posisi inline agar Babak 1 menentukan tinggi kolom secara natural / flex
             for (let r = 1; r <= totalRounds; r++) {
                 const listEl = document.getElementById('roundMatchesList_' + r);
                 if (!listEl) continue;
                 listEl.style.minHeight = '';
+                listEl.style.height = '';
                 const wraps = listEl.querySelectorAll('.match-unit-wrap');
                 wraps.forEach(w => {
                     w.style.position = '';
@@ -2286,6 +2298,23 @@
 
             const baseListHeight = list1 ? list1.offsetHeight : 0;
 
+            // Kunci koordinat vertikal kartu Babak 1 secara absolut agar 100% sinkron dan tidak bergeser saat cetak
+            if (list1 && baseListHeight > 0) {
+                const r1Wraps = Array.from(list1.querySelectorAll('.match-unit-wrap'));
+                const r1Tops = r1Wraps.map(w => Math.round(getCardLocalPos(w, list1).top));
+                list1.style.position = 'relative';
+                list1.style.height = baseListHeight + 'px';
+                list1.style.minHeight = baseListHeight + 'px';
+                r1Wraps.forEach((w, idx) => {
+                    w.style.position = 'absolute';
+                    w.style.left = '0';
+                    w.style.right = '0';
+                    w.style.width = '100%';
+                    w.style.top = r1Tops[idx] + 'px';
+                });
+                void list1.offsetHeight;
+            }
+
             // 2. Untuk Babak 2 s/d Final, sejajarkan setiap kartu tepat di titik tengah (atau slot) kartu pengumpannya
             for (let r = 2; r <= totalRounds; r++) {
                 const listEl = document.getElementById('roundMatchesList_' + r);
@@ -2293,6 +2322,7 @@
 
                 listEl.style.position = 'relative';
                 if (baseListHeight > 0) {
+                    listEl.style.height = baseListHeight + 'px';
                     listEl.style.minHeight = baseListHeight + 'px';
                 }
                 void listEl.offsetHeight;
@@ -2628,7 +2658,7 @@
                 return;
             }
 
-            // Reset gaya inline sebelum kalkulasi
+            // Reset gaya inline & kunci position:absolute pada stageInner SEBELUM kalkulasi agar tinggi flex 100% akurat
             stageWrapper.removeAttribute('style');
             stageInner.removeAttribute('style');
             tree.style.transform = 'none';
@@ -2636,6 +2666,29 @@
             if (scrollContainer) {
                 scrollContainer.style.height = '';
                 scrollContainer.style.overflow = 'visible';
+            }
+
+            stageWrapper.style.width = PAGE_W + 'px';
+            stageWrapper.style.height = PAGE_H + 'px';
+            stageWrapper.style.maxHeight = PAGE_H + 'px';
+            stageWrapper.style.overflow = 'hidden';
+            stageWrapper.style.position = 'relative';
+            stageWrapper.style.margin = '0 auto';
+
+            stageInner.style.position = 'absolute';
+            stageInner.style.top = '0';
+            stageInner.style.left = '0';
+            stageInner.style.transformOrigin = 'top left';
+            stageInner.style.transform = 'none';
+
+            // Reset ukuran SVG agar tidak mempengaruhi scrollHeight
+            const svg = document.getElementById('bracketSvgCanvas');
+            if (svg) {
+                svg.innerHTML = '';
+                svg.setAttribute('width', '0');
+                svg.setAttribute('height', '0');
+                svg.style.width = '0px';
+                svg.style.height = '0px';
             }
 
             const currentData = allTournaments[currentCategory];
@@ -2648,6 +2701,7 @@
                 const listEl = document.getElementById('roundMatchesList_' + r);
                 if (!listEl) continue;
                 listEl.style.minHeight = '';
+                listEl.style.height = '';
                 const wraps = listEl.querySelectorAll('.match-unit-wrap');
                 wraps.forEach(w => {
                     w.style.position = '';
@@ -2678,9 +2732,17 @@
             void stageInner.offsetHeight;
 
             let H_min = stageInner.scrollHeight + 4;
-
-            // Sesuaikan W_canvas dan H_canvas agar rasio aspeknya sama persis dengan kertas A4 (terisi 100% penuh lebar & tinggi)
             let W_canvas = Math.max(W_min, Math.ceil(H_min * pageAspect));
+
+            // Jika W_canvas melebar dari W_min, ukur ulang tinggi natural pada lebar W_canvas (karena teks kartu bisa menjadi 1 baris)
+            if (W_canvas > W_min) {
+                stageInner.style.width = W_canvas + 'px';
+                stageInner.style.height = 'auto';
+                void stageInner.offsetHeight;
+                H_min = stageInner.scrollHeight + 4;
+                W_canvas = Math.max(W_min, Math.ceil(H_min * pageAspect));
+            }
+
             let H_canvas = Math.max(H_min, Math.ceil(W_canvas / pageAspect));
 
             stageInner.style.width = W_canvas + 'px';
@@ -2695,26 +2757,14 @@
                 void stageInner.offsetHeight;
             }
 
-            // Sejajarkan kartu setiap babak & gambar garis SVG pada dimensi final (W_canvas x H_canvas)
+            // Sejajarkan kartu setiap babak (termasuk mengunci kartu Babak 1 secara absolut) & gambar garis SVG pada dimensi final (W_canvas x H_canvas)
             if (currentData) {
                 alignBracketCardsAndDrawLines(currentData);
             }
 
-            // Skala penuh (100% lebar & tinggi kertas) tepat dalam 1 halaman A4
+            // Skala penuh (100% lebar & tinggi kertas) tepat dalam 1 halaman A4 tanpa mengubah posisi layout lagi
             const scaleX = PAGE_W / W_canvas;
             const scaleY = PAGE_H / H_canvas;
-
-            stageWrapper.style.width = PAGE_W + 'px';
-            stageWrapper.style.height = PAGE_H + 'px';
-            stageWrapper.style.maxHeight = PAGE_H + 'px';
-            stageWrapper.style.overflow = 'hidden';
-            stageWrapper.style.position = 'relative';
-            stageWrapper.style.margin = '0 auto';
-
-            stageInner.style.position = 'absolute';
-            stageInner.style.top = '0';
-            stageInner.style.left = '0';
-            stageInner.style.transformOrigin = 'top left';
             stageInner.style.transform = `scale(${scaleX}, ${scaleY})`;
         }
 
