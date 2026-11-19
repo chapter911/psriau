@@ -180,6 +180,20 @@
             background-color: rgba(255, 255, 255, 0.22);
         }
 
+        .btn-action-fit {
+            background-color: #059669;
+            color: #ffffff;
+        }
+        .btn-action-fit:hover {
+            background-color: #047857;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+        }
+        .btn-action-fit.active {
+            background-color: #10b981;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+        }
+
         /* CATEGORY TABS */
         .category-nav-bar {
             background: #ffffff;
@@ -387,20 +401,123 @@
 
         .bracket-tree {
             display: flex;
-            gap: 70px;
+            gap: 45px;
             min-width: max-content;
             align-items: stretch;
             padding: 10px 0;
             position: relative;
+            transform-origin: top left;
+            transition: transform 0.2s ease;
         }
 
         .bracket-round-column {
             display: flex;
             flex-direction: column;
-            width: 330px;
+            width: 270px;
             flex-shrink: 0;
             position: relative;
             z-index: 2;
+        }
+
+        /* 10 PESERTA COMPACT (PAS LAYAR & TANPA PERLU GESER-GESER) */
+        .bracket-tree.is-10p {
+            gap: 22px;
+        }
+
+        .bracket-tree.is-10p .bracket-round-column {
+            width: 235px;
+        }
+
+        .bracket-tree.is-10p .match-card {
+            border-radius: 8px;
+        }
+
+        .bracket-tree.is-10p .match-card-header {
+            padding: 4px 8px;
+            font-size: 0.7rem;
+        }
+
+        .bracket-tree.is-10p .player-slot {
+            padding: 4px 8px;
+            gap: 6px;
+        }
+
+        .bracket-tree.is-10p .player-seed {
+            width: 20px;
+            height: 20px;
+            font-size: 0.68rem;
+            border-radius: 4px;
+        }
+
+        .bracket-tree.is-10p .player-name {
+            font-size: 0.82rem;
+        }
+
+        .bracket-tree.is-10p .balai-badge-pill {
+            font-size: 0.62rem;
+            padding: 1px 4px;
+        }
+
+        .bracket-tree.is-10p .score-input {
+            width: 34px;
+            height: 26px;
+            font-size: 0.92rem;
+        }
+
+        .bracket-tree.is-10p .btn-pick-winner {
+            width: 24px;
+            height: 24px;
+            font-size: 0.7rem;
+        }
+
+        .bracket-tree.is-10p .round-header {
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+        }
+
+        .bracket-tree.is-10p .round-header h3 {
+            font-size: 0.88rem;
+        }
+
+        .bracket-tree.is-10p .round-header span {
+            font-size: 0.68rem;
+        }
+
+        .bracket-tree.is-10p .round-matches-list {
+            gap: 8px;
+        }
+
+        .bracket-tree.is-10p .match-note-banner {
+            padding: 3px 6px;
+            font-size: 0.68rem;
+        }
+
+        .bracket-tree.is-10p .match-actions-footer {
+            padding: 3px 8px 5px;
+        }
+
+        .bracket-tree.is-10p .btn-save-match {
+            padding: 3px 10px;
+            font-size: 0.72rem;
+        }
+
+        /* PRINT PREVIEW MODE STYLES (DIAPLIKASIKAN SEBELUM DIALOG CETAK TERBUKA) */
+        body.print-preview-mode .bracket-tree {
+            transform: none !important;
+            zoom: 1 !important;
+        }
+        body.print-preview-mode .bracket-tree.is-10p {
+            gap: 20px !important;
+        }
+        body.print-preview-mode .bracket-tree.is-10p .bracket-round-column {
+            width: 220px !important;
+        }
+        body.print-preview-mode .bracket-tree:not(.is-10p) {
+            gap: 40px !important;
+        }
+        body.print-preview-mode .bracket-tree:not(.is-10p) .bracket-round-column {
+            width: 260px !important;
         }
 
         .bracket-line {
@@ -1141,6 +1258,10 @@
                 overflow: visible !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                box-shadow: none !important;
+                border: none !important;
+                min-height: auto !important;
+                height: auto !important;
             }
 
             .bracket-tree-wrapper {
@@ -1153,6 +1274,32 @@
             .bracket-tree {
                 min-width: 100% !important;
                 padding: 0 !important;
+                transform: none !important;
+                zoom: 1 !important;
+            }
+
+            .bracket-tree.is-10p {
+                gap: 20px !important;
+            }
+
+            .bracket-tree.is-10p .bracket-round-column {
+                width: 220px !important;
+            }
+
+            .bracket-tree.is-10p .round-matches-list {
+                gap: 6px !important;
+            }
+
+            .bracket-tree.is-10p .player-slot {
+                padding: 3px 6px !important;
+            }
+
+            .bracket-tree:not(.is-10p) {
+                gap: 40px !important;
+            }
+
+            .bracket-tree:not(.is-10p) .bracket-round-column {
+                width: 260px !important;
             }
 
             @page {
@@ -1181,6 +1328,11 @@
                     <span style="font-size: 0.7rem; background: rgba(0,0,0,0.25); padding: 2px 6px; border-radius: 4px; margin-left: 2px;">
                         <i class="fas fa-lock"></i> Superadmin
                     </span>
+                </button>
+
+                <!-- PAS LAYAR (TANPA PERLU GESER-GESER) -->
+                <button type="button" class="btn-action btn-action-fit active" id="btnFitScreen" onclick="toggleFitScreen()" title="Mode Pas Layar (Otomatis menyesuaikan layar tanpa perlu menggeser)">
+                    <i class="fas fa-compress"></i> Pas Layar
                 </button>
 
                 <!-- CETAK BAGAN (TAMPILAN WEB) -->
@@ -1498,6 +1650,12 @@
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
             container.innerHTML = '<svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>';
 
+            if (data.participant_count === 10) {
+                container.classList.add('is-10p');
+            } else {
+                container.classList.remove('is-10p');
+            }
+
             for (let r = 1; r <= totalRounds; r++) {
                 const roundData = rounds[r];
                 if (!roundData) continue;
@@ -1542,16 +1700,42 @@
                 });
             }
 
-            // Draw visible SVG connector lines between matches
+            // Draw visible SVG connector lines between matches & auto-fit
             requestAnimationFrame(() => {
                 drawBracketLines(data);
+                if (isFitScreenMode) {
+                    applyScreenFit();
+                }
             });
             setTimeout(() => {
                 drawBracketLines(data);
+                if (isFitScreenMode) {
+                    applyScreenFit();
+                }
             }, 60);
         }
 
-        // DRAW VISIBLE BRACKET CONNECTOR LINES VIA SVG
+        // FUNGSI HITUNG POSISI ELEMEN RELATIF TERHADAP ROOT BRACKET TREE
+        function getCardLocalPos(card, root) {
+            let left = 0;
+            let top = 0;
+            let el = card;
+            while (el && el !== root) {
+                left += el.offsetLeft;
+                top += el.offsetTop;
+                el = el.offsetParent;
+            }
+            return {
+                left: left,
+                top: top,
+                right: left + card.offsetWidth,
+                bottom: top + card.offsetHeight,
+                width: card.offsetWidth,
+                height: card.offsetHeight
+            };
+        }
+
+        // DRAW VISIBLE BRACKET CONNECTOR LINES VIA SVG (PRESISI 100% BEBAS DARI DISTORSI ZOOM)
         function drawBracketLines(data) {
             const tree = document.getElementById('bracketTree');
             if (!tree) return;
@@ -1578,7 +1762,6 @@
             svg.style.width = scrollW + 'px';
             svg.style.height = scrollH + 'px';
 
-            const svgRect = svg.getBoundingClientRect();
             const rounds = data.bracket_json.rounds;
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
 
@@ -1594,15 +1777,15 @@
 
                     if (!cardA || !cardB) return;
 
-                    const rectA = cardA.getBoundingClientRect();
-                    const rectB = cardB.getBoundingClientRect();
+                    const posA = getCardLocalPos(cardA, tree);
+                    const posB = getCardLocalPos(cardB, tree);
 
-                    const x1 = rectA.right - svgRect.left;
-                    const y1 = (rectA.top - svgRect.top) + (rectA.height / 2);
+                    const x1 = posA.right;
+                    const y1 = posA.top + (posA.height / 2);
 
-                    const x2 = rectB.left - svgRect.left;
+                    const x2 = posB.left;
                     const slotRatio = (m.next_match_slot === 1) ? 0.32 : 0.68;
-                    const y2 = (rectB.top - svgRect.top) + (rectB.height * slotRatio);
+                    const y2 = posB.top + (posB.height * slotRatio);
 
                     const midX = x1 + (x2 - x1) * 0.5;
 
@@ -1624,45 +1807,134 @@
             }
         }
 
+        // FIT LAYAR / PAS LAYAR (OTOMATIS TANPA PERLU MENGGESER-GESER LAYAR)
+        let isFitScreenMode = true;
+
+        function toggleFitScreen() {
+            isFitScreenMode = !isFitScreenMode;
+            const btn = document.getElementById('btnFitScreen');
+            if (btn) {
+                if (isFitScreenMode) {
+                    btn.classList.add('active');
+                    btn.innerHTML = '<i class="fas fa-compress"></i> Pas Layar';
+                } else {
+                    btn.classList.remove('active');
+                    btn.innerHTML = '<i class="fas fa-expand"></i> Skala Penuh (Geser)';
+                }
+            }
+            applyScreenFit();
+        }
+
+        function applyScreenFit() {
+            const tree = document.getElementById('bracketTree');
+            const scrollContainer = document.querySelector('.bracket-scroll-container');
+            if (!tree || !scrollContainer) return;
+
+            if (!isFitScreenMode) {
+                tree.style.transform = '';
+                tree.style.zoom = '';
+                scrollContainer.style.overflowX = 'auto';
+                scrollContainer.style.overflowY = 'visible';
+                scrollContainer.style.height = '';
+                if (allTournaments[currentCategory]) {
+                    drawBracketLines(allTournaments[currentCategory]);
+                }
+                return;
+            }
+
+            // Reset sejenak untuk kalkulasi dimensi aktual kontainer
+            tree.style.transform = '';
+            tree.style.zoom = '';
+
+            const containerW = scrollContainer.clientWidth - 20;
+            const contentW = tree.scrollWidth;
+
+            if (contentW > containerW && containerW > 320) {
+                const scale = containerW / contentW;
+                tree.style.transformOrigin = 'top left';
+                tree.style.transform = `scale(${scale})`;
+                scrollContainer.style.overflowX = 'hidden';
+                scrollContainer.style.overflowY = 'hidden';
+                scrollContainer.style.height = (tree.scrollHeight * scale + 24) + 'px';
+            } else {
+                tree.style.transform = '';
+                scrollContainer.style.overflowX = 'hidden';
+                scrollContainer.style.overflowY = 'hidden';
+                scrollContainer.style.height = '';
+            }
+
+            if (allTournaments[currentCategory]) {
+                drawBracketLines(allTournaments[currentCategory]);
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (isFitScreenMode) {
+                applyScreenFit();
+            } else if (allTournaments[currentCategory]) {
+                drawBracketLines(allTournaments[currentCategory]);
+            }
+        });
+
         // CETAK BAGAN KHUSUS (PAS 1 HALAMAN LANDSCAPE & GARIS ALIR TETAP PRESISI)
         function printBracket() {
             const currentData = allTournaments[currentCategory];
-            const is10p = (currentData && currentData.participant_count === 10);
             const tree = document.getElementById('bracketTree');
+            const scrollContainer = document.querySelector('.bracket-scroll-container');
             if (!tree) {
                 window.print();
                 return;
             }
 
-            // Atur skala cetak agar tepat muat 1 halaman landscape
-            tree.style.zoom = is10p ? '0.66' : '0.88';
+            // Aktifkan stylesheet preview cetak
+            document.body.classList.add('print-preview-mode');
+            tree.style.transform = '';
+            tree.style.zoom = '';
+            if (scrollContainer) {
+                scrollContainer.style.height = '';
+                scrollContainer.style.overflow = 'visible';
+            }
+
+            // Gambar ulang garis SVG agar koordinatnya 100% tepat pada dimensi cetak
             drawBracketLines(currentData);
 
             setTimeout(() => {
                 window.print();
                 setTimeout(() => {
-                    tree.style.zoom = '';
-                    drawBracketLines(currentData);
+                    document.body.classList.remove('print-preview-mode');
+                    if (isFitScreenMode) {
+                        applyScreenFit();
+                    } else {
+                        drawBracketLines(currentData);
+                    }
                 }, 300);
-            }, 120);
+            }, 80);
         }
 
         window.addEventListener('beforeprint', () => {
             const currentData = allTournaments[currentCategory];
-            const is10p = (currentData && currentData.participant_count === 10);
             const tree = document.getElementById('bracketTree');
+            const scrollContainer = document.querySelector('.bracket-scroll-container');
+            document.body.classList.add('print-preview-mode');
             if (tree) {
-                tree.style.zoom = is10p ? '0.66' : '0.88';
+                tree.style.transform = '';
+                tree.style.zoom = '';
+            }
+            if (scrollContainer) {
+                scrollContainer.style.height = '';
+                scrollContainer.style.overflow = 'visible';
+            }
+            if (currentData) {
                 drawBracketLines(currentData);
             }
         });
 
         window.addEventListener('afterprint', () => {
-            const currentData = allTournaments[currentCategory];
-            const tree = document.getElementById('bracketTree');
-            if (tree) {
-                tree.style.zoom = '';
-                drawBracketLines(currentData);
+            document.body.classList.remove('print-preview-mode');
+            if (isFitScreenMode) {
+                applyScreenFit();
+            } else if (allTournaments[currentCategory]) {
+                drawBracketLines(allTournaments[currentCategory]);
             }
         });
 

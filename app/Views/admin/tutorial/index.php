@@ -643,7 +643,8 @@ graph TD
     D --> E["Form Input Berpasangan: Nama Peserta &amp; Asal Balai (1 Balai Bisa Multi-Nama)"]
     E --> F["Pilihan Cepat Jumlah Peserta (5, 10, 4, 8, 16) atau Tambah Peserta Baru"]
     F --> G["Klik 'Generate Bagan Turnamen' (Struktur Bagan Otomatis &amp; Resolusi BYE)"]
-    G --> H["Bagan Interaktif Tampil dengan Garis Alir Rapi &amp; Visual Pemisah Bagan"]
+    G --> H["Bagan Interaktif Tampil Otomatis Pas Layar (Tanpa Perlu Geser) &amp; Garis Alir Rapi"]
+    H --> H1["Tombol 'Pas Layar' untuk Beralih Mode Pas Layar atau Skala Penuh"]
     H --> I1["Input Skor Pertandingan &amp; Simpan Skor"]
     H --> I2["Klik Tombol Pemenang (Pemenang Lolos Otomatis ke Babak Selanjutnya)"]
     I2 --> J1["Babak Final / Grand Final: Pemenang Dinobatkan sebagai Juara 1 &amp; Runner-Up"]
@@ -2058,7 +2059,8 @@ graph TD
                                     <li><strong>Acak Posisi Peserta (Shuffle Bracket):</strong> Klik tombol merah <strong>Acak Posisi</strong> pada toolbar atas. Untuk menjaga sportivitas dan integritas pengundian, sistem meminta verifikasi dengan <strong>memasukkan password akun Superadministrator</strong>.</li>
                                     <li>Setelah password terverifikasi, posisi peserta pada bagan kategori yang aktif (Putra/Putri) akan diacak secara adil dan bagan otomatis diperbarui secara instan dengan notifikasi tunggal (bebas double alert).</li>
                                     <li><strong>Catat Skor &amp; Tentukan Pemenang:</strong> Masukkan skor pada kartu pertandingan dan klik tombol simpan atau klik tanda centang pemenang. Pemenang otomatis melaju ke babak berikutnya hingga babak Final dan podium juara.</li>
-                                    <li><strong>Ekspor Dokumen PDF &amp; Cetak Bagan:</strong> Klik tombol biru <strong>Ekspor PDF</strong> untuk mengunduh berkas PDF resmi <strong>1 halaman A4 Landscape</strong> dengan desain visual yang <strong>identik dan selaras penuh dengan tampilan portal web</strong> (Top Bar biru tua PUPR, kartu pertandingan dengan seed badge, balai badge, dan box skor, banner podium juara tanpa kolom tanda tangan, serta bagan pohon pertandingan rapi presisi). Tersedia juga tombol <strong>Cetak Bagan</strong> untuk mencetak langsung atau menyimpan PDF 1 halaman landscape dari peramban (Chrome/Edge/Safari).</li>
+                                    <li><strong>Tampilan Pas Layar (Tanpa Geser):</strong> Tersedia tombol <strong>Pas Layar</strong> pada toolbar yang secara otomatis menyesuaikan ukuran bagan agar pas dan terlihat penuh di layar monitor/laptop tanpa perlu menggeser horizontal maupun vertikal. Pengguna dapat mengklik tombol tersebut kapan saja untuk beralih antara mode Pas Layar atau Skala Penuh.</li>
+                                    <li><strong>Ekspor Dokumen PDF &amp; Cetak Bagan:</strong> Klik tombol biru <strong>Ekspor PDF</strong> untuk mengunduh berkas PDF resmi <strong>1 halaman A4 Landscape</strong> dengan desain visual yang <strong>identik dan selaras penuh dengan tampilan portal web</strong> (Top Bar biru tua PUPR, kartu pertandingan dengan seed badge, balai badge, dan box skor, banner podium juara tanpa kolom tanda tangan, serta bagan pohon pertandingan rapi presisi). Tersedia juga tombol <strong>Cetak Bagan</strong> untuk mencetak langsung atau menyimpan PDF 1 halaman landscape dari peramban dengan garis alir SVG yang dihitung presisi tanpa terputus.</li>
                                     <li>Tersedia tombol <strong>Reset Skor</strong> untuk mengulang skor pertandingan tanpa menghapus data peserta yang telah diinput.</li>
                                 </ol>
                             </div>
