@@ -503,20 +503,96 @@
         }
 
         /* PRINT PREVIEW MODE STYLES (DIAPLIKASIKAN SEBELUM DIALOG CETAK TERBUKA) */
+        body.print-preview-mode .header-actions,
+        body.print-preview-mode .category-nav-bar,
+        body.print-preview-mode .site-footer,
+        body.print-preview-mode .btn-save-match,
+        body.print-preview-mode .btn-pick-winner,
+        body.print-preview-mode .score-input,
+        body.print-preview-mode .modal-overlay,
+        body.print-preview-mode .match-actions-footer {
+            display: none !important;
+        }
+
+        body.print-preview-mode .score-print-display {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 32px !important;
+            height: 24px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 4px !important;
+            font-weight: 800 !important;
+            font-size: 0.85rem !important;
+            color: #0f172a !important;
+            background: #f8fafc !important;
+        }
+
+        body.print-preview-mode .winner-print-check {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 20px !important;
+            height: 20px !important;
+            border-radius: 50% !important;
+            background: #10b981 !important;
+            color: #ffffff !important;
+            font-size: 0.7rem !important;
+            margin-left: 2px !important;
+        }
+
+        body.print-preview-mode .site-header {
+            padding: 8px 14px !important;
+            background: #002244 !important;
+            border-radius: 6px !important;
+            margin-bottom: 6px !important;
+        }
+
+        body.print-preview-mode .tournament-banner {
+            box-shadow: none !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            margin-bottom: 8px !important;
+            padding: 6px 12px !important;
+        }
+
+        body.print-preview-mode .bracket-scroll-container {
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-shadow: none !important;
+            border: none !important;
+            height: auto !important;
+        }
+
         body.print-preview-mode .bracket-tree {
             transform: none !important;
             zoom: 1 !important;
+            min-width: 100% !important;
+            padding: 0 !important;
         }
-        body.print-preview-mode .bracket-tree.is-10p {
+
+        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p {
             gap: 20px !important;
         }
-        body.print-preview-mode .bracket-tree.is-10p .bracket-round-column {
+
+        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p .bracket-round-column {
             width: 220px !important;
         }
-        body.print-preview-mode .bracket-tree:not(.is-10p) {
+
+        body.print-preview-mode .bracket-tree.is-10p .round-matches-list {
+            gap: 6px !important;
+        }
+
+        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree.is-10p .player-slot {
+            padding: 3px 6px !important;
+        }
+
+        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) {
             gap: 40px !important;
         }
-        body.print-preview-mode .bracket-tree:not(.is-10p) .bracket-round-column {
+
+        body.print-preview-mode:not(.print-portrait-mode) .bracket-tree:not(.is-10p) .bracket-round-column {
             width: 260px !important;
         }
 
@@ -536,8 +612,15 @@
         body.print-portrait-mode .bracket-tree.is-10p .player-name {
             font-size: 0.72rem !important;
         }
-        body.print-portrait-mode .bracket-tree.is-10p .round-title {
+        body.print-portrait-mode .bracket-tree.is-10p .round-header {
+            padding: 6px 8px !important;
+            margin-bottom: 8px !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .round-header h3 {
             font-size: 0.75rem !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .round-matches-list {
+            gap: 5px !important;
         }
         body.print-portrait-mode .bracket-tree:not(.is-10p) {
             gap: 24px !important;
@@ -1901,22 +1984,26 @@
         }
 
         // FUNGSI HITUNG POSISI ELEMEN RELATIF TERHADAP ROOT BRACKET TREE
-        function getCardLocalPos(card, root) {
-            let left = 0;
-            let top = 0;
-            let el = card;
-            while (el && el !== root) {
-                left += el.offsetLeft;
-                top += el.offsetTop;
-                el = el.offsetParent;
-            }
+        function getCardLocalPos(el, root) {
+            const elRect = el.getBoundingClientRect();
+            const rootRect = root.getBoundingClientRect();
+            const scaleX = (root.offsetWidth > 0 && rootRect.width > 0) ? (rootRect.width / root.offsetWidth) : 1;
+            const scaleY = (root.offsetHeight > 0 && rootRect.height > 0) ? (rootRect.height / root.offsetHeight) : 1;
+            const effectiveScaleX = (scaleX > 0.05) ? scaleX : 1;
+            const effectiveScaleY = (scaleY > 0.05) ? scaleY : 1;
+
+            const left = (elRect.left - rootRect.left) / effectiveScaleX;
+            const top = (elRect.top - rootRect.top) / effectiveScaleY;
+            const width = elRect.width / effectiveScaleX;
+            const height = elRect.height / effectiveScaleY;
+
             return {
                 left: left,
                 top: top,
-                right: left + card.offsetWidth,
-                bottom: top + card.offsetHeight,
-                width: card.offsetWidth,
-                height: card.offsetHeight
+                right: left + width,
+                bottom: top + height,
+                width: width,
+                height: height
             };
         }
 
@@ -1969,8 +2056,18 @@
                     const y1 = posA.top + (posA.height / 2);
 
                     const x2 = posB.left;
-                    const slotRatio = (m.next_match_slot === 1) ? 0.32 : 0.68;
-                    const y2 = posB.top + (posB.height * slotRatio);
+                    
+                    // Pinpoint target slot in card B
+                    const slotsB = cardB.querySelectorAll('.player-slot');
+                    const targetSlotIdx = (m.next_match_slot === 1) ? 0 : 1;
+                    let y2;
+                    if (slotsB && slotsB[targetSlotIdx]) {
+                        const slotPos = getCardLocalPos(slotsB[targetSlotIdx], tree);
+                        y2 = slotPos.top + (slotPos.height / 2);
+                    } else {
+                        const slotRatio = (m.next_match_slot === 1) ? 0.32 : 0.68;
+                        y2 = posB.top + (posB.height * slotRatio);
+                    }
 
                     const midX = x1 + (x2 - x1) * 0.5;
 
@@ -2104,7 +2201,9 @@
                 document.body.classList.remove('print-portrait-mode');
             }
 
-            const currentData = allTournaments[currentCategory];
+            // Aktifkan stylesheet preview cetak
+            document.body.classList.add('print-preview-mode');
+
             const tree = document.getElementById('bracketTree');
             const scrollContainer = document.querySelector('.bracket-scroll-container');
             if (!tree) {
@@ -2112,30 +2211,30 @@
                 return;
             }
 
-            // Aktifkan stylesheet preview cetak
-            document.body.classList.add('print-preview-mode');
-            tree.style.transform = '';
-            tree.style.zoom = '';
+            tree.style.transform = 'none';
+            tree.style.zoom = '1';
             if (scrollContainer) {
                 scrollContainer.style.height = '';
                 scrollContainer.style.overflow = 'visible';
             }
 
-            // Gambar ulang garis SVG agar koordinatnya 100% tepat pada dimensi cetak
-            drawBracketLines(currentData);
+            // Paksa reflow layout DOM sehingga semua aturan print-preview-mode aktif 100%
+            void document.body.offsetHeight;
+            void tree.offsetHeight;
 
-            setTimeout(() => {
-                window.print();
+            // Gambar ulang garis SVG agar koordinatnya 100% tepat pada dimensi cetak
+            const currentData = allTournaments[currentCategory];
+            if (currentData) {
+                drawBracketLines(currentData);
+            }
+
+            // Panggil dialog cetak; jangan gunakan setTimeout untuk menghapus class
+            // karena class harus tetap aktif selama dialog cetak browser terbuka!
+            requestAnimationFrame(() => {
                 setTimeout(() => {
-                    document.body.classList.remove('print-preview-mode');
-                    document.body.classList.remove('print-portrait-mode');
-                    if (isFitScreenMode) {
-                        applyScreenFit();
-                    } else {
-                        drawBracketLines(currentData);
-                    }
-                }, 300);
-            }, 100);
+                    window.print();
+                }, 120);
+            });
         }
 
         window.addEventListener('beforeprint', () => {
@@ -2144,13 +2243,15 @@
             const scrollContainer = document.querySelector('.bracket-scroll-container');
             document.body.classList.add('print-preview-mode');
             if (tree) {
-                tree.style.transform = '';
-                tree.style.zoom = '';
+                tree.style.transform = 'none';
+                tree.style.zoom = '1';
             }
             if (scrollContainer) {
                 scrollContainer.style.height = '';
                 scrollContainer.style.overflow = 'visible';
             }
+            void document.body.offsetHeight;
+            void (tree ? tree.offsetHeight : 0);
             if (currentData) {
                 drawBracketLines(currentData);
             }
@@ -2159,6 +2260,10 @@
         window.addEventListener('afterprint', () => {
             document.body.classList.remove('print-preview-mode');
             document.body.classList.remove('print-portrait-mode');
+            const styleTag = document.getElementById('printOrientationStyle');
+            if (styleTag) {
+                styleTag.textContent = '';
+            }
             if (isFitScreenMode) {
                 applyScreenFit();
             } else if (allTournaments[currentCategory]) {
