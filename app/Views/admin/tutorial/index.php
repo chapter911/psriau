@@ -617,6 +617,42 @@ graph TD
         </div>
     </div>
 
+    <!-- FLOWCHART: TURNAMEN TENIS MEJA SISTEM GUGUR -->
+    <div class="flowchart-card role-section" data-roles="operator,admin,super_administrator,all">
+        <div class="flowchart-card__header d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="font-weight-bold mb-1 text-primary"><i class="fas fa-table-tennis-paddle-ball mr-2 text-warning"></i> Alur Turnamen Tenis Meja Sistem Gugur (/tenismeja)</h5>
+                <small class="text-muted">Akses publik bagan turnamen sistem gugur tanpa login, input peserta/balai, live bracket, acak posisi aman (khusus Superadministrator), dan ekspor dokumen PDF.</small>
+            </div>
+            <div>
+                <span class="badge badge-info">Publik / Superadmin</span>
+            </div>
+        </div>
+        <div class="flowchart-card__body">
+            <div class="mermaid-container mb-4">
+                <pre class="mermaid">
+graph TD
+    A["Akses Portal /tenismeja (Tanpa Perlu Login)"] --> B{"Sudah Ada Bagan Turnamen Aktif?"}
+    B -- Belum Ada / Buat Baru --> C["Klik Tombol 'Atur Peserta'"]
+    C --> D["Input Jumlah Peserta (4, 8, 16, 32 atau Angka Bebas)"]
+    D --> E["Ketik Nama Peserta / Klik Cepat Pilihan Balai PUPR (BWS, BPJN, BPPW, BP2JK, Satker PPS, dll.)"]
+    E --> F["Klik 'Generate Bagan Turnamen' (Sistem Gugur Standar Otomatis)"]
+    B -- Sudah Ada --> G["Bagan Turnamen Interaktif Tampil Lengkap per Babak"]
+    F --> G
+    G --> H1["Input Skor Pertandingan &amp; Simpan Skor"]
+    G --> H2["Klik Tombol Pemenang (Pemenang Lolos Otomatis ke Babak Selanjutnya)"]
+    H2 --> I1["Babak Final: Pemenang Dinobatkan sebagai Juara 1 (Champion) &amp; Juara 2 (Runner-Up)"]
+    G --> J1["Klik Tombol 'Ekspor PDF' -> Unduh Dokumen PDF Resmi Kop Satker PPS &amp; Bagan Lengkap"]
+    G --> K1["Klik Tombol 'Acak Posisi' (Shuffle Bracket)"]
+    K1 --> L1["Modal Input Password Akun Superadministrator"]
+    L1 --> M1{"Verifikasi Password Superadmin"}
+    M1 -- Salah --> N1["Pemberitahuan Ditolak (Password Salah)"]
+    M1 -- Benar --> O1["Posisi Peserta Diacak Secara Adil &amp; Bagan Diperbarui Otomatis"]
+                </pre>
+            </div>
+        </div>
+    </div>
+
     <!-- FLOWCHART 7: INVENTARISASI - PENDATAAN ASET SATKER, DBR, PINJAM PAKAI & SARPRAS SEKOLAH -->
     <div class="flowchart-card role-section" data-roles="admin,super_administrator,all">
         <div class="flowchart-card__header d-flex justify-content-between align-items-center">
@@ -1973,6 +2009,54 @@ graph TD
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODUL TURNAMEN TENIS MEJA SISTEM GUGUR -->
+        <div class="card menu-tutorial-card mb-3 role-section" data-roles="all,admin,super_administrator,staf_pelaksana,ppk_kasatker">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 font-weight-bold text-primary">
+                    <i class="fas fa-table-tennis-paddle-ball mr-2 text-warning"></i> Modul Turnamen Tenis Meja: Sistem Gugur, Bagan Pertandingan, Acak Posisi &amp; Ekspor PDF
+                </h5>
+            </div>
+            <div class="card-body bg-light">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-globe mr-1"></i> Akses Publik &amp; Bagan Pertandingan</h6>
+                                <p class="small text-muted mb-2"><code>/tenismeja</code> (Bisa diakses publik tanpa perlu login)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li>Buka URL <code>/tenismeja</code> dari peramban (smartphone, tablet, laptop, atau display monitor).</li>
+                                    <li>Halaman menampilkan bagan turnamen sistem gugur (<em>Single Elimination Tournament Bracket</em>) dengan pohon bagan interaktif (Babak 1, Perempat Final, Semi Final, Final, dan Juara).</li>
+                                    <li>Jika belum ada bagan atau ingin membuat turnamen baru, klik tombol <strong>Atur Peserta</strong>.</li>
+                                    <li>Tentukan <strong>Jumlah Peserta</strong> (pilihan cepat: 4, 8, 16, 32 atau ketik angka bebas dari 2 s.d 32).</li>
+                                    <li>Input nama peserta atau asal balai (tersedia tombol klik cepat untuk Balai PUPR seperti BWS Sumatera III, BPJN Riau, BPPW Riau, BP2JK Riau, Satker PPS Riau, BPBPK Wilayah II, Sekretariat PUPR Riau, dll.).</li>
+                                    <li>Klik <strong>Generate Bagan Turnamen</strong> untuk langsung menyusun bagan pertandingan secara otomatis dengan penanganan BYE standar turnamen internasional jika jumlah peserta bukan pangkat 2.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-shield-halved mr-1"></i> Acak Posisi (Superadmin) &amp; Ekspor PDF</h6>
+                                <p class="small text-muted mb-2"><code>/tenismeja</code> (Otorisasi Password Superadmin &amp; Cetak Resmi)</p>
+                                <ol class="pl-3 small mb-0">
+                                    <li><strong>Acak Posisi Peserta (Shuffle Bracket):</strong> Klik tombol merah <strong>Acak Posisi</strong> pada toolbar atas. Untuk menjaga sportivitas dan integritas pengundian, sistem meminta verifikasi dengan <strong>memasukkan password akun Superadministrator</strong>.</li>
+                                    <li>Setelah password terverifikasi, posisi peserta pada bagan akan diacak secara adil dan bagan otomatis diperbarui secara instan dengan notifikasi tunggal (bebas double alert).</li>
+                                    <li><strong>Catat Skor &amp; Tentukan Pemenang:</strong> Masukkan skor pada kartu pertandingan dan klik tombol simpan atau klik tanda centang pemenang. Pemenang otomatis melaju ke babak berikutnya hingga babak Final dan podium juara.</li>
+                                    <li><strong>Ekspor Dokumen PDF:</strong> Klik tombol biru <strong>Ekspor PDF</strong> untuk mengunduh berkas PDF resmi berukuran A4 Landscape lengkap dengan Kop Satker PPS Riau, bagan turnamen, daftar pertandingan &amp; skor, serta lembar tanda tangan panitia dan pengesahan Kasatker.</li>
+                                    <li>Tersedia tombol <strong>Reset Skor</strong> untuk mengulang skor pertandingan tanpa menghapus data peserta yang telah diinput.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- MODUL KONSULTAN INDIVIDUAL -->
         <?php if ($canRenderForUser(['all', 'admin', 'super_administrator', 'staf_pelaksana'])): ?>
         <div class="card menu-tutorial-card mb-3 role-section" data-roles="all,admin,super_administrator,staf_pelaksana">

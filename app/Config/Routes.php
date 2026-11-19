@@ -45,6 +45,16 @@ $routes->post('gateball/api/update-score', 'Gateball::apiUpdateScore');
 $routes->post('gateball/api/batch-update', 'Gateball::apiBatchUpdate');
 $routes->post('gateball/api/reset', 'Gateball::apiReset');
 
+// Tenis Meja Tournament Routes (Public - No Login Required)
+$routes->get('tenismeja', 'TenisMeja::index');
+$routes->addRedirect('tenis-meja', 'tenismeja', 301);
+$routes->get('tenismeja/api/data', 'TenisMeja::apiData');
+$routes->post('tenismeja/api/setup', 'TenisMeja::apiSetup');
+$routes->post('tenismeja/api/acak-posisi', 'TenisMeja::apiAcakPosisi');
+$routes->post('tenismeja/api/update-match', 'TenisMeja::apiUpdateMatch');
+$routes->post('tenismeja/api/reset', 'TenisMeja::apiReset');
+$routes->get('tenismeja/pdf', 'TenisMeja::exportPdf');
+
 // OAuth routes for Google Drive
 $routes->get('oauth/connect', 'Oauth::connect');
 $routes->get('oauth/callback', 'Oauth::callback');
