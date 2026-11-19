@@ -379,8 +379,16 @@ class TenisMejaTournamentModel extends Model
             ];
         }
 
-        // 5 PARTICIPANTS (EXACT USER SPECIFICATION)
+        // 5 PARTICIPANTS (EXACT USER SPECIFICATION WITH EXPLICIT BYE BAGAN CARDS)
         if ($N === 5) {
+            $byeDummy = [
+                'id'     => 0,
+                'seed'   => '-',
+                'name'   => '(BYE)',
+                'balai'  => 'Lolos Otomatis',
+                'is_bye' => true,
+            ];
+
             $rounds = [
                 1 => [
                     'round'   => 1,
@@ -397,9 +405,9 @@ class TenisMejaTournamentModel extends Model
                             'score2'          => null,
                             'winner'          => null,
                             'status'          => 'pending',
-                            'next_match_id'   => 'R3_M0',
+                            'next_match_id'   => 'R2_M_BYE',
                             'next_match_slot' => 1,
-                            'note'            => 'Pemenang Menang Bye di Ronde 2 & Lolos ke Final',
+                            'note'            => 'Pemenang Lolos ke Babak 2 (Menang Bye ke Final)',
                         ],
                         [
                             'id'              => 'R1_M1',
@@ -415,13 +423,45 @@ class TenisMejaTournamentModel extends Model
                             'next_match_id'   => 'R2_M0',
                             'next_match_slot' => 1,
                             'note'            => 'Pemenang Melawan ' . ($participants[4]['name'] ?? 'Peserta 5') . ' di Semi Final',
-                        ]
+                        ],
+                        [
+                            'id'              => 'R1_M_BYE',
+                            'round'           => 1,
+                            'round_name'      => 'Babak I',
+                            'match_number'    => 'BYE',
+                            'player1'         => $participants[4],
+                            'player2'         => $byeDummy,
+                            'score1'          => 1,
+                            'score2'          => 0,
+                            'winner'          => $participants[4],
+                            'status'          => 'completed',
+                            'is_bye'          => true,
+                            'next_match_id'   => 'R2_M0',
+                            'next_match_slot' => 2,
+                            'note'            => 'Menang Bye Babak 1 (Lolos ke Semi Final)',
+                        ],
                     ]
                 ],
                 2 => [
                     'round'   => 2,
                     'name'    => 'Semi Final',
                     'matches' => [
+                        [
+                            'id'              => 'R2_M_BYE',
+                            'round'           => 2,
+                            'round_name'      => 'Semi Final',
+                            'match_number'    => 'BYE',
+                            'player1'         => null, // Winner of R1_M0
+                            'player2'         => $byeDummy,
+                            'score1'          => null,
+                            'score2'          => null,
+                            'winner'          => null,
+                            'status'          => 'pending',
+                            'is_bye'          => true,
+                            'next_match_id'   => 'R3_M0',
+                            'next_match_slot' => 1,
+                            'note'            => 'Menang Bye Ronde 2 (Lolos ke Final)',
+                        ],
                         [
                             'id'              => 'R2_M0',
                             'round'           => 2,
@@ -448,8 +488,8 @@ class TenisMejaTournamentModel extends Model
                             'round'           => 3,
                             'round_name'      => 'Final (Bye vs Pemenang Semifinal)',
                             'match_number'    => 4,
-                            'player1'         => null, // Winner of R1_M0 (Menang Bye di semifinal)
-                            'player2'         => null, // Winner of R2_M0 (Pemenang Semifinal)
+                            'player1'         => null, // From R2_M_BYE (Winner R1_M0)
+                            'player2'         => null, // From R2_M0 (Winner Semifinal)
                             'score1'          => null,
                             'score2'          => null,
                             'winner'          => null,
@@ -865,29 +905,58 @@ class TenisMejaTournamentModel extends Model
         $match['winner'] = $selectedWinner;
         $match['status'] = $selectedWinner ? 'completed' : 'pending';
 
-        // Cascade to next match (search by ID across all rounds)
+        // Cascade to next match (support cascading through automatic BYE cards)
         $nextMatchId = $match['next_match_id'] ?? null;
         $nextSlot = $match['next_match_slot'] ?? 1;
 
+        $cascadeQueue = [];
         if ($nextMatchId) {
+            $cascadeQueue[] = [
+                'id'     => $nextMatchId,
+                'slot'   => $nextSlot,
+                'player' => $selectedWinner,
+            ];
+        }
+
+        while (! empty($cascadeQueue)) {
+            $item = array_shift($cascadeQueue);
+            $cId = $item['id'];
+            $cSlot = $item['slot'];
+            $cPlayer = $item['player'];
+
             foreach ($rounds as $rIdx => &$rd) {
-                foreach ($rd['matches'] as &$nextM) {
-                    if ($nextM['id'] === $nextMatchId) {
-                        $oldPlayer = ($nextSlot === 1) ? ($nextM['player1'] ?? null) : ($nextM['player2'] ?? null);
+                foreach ($rd['matches'] as &$targetM) {
+                    if ($targetM['id'] === $cId) {
+                        $oldPlayer = ($cSlot === 1) ? ($targetM['player1'] ?? null) : ($targetM['player2'] ?? null);
 
-                        if ($nextSlot === 1) {
-                            $nextM['player1'] = $selectedWinner;
+                        if ($cSlot === 1) {
+                            $targetM['player1'] = $cPlayer;
                         } else {
-                            $nextM['player2'] = $selectedWinner;
+                            $targetM['player2'] = $cPlayer;
                         }
 
-                        if ($oldPlayer !== null && ($selectedWinner === null || $oldPlayer['name'] !== $selectedWinner['name'])) {
-                            $this->clearDownstreamMatches($rounds, $nextM['id']);
+                        if ($oldPlayer !== null && ($cPlayer === null || ($oldPlayer['name'] ?? '') !== ($cPlayer['name'] ?? ''))) {
+                            $this->clearDownstreamMatches($rounds, $targetM['id']);
                         }
+
+                        // If target match is an automatic BYE match (e.g. R2_M_BYE), automatically advance its winner
+                        if (! empty($targetM['is_bye'])) {
+                            $targetM['winner'] = $targetM['player1'];
+                            $targetM['status'] = (! empty($targetM['player1'])) ? 'completed' : 'pending';
+
+                            if (! empty($targetM['next_match_id'])) {
+                                $cascadeQueue[] = [
+                                    'id'     => $targetM['next_match_id'],
+                                    'slot'   => $targetM['next_match_slot'] ?? 1,
+                                    'player' => $targetM['winner'],
+                                ];
+                            }
+                        }
+
                         break 2;
                     }
                 }
-                unset($nextM);
+                unset($targetM);
             }
             unset($rd);
         }

@@ -368,7 +368,7 @@
             top: 0;
             left: 0;
             pointer-events: none;
-            z-index: 5;
+            z-index: 1;
         }
 
         .bracket-tree {
@@ -378,7 +378,6 @@
             align-items: stretch;
             padding: 10px 0;
             position: relative;
-            z-index: 10;
         }
 
         .bracket-round-column {
@@ -386,6 +385,8 @@
             flex-direction: column;
             width: 330px;
             flex-shrink: 0;
+            position: relative;
+            z-index: 2;
         }
 
         .bracket-line {
@@ -499,6 +500,17 @@
             border-color: var(--pupr-yellow);
             border-width: 2px;
             box-shadow: 0 4px 16px rgba(247, 168, 27, 0.2);
+        }
+
+        .match-card.is-bye-card {
+            border-style: dashed;
+            border-color: #86efac;
+            background: #fafdfb;
+        }
+
+        .match-card.is-bye-card .match-card-header {
+            background: #ecfdf5;
+            color: #065f46;
         }
 
         .match-card-header {
@@ -1053,8 +1065,8 @@
 
         <!-- INTERACTIVE BRACKET SECTION -->
         <section class="bracket-scroll-container" id="bracketScrollContainer">
-            <svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>
             <div class="bracket-tree" id="bracketTree">
+                <svg id="bracketSvgCanvas" class="bracket-svg-canvas"></svg>
                 <!-- RENDERED DYNAMICALLY BY JAVASCRIPT -->
             </div>
         </section>
@@ -1267,53 +1279,10 @@
 
                 const matchesList = col.querySelector(`#roundMatchesList_${r}`);
 
-                // In 5-participant tournament, show "A/B Menang Bye" at top of Round 2 (Semi Final)
-                if (data.participant_count === 5 && r === 2) {
-                    const m1 = (rounds[1] && rounds[1].matches) ? rounds[1].matches[0] : null;
-                    const m1Winner = (m1 && m1.winner) ? m1.winner : null;
-                    const byeCard = document.createElement('div');
-                    byeCard.className = 'bye-slot-card bye-slot-finalist';
-                    byeCard.innerHTML = `
-                        <div class="bye-slot-header">
-                            <span class="badge-bye-pill" style="background:#ecfdf5; color:#065f46;"><i class="fas fa-bolt text-success"></i> Menang Bye Ronde 2</span>
-                            <span style="font-size: 0.72rem; color: #065f46; font-weight: 700;">Lolos ke Final</span>
-                        </div>
-                        <div class="bye-slot-body">
-                            <div class="player-seed">${m1Winner ? (m1Winner.seed || '•') : '1/2'}</div>
-                            <div class="player-name-wrap">
-                                <div class="player-name">${m1Winner ? escapeHtml(m1Winner.name) : '<em style="color:#64748b">Pemenang Match #1 (A vs B)</em>'}</div>
-                                ${m1Winner && m1Winner.balai ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(m1Winner.balai)}</span>` : ''}
-                            </div>
-                        </div>
-                    `;
-                    matchesList.appendChild(byeCard);
-                }
-
                 roundData.matches.forEach((m) => {
                     const matchCard = createMatchCardElement(m, isFinalRound);
                     matchesList.appendChild(matchCard);
                 });
-
-                // In 5-participant tournament, show "E Menang Bye" at bottom of Round 1 (Babak I)
-                if (data.participant_count === 5 && r === 1 && data.participants_json && data.participants_json.length >= 5) {
-                    const p5 = data.participants_json[4];
-                    const byeCard = document.createElement('div');
-                    byeCard.className = 'bye-slot-card';
-                    byeCard.innerHTML = `
-                        <div class="bye-slot-header">
-                            <span class="badge-bye-pill"><i class="fas fa-bolt text-warning"></i> Menang Bye Ronde 1</span>
-                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 700;">Lolos ke Semi Final</span>
-                        </div>
-                        <div class="bye-slot-body">
-                            <div class="player-seed">5</div>
-                            <div class="player-name-wrap">
-                                <div class="player-name">${escapeHtml(p5.name)}</div>
-                                ${p5.balai ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(p5.balai)}</span>` : ''}
-                            </div>
-                        </div>
-                    `;
-                    matchesList.appendChild(byeCard);
-                }
             }
 
             // Draw visible SVG connector lines between matches
@@ -1337,15 +1306,15 @@
                 return;
             }
 
-            const scrollW = Math.max(tree.scrollWidth, tree.offsetWidth);
-            const scrollH = Math.max(tree.scrollHeight, tree.offsetHeight);
+            const scrollW = tree.scrollWidth;
+            const scrollH = tree.scrollHeight;
 
             svg.setAttribute('width', scrollW);
             svg.setAttribute('height', scrollH);
             svg.style.width = scrollW + 'px';
             svg.style.height = scrollH + 'px';
 
-            const treeRect = tree.getBoundingClientRect();
+            const svgRect = svg.getBoundingClientRect();
             const rounds = data.bracket_json.rounds;
             const totalRounds = parseInt(data.bracket_json.total_rounds || Object.keys(rounds).length);
 
@@ -1364,15 +1333,14 @@
                     const rectA = cardA.getBoundingClientRect();
                     const rectB = cardB.getBoundingClientRect();
 
-                    const x1 = rectA.right - treeRect.left;
-                    const y1 = (rectA.top - treeRect.top) + (rectA.height / 2);
+                    const x1 = rectA.right - svgRect.left;
+                    const y1 = (rectA.top - svgRect.top) + (rectA.height / 2);
 
-                    const x2 = rectB.left - treeRect.left;
+                    const x2 = rectB.left - svgRect.left;
                     const slotRatio = (m.next_match_slot === 1) ? 0.32 : 0.68;
-                    const y2 = (rectB.top - treeRect.top) + (rectB.height * slotRatio);
+                    const y2 = (rectB.top - svgRect.top) + (rectB.height * slotRatio);
 
-                    // If skipping across intermediate columns (e.g. R1 to R3 directly), turn vertically 25px before target card
-                    const midX = (x2 - x1 > 120) ? (x2 - 25) : (x1 + (x2 - x1) * 0.5);
+                    const midX = x1 + (x2 - x1) * 0.5;
 
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     const d = `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
@@ -1396,7 +1364,7 @@
         function createMatchCardElement(match, isFinal) {
             const hasWinner = !!(match.winner && match.status === 'completed');
             const card = document.createElement('div');
-            card.className = `match-card ${isFinal ? 'is-final' : ''} ${hasWinner ? 'has-winner' : ''}`;
+            card.className = `match-card ${isFinal ? 'is-final' : ''} ${hasWinner ? 'has-winner' : ''} ${match.is_bye ? 'is-bye-card' : ''}`;
             card.id = `card_${match.id}`;
 
             const p1 = match.player1;
@@ -1409,8 +1377,12 @@
 
             card.innerHTML = `
                 <div class="match-card-header">
-                    <span><i class="fas fa-gamepad mr-1"></i> Match #${match.match_number}</span>
-                    <span>${match.status === 'completed' ? '<span style="color: #10b981; font-weight: 800;"><i class="fas fa-check"></i> SELESAI</span>' : '<span style="color: #f59e0b;"><i class="fas fa-hourglass-half"></i> PENDING</span>'}</span>
+                    <span>
+                        ${match.is_bye ? '<i class="fas fa-bolt text-warning mr-1"></i> Menang Bye' : '<i class="fas fa-gamepad mr-1"></i> Match #' + match.match_number}
+                    </span>
+                    <span>
+                        ${match.is_bye ? '<span style="color: #10b981; font-weight: 800;"><i class="fas fa-check-circle"></i> ' + (match.status === 'completed' ? 'MENANG BYE' : 'MENUNGGU') + '</span>' : (match.status === 'completed' ? '<span style="color: #10b981; font-weight: 800;"><i class="fas fa-check"></i> SELESAI</span>' : '<span style="color: #f59e0b;"><i class="fas fa-hourglass-half"></i> PENDING</span>')}
+                    </span>
                 </div>
 
                 <!-- PLAYER 1 -->
@@ -1418,15 +1390,19 @@
                     <div class="player-info">
                         <div class="player-seed">${p1 ? (p1.seed || '•') : '-'}</div>
                         <div class="player-name-wrap">
-                            <div class="player-name">${p1 ? escapeHtml(p1.name) : '<em style="color:#94a3b8">Menunggu Pemenang</em>'}</div>
+                            <div class="player-name">${p1 ? escapeHtml(p1.name) : '<em style="color:#94a3b8">Menunggu Pemenang Match #1</em>'}</div>
                             ${p1 && p1.balai ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(p1.balai)}</span>` : ''}
                         </div>
                     </div>
                     <div class="player-score-ctrl">
-                        <input type="number" min="0" max="99" class="score-input" id="score1_${match.id}" value="${match.score1 !== null ? match.score1 : ''}" placeholder="0" ${!p1 || isByeMatch ? 'disabled' : ''}>
-                        <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p1 ? escapeHtml(p1.name) : ''}')" ${!p1 || isByeMatch ? 'disabled' : ''}>
-                            <i class="fas fa-check"></i>
-                        </button>
+                        ${isByeMatch ? `
+                            <span class="badge-bye-pill" style="background:#ecfdf5; color:#065f46; font-size:0.75rem;"><i class="fas fa-check"></i> Lolos</span>
+                        ` : `
+                            <input type="number" min="0" max="99" class="score-input" id="score1_${match.id}" value="${match.score1 !== null ? match.score1 : ''}" placeholder="0" ${!p1 ? 'disabled' : ''}>
+                            <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p1 ? escapeHtml(p1.name) : ''}')" ${!p1 ? 'disabled' : ''}>
+                                <i class="fas fa-check"></i>
+                            </button>
+                        `}
                     </div>
                 </div>
 
@@ -1435,16 +1411,19 @@
                     <div class="player-info">
                         <div class="player-seed">${p2 ? (p2.seed || '•') : '-'}</div>
                         <div class="player-name-wrap">
-                            <div class="player-name">${p2 ? escapeHtml(p2.name) : '<em style="color:#94a3b8">Menunggu Pemenang</em>'}</div>
+                            <div class="player-name">${p2 && p2.is_bye ? '<span style="color:#64748b; font-style:italic;">(BYE) - Lolos Otomatis</span>' : (p2 ? escapeHtml(p2.name) : '<em style="color:#94a3b8">Menunggu Pemenang</em>')}</div>
                             ${p2 && p2.balai && !p2.is_bye ? `<span class="balai-badge-pill"><i class="fas fa-building"></i> ${escapeHtml(p2.balai)}</span>` : ''}
-                            ${match.round === 2 && match.match_number === 3 && p2 && !p2.is_bye ? `<span class="badge-bye-pill"><i class="fas fa-bolt"></i> Menang Bye Babak 1</span>` : ''}
                         </div>
                     </div>
                     <div class="player-score-ctrl">
-                        <input type="number" min="0" max="99" class="score-input" id="score2_${match.id}" value="${match.score2 !== null ? match.score2 : ''}" placeholder="0" ${!p2 || isByeMatch ? 'disabled' : ''}>
-                        <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p2 ? escapeHtml(p2.name) : ''}')" ${!p2 || isByeMatch ? 'disabled' : ''}>
-                            <i class="fas fa-check"></i>
-                        </button>
+                        ${isByeMatch ? `
+                            <span class="badge-bye-pill" style="opacity:0.6; font-size:0.75rem;">BYE</span>
+                        ` : `
+                            <input type="number" min="0" max="99" class="score-input" id="score2_${match.id}" value="${match.score2 !== null ? match.score2 : ''}" placeholder="0" ${!p2 ? 'disabled' : ''}>
+                            <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p2 ? escapeHtml(p2.name) : ''}')" ${!p2 ? 'disabled' : ''}>
+                                <i class="fas fa-check"></i>
+                            </button>
+                        `}
                     </div>
                 </div>
 
@@ -1462,6 +1441,9 @@
                 </div>
                 ` : ''}
             `;
+
+            return card;
+        }
 
             return card;
         }
