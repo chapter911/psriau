@@ -520,6 +520,71 @@
             width: 260px !important;
         }
 
+        /* PORTRAIT PRINT MODE (1 HALAMAN A4 TEGAK) */
+        body.print-portrait-mode .bracket-tree.is-10p {
+            gap: 12px !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
+            width: 165px !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .match-card {
+            font-size: 0.72rem !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .player-slot {
+            padding: 2px 4px !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .player-name {
+            font-size: 0.72rem !important;
+        }
+        body.print-portrait-mode .bracket-tree.is-10p .round-title {
+            font-size: 0.75rem !important;
+        }
+        body.print-portrait-mode .bracket-tree:not(.is-10p) {
+            gap: 24px !important;
+        }
+        body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
+            width: 210px !important;
+        }
+
+        /* MODAL ORIENTATION SELECT CARDS */
+        .orientation-select-card {
+            border: 2px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 18px 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .orientation-select-card:hover {
+            border-color: #0b3c74;
+            background: #f0f7ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(11, 60, 116, 0.12);
+        }
+
+        .orient-icon-box {
+            font-size: 2.2rem;
+            margin-bottom: 8px;
+        }
+
+        .orient-card-title {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #002244;
+        }
+
+        .orient-card-sub {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 4px;
+            flex-grow: 1;
+        }
+
         .bracket-line {
             fill: none;
             stroke: #0b3c74;
@@ -1302,12 +1367,46 @@
                 width: 260px !important;
             }
 
+            body.print-portrait-mode .bracket-tree.is-10p {
+                gap: 12px !important;
+            }
+
+            body.print-portrait-mode .bracket-tree.is-10p .bracket-round-column {
+                width: 165px !important;
+            }
+
+            body.print-portrait-mode .bracket-tree.is-10p .match-card {
+                font-size: 0.72rem !important;
+            }
+
+            body.print-portrait-mode .bracket-tree.is-10p .player-slot {
+                padding: 2px 4px !important;
+            }
+
+            body.print-portrait-mode .bracket-tree.is-10p .player-name {
+                font-size: 0.72rem !important;
+            }
+
+            body.print-portrait-mode .bracket-tree.is-10p .round-title {
+                font-size: 0.75rem !important;
+            }
+
+            body.print-portrait-mode .bracket-tree:not(.is-10p) {
+                gap: 24px !important;
+            }
+
+            body.print-portrait-mode .bracket-tree:not(.is-10p) .bracket-round-column {
+                width: 210px !important;
+            }
+
             @page {
                 size: A4 landscape;
                 margin: 5mm 8mm;
             }
         }
     </style>
+    <!-- Dynamic Print Orientation Tag -->
+    <style id="printOrientationStyle"></style>
 </head>
 <body>
 
@@ -1335,15 +1434,15 @@
                     <i class="fas fa-compress"></i> Pas Layar
                 </button>
 
-                <!-- CETAK BAGAN (TAMPILAN WEB) -->
-                <button type="button" class="btn-action btn-action-print" onclick="printBracket()" title="Cetak / Simpan PDF langsung dari peramban">
+                <!-- CETAK BAGAN (PILIHAN LANDSCAPE / PORTRAIT) -->
+                <button type="button" class="btn-action btn-action-print" onclick="openPrintModal()" title="Cetak / Simpan PDF langsung dari peramban (Pilihan Landscape / Portrait)">
                     <i class="fas fa-print"></i> Cetak Bagan
                 </button>
 
-                <!-- EKSPOR PDF -->
-                <a href="<?= site_url('tenismeja/pdf?category=putra'); ?>" target="_blank" class="btn-action btn-action-pdf" id="btnEksporPdf">
+                <!-- EKSPOR PDF (PILIHAN LANDSCAPE / PORTRAIT) -->
+                <button type="button" class="btn-action btn-action-pdf" onclick="openExportPdfModal()" title="Ekspor Dokumen PDF Bagan (Pilihan Landscape / Portrait)" id="btnEksporPdf">
                     <i class="fas fa-file-pdf"></i> Ekspor PDF
-                </a>
+                </button>
 
                 <!-- ATUR PESERTA -->
                 <button type="button" class="btn-action btn-action-primary" id="btnOpenSetup">
@@ -1501,6 +1600,92 @@
                 <button type="button" class="btn-action btn-action-primary" id="btnSubmitSetup">
                     <i class="fas fa-diagram-project"></i> Generate Bagan Turnamen
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PILIH ORIENTASI CETAK BAGAN -->
+    <div class="modal-overlay" id="printModal">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-print text-primary mr-1"></i> Cetak Bagan Turnamen</h3>
+                <button type="button" class="modal-close" onclick="closePrintModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="font-size: 0.88rem; color: #475569; margin-bottom: 16px;">
+                    Silakan tentukan orientasi cetak untuk bagan turnamen:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <!-- LANDSCAPE CARD -->
+                    <div class="orientation-select-card" onclick="executePrint('landscape')">
+                        <div class="orient-icon-box text-primary">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="orient-card-title">Landscape</div>
+                        <div class="orient-card-sub">Mendatar (Sangat cocok untuk bagan melebar)</div>
+                        <button type="button" class="btn-action btn-action-primary" style="margin-top: 12px; width: 100%; justify-content: center;">
+                            <i class="fas fa-print"></i> Cetak Landscape
+                        </button>
+                    </div>
+
+                    <!-- PORTRAIT CARD -->
+                    <div class="orientation-select-card" onclick="executePrint('portrait')">
+                        <div class="orient-icon-box text-primary">
+                            <i class="fas fa-file-lines"></i>
+                        </div>
+                        <div class="orient-card-title">Portrait</div>
+                        <div class="orient-card-sub">Tegak (Format A4 standar vertikal)</div>
+                        <button type="button" class="btn-action btn-action-fit" style="margin-top: 12px; width: 100%; justify-content: center; background: #0b3c74; color: white;">
+                            <i class="fas fa-print"></i> Cetak Portrait
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button type="button" class="btn-action btn-action-light" onclick="closePrintModal()">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: PILIH ORIENTASI EKSPOR PDF -->
+    <div class="modal-overlay" id="exportPdfModal">
+        <div class="modal-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-pdf text-danger mr-1"></i> Unduh Dokumen PDF Bagan</h3>
+                <button type="button" class="modal-close" onclick="closeExportPdfModal()">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <p style="font-size: 0.88rem; color: #475569; margin-bottom: 16px;">
+                    Pilih format orientasi halaman PDF yang ingin diunduh:
+                </p>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+                    <!-- LANDSCAPE PDF -->
+                    <a id="linkPdfLandscape" href="#" target="_blank" class="orientation-select-card" onclick="closeExportPdfModal()" style="text-decoration: none; color: inherit;">
+                        <div class="orient-icon-box text-danger">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="orient-card-title">PDF Landscape</div>
+                        <div class="orient-card-sub">Mendatar (Bagan terlihat lapang dan rapi)</div>
+                        <div class="btn-action btn-action-primary" style="margin-top: 12px; width: 100%; justify-content: center;">
+                            <i class="fas fa-download"></i> Unduh Landscape
+                        </div>
+                    </a>
+
+                    <!-- PORTRAIT PDF -->
+                    <a id="linkPdfPortrait" href="#" target="_blank" class="orientation-select-card" onclick="closeExportPdfModal()" style="text-decoration: none; color: inherit;">
+                        <div class="orient-icon-box text-danger">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <div class="orient-card-title">PDF Portrait</div>
+                        <div class="orient-card-sub">Tegak (Format vertikal 1 halaman)</div>
+                        <div class="btn-action btn-action-fit" style="margin-top: 12px; width: 100%; justify-content: center; background: #dc2626; color: white;">
+                            <i class="fas fa-download"></i> Unduh Portrait
+                        </div>
+                    </a>
+                </div>
+            </div>
+            <div class="modal-footer" style="justify-content: flex-end;">
+                <button type="button" class="btn-action btn-action-light" onclick="closeExportPdfModal()">Tutup</button>
             </div>
         </div>
     </div>
@@ -1876,8 +2061,49 @@
             }
         });
 
-        // CETAK BAGAN KHUSUS (PAS 1 HALAMAN LANDSCAPE & GARIS ALIR TETAP PRESISI)
+        // CETAK & EKSPOR PDF MODAL CONTROLS (PILIHAN LANDSCAPE & PORTRAIT)
+        function openPrintModal() {
+            document.getElementById('printModal').classList.add('active');
+        }
+
+        function closePrintModal() {
+            document.getElementById('printModal').classList.remove('active');
+        }
+
+        function openExportPdfModal() {
+            const linkL = document.getElementById('linkPdfLandscape');
+            const linkP = document.getElementById('linkPdfPortrait');
+            if (linkL) linkL.href = `${PDF_BASE_URL}?category=${encodeURIComponent(currentCategory)}&orientation=landscape`;
+            if (linkP) linkP.href = `${PDF_BASE_URL}?category=${encodeURIComponent(currentCategory)}&orientation=portrait`;
+            document.getElementById('exportPdfModal').classList.add('active');
+        }
+
+        function closeExportPdfModal() {
+            document.getElementById('exportPdfModal').classList.remove('active');
+        }
+
         function printBracket() {
+            openPrintModal();
+        }
+
+        function executePrint(orientation) {
+            closePrintModal();
+
+            let styleTag = document.getElementById('printOrientationStyle');
+            if (!styleTag) {
+                styleTag = document.createElement('style');
+                styleTag.id = 'printOrientationStyle';
+                document.head.appendChild(styleTag);
+            }
+
+            if (orientation === 'portrait') {
+                styleTag.textContent = '@page { size: A4 portrait !important; margin: 5mm 6mm !important; }';
+                document.body.classList.add('print-portrait-mode');
+            } else {
+                styleTag.textContent = '@page { size: A4 landscape !important; margin: 5mm 8mm !important; }';
+                document.body.classList.remove('print-portrait-mode');
+            }
+
             const currentData = allTournaments[currentCategory];
             const tree = document.getElementById('bracketTree');
             const scrollContainer = document.querySelector('.bracket-scroll-container');
@@ -1902,13 +2128,14 @@
                 window.print();
                 setTimeout(() => {
                     document.body.classList.remove('print-preview-mode');
+                    document.body.classList.remove('print-portrait-mode');
                     if (isFitScreenMode) {
                         applyScreenFit();
                     } else {
                         drawBracketLines(currentData);
                     }
                 }, 300);
-            }, 80);
+            }, 100);
         }
 
         window.addEventListener('beforeprint', () => {
@@ -1931,6 +2158,7 @@
 
         window.addEventListener('afterprint', () => {
             document.body.classList.remove('print-preview-mode');
+            document.body.classList.remove('print-portrait-mode');
             if (isFitScreenMode) {
                 applyScreenFit();
             } else if (allTournaments[currentCategory]) {

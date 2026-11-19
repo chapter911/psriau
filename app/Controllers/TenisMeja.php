@@ -358,6 +358,10 @@ class TenisMeja extends BaseController
         }
 
         $catLabel = strtoupper(TenisMejaTournamentModel::getCategoryLabel($category));
+        $orientation = strtolower(trim((string) ($this->request->getGet('orientation') ?? 'landscape')));
+        if ($orientation !== 'portrait') {
+            $orientation = 'landscape';
+        }
 
         $data = [
             'title'        => $tournament['title'] ?? ('Bagan Turnamen Tenis Meja ' . $catLabel),
@@ -369,6 +373,7 @@ class TenisMeja extends BaseController
             'logoUrl'      => $logoUrl,
             'logoBase64'   => $logoBase64,
             'printDate'    => date('d F Y, H:i') . ' WIB',
+            'orientation'  => $orientation,
         ];
 
         $html = view('public/tenismeja/pdf', $data);
@@ -380,10 +385,10 @@ class TenisMeja extends BaseController
 
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'landscape');
+        $dompdf->setPaper('A4', $orientation);
         $dompdf->render();
 
-        $filename = 'Bagan_Turnamen_Tenis_Meja_' . $catLabel . '_' . date('Ymd_His') . '.pdf';
+        $filename = 'Bagan_Turnamen_Tenis_Meja_' . $catLabel . '_' . ucfirst($orientation) . '_' . date('Ymd_His') . '.pdf';
 
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')
