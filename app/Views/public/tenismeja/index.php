@@ -728,6 +728,12 @@
             box-shadow: 0 0 0 3px rgba(11, 60, 116, 0.15);
         }
 
+        /* PRINT COMPATIBILITY SCORE DISPLAY (SELARAS TAMPILAN WEB) */
+        .score-print-display,
+        .winner-print-check {
+            display: none;
+        }
+
         .btn-pick-winner {
             width: 28px;
             height: 28px;
@@ -1045,6 +1051,11 @@
             }
         }
         @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
             .header-actions,
             .category-nav-bar,
             .site-footer,
@@ -1056,14 +1067,45 @@
                 display: none !important;
             }
 
+            .score-print-display {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 36px !important;
+                height: 28px !important;
+                border: 1.5px solid #cbd5e1 !important;
+                border-radius: 6px !important;
+                font-weight: 800 !important;
+                font-size: 0.95rem !important;
+                color: #0f172a !important;
+                background: #f8fafc !important;
+            }
+
+            .score-print-display.is-winner {
+                background: #d1fae5 !important;
+                border-color: #10b981 !important;
+                color: #065f46 !important;
+            }
+
+            .winner-print-check {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 24px !important;
+                height: 24px !important;
+                border-radius: 50% !important;
+                background: #10b981 !important;
+                color: #ffffff !important;
+                font-size: 0.72rem !important;
+                margin-left: 2px !important;
+            }
+
             html, body {
                 background: #ffffff !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 height: 100% !important;
                 overflow: hidden !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
             }
 
             .main-wrapper {
@@ -1096,7 +1138,7 @@
             }
 
             .bracket-scroll-container {
-                overflow: hidden !important;
+                overflow: visible !important;
                 padding: 0 !important;
                 margin: 0 !important;
             }
@@ -1111,12 +1153,6 @@
             .bracket-tree {
                 min-width: 100% !important;
                 padding: 0 !important;
-                gap: 40px !important;
-                zoom: 0.82;
-            }
-
-            .bracket-round-column {
-                width: 280px !important;
             }
 
             @page {
@@ -1148,7 +1184,7 @@
                 </button>
 
                 <!-- CETAK BAGAN (TAMPILAN WEB) -->
-                <button type="button" class="btn-action btn-action-print" onclick="window.print()" title="Cetak / Simpan PDF langsung dari peramban">
+                <button type="button" class="btn-action btn-action-print" onclick="printBracket()" title="Cetak / Simpan PDF langsung dari peramban">
                     <i class="fas fa-print"></i> Cetak Bagan
                 </button>
 
@@ -1588,6 +1624,48 @@
             }
         }
 
+        // CETAK BAGAN KHUSUS (PAS 1 HALAMAN LANDSCAPE & GARIS ALIR TETAP PRESISI)
+        function printBracket() {
+            const currentData = allTournaments[currentCategory];
+            const is10p = (currentData && currentData.participant_count === 10);
+            const tree = document.getElementById('bracketTree');
+            if (!tree) {
+                window.print();
+                return;
+            }
+
+            // Atur skala cetak agar tepat muat 1 halaman landscape
+            tree.style.zoom = is10p ? '0.66' : '0.88';
+            drawBracketLines(currentData);
+
+            setTimeout(() => {
+                window.print();
+                setTimeout(() => {
+                    tree.style.zoom = '';
+                    drawBracketLines(currentData);
+                }, 300);
+            }, 120);
+        }
+
+        window.addEventListener('beforeprint', () => {
+            const currentData = allTournaments[currentCategory];
+            const is10p = (currentData && currentData.participant_count === 10);
+            const tree = document.getElementById('bracketTree');
+            if (tree) {
+                tree.style.zoom = is10p ? '0.66' : '0.88';
+                drawBracketLines(currentData);
+            }
+        });
+
+        window.addEventListener('afterprint', () => {
+            const currentData = allTournaments[currentCategory];
+            const tree = document.getElementById('bracketTree');
+            if (tree) {
+                tree.style.zoom = '';
+                drawBracketLines(currentData);
+            }
+        });
+
         // CREATE SINGLE MATCH CARD
         function createMatchCardElement(match, isFinal) {
             const hasWinner = !!(match.winner && match.status === 'completed');
@@ -1645,6 +1723,8 @@
                             <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p1 ? escapeHtml(p1.name) : ''}')" ${!p1 ? 'disabled' : ''}>
                                 <i class="fas fa-check"></i>
                             </button>
+                            <span class="score-print-display ${isP1Winner ? 'is-winner' : ''}">${match.score1 !== null ? match.score1 : '0'}</span>
+                            ${isP1Winner ? '<span class="winner-print-check"><i class="fas fa-check"></i></span>' : ''}
                         `}
                     </div>
                 </div>
@@ -1666,6 +1746,8 @@
                             <button type="button" class="btn-pick-winner" title="Tandai sebagai Pemenang" onclick="setMatchWinner('${match.id}', '${p2 ? escapeHtml(p2.name) : ''}')" ${!p2 ? 'disabled' : ''}>
                                 <i class="fas fa-check"></i>
                             </button>
+                            <span class="score-print-display ${isP2Winner ? 'is-winner' : ''}">${match.score2 !== null ? match.score2 : '0'}</span>
+                            ${isP2Winner ? '<span class="winner-print-check"><i class="fas fa-check"></i></span>' : ''}
                         `}
                     </div>
                 </div>

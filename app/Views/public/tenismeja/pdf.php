@@ -41,61 +41,62 @@ if (! function_exists('renderPdfMatchBox')) {
         $cardBorder = $isFinal ? '2px solid #f59e0b' : ($isBye ? '1.5px dashed #86efac' : '1.5px solid #cbd5e1');
         $cardBg = $isFinal ? '#fffdf7' : ($isBye ? '#fafdfb' : '#ffffff');
         $headerBg = $isFinal ? '#fef3c7' : ($isBye ? '#ecfdf5' : '#f1f5f9');
-        $headerColor = $isFinal ? '#92400e' : ($isBye ? '#065f46' : '#475569');
+        $headerColor = $isFinal ? '#92400e' : ($isBye ? '#065f46' : '#1e293b');
 
         if ($isBye) {
-            $statusText = $isCompleted ? 'MENANG BYE' : 'MENUNGGU';
-            $statusColor = '#10b981';
+            $statusBadge = '<span style="background: #ecfdf5; color: #047857; border: 0.5px solid #a7f3d0; border-radius: 3px; padding: 1px 5px; font-weight: bold; font-size: 5.8pt;">' . ($isCompleted ? 'MENANG BYE' : 'MENUNGGU') . '</span>';
         } elseif ($isCompleted) {
-            $statusText = 'SELESAI';
-            $statusColor = '#10b981';
+            $statusBadge = '<span style="background: #ecfdf5; color: #047857; border: 0.5px solid #a7f3d0; border-radius: 3px; padding: 1px 5px; font-weight: bold; font-size: 5.8pt;">SELESAI</span>';
         } else {
-            $statusText = 'PENDING';
-            $statusColor = '#f59e0b';
+            $statusBadge = '<span style="background: #fffbeb; color: #b45309; border: 0.5px solid #fde68a; border-radius: 3px; padding: 1px 5px; font-weight: bold; font-size: 5.8pt;">PENDING</span>';
         }
 
-        $html = '<div style="background: ' . $cardBg . '; border: ' . $cardBorder . '; border-radius: 6px; font-size: 7pt; width: 220px; box-sizing: border-box; overflow: hidden; font-family: Helvetica, Arial, sans-serif;">';
+        $html = '<div style="background: ' . $cardBg . '; border: ' . $cardBorder . '; border-radius: 6px; font-size: 7.2pt; width: 260px; box-sizing: border-box; overflow: hidden; font-family: Helvetica, Arial, sans-serif;">';
         
         // Header Kartu
         $html .= '<table style="width: 100%; border-collapse: collapse; background: ' . $headerBg . '; border-bottom: 1px solid #e2e8f0;">';
         $html .= '<tr>';
-        $html .= '<td style="padding: 2.5px 6px; font-weight: bold; font-size: 6.8pt; color: ' . $headerColor . ';">';
+        $html .= '<td style="padding: 3px 6px; font-weight: bold; font-size: 7.2pt; color: ' . $headerColor . ';">';
         $html .= ($isBye ? 'Menang Bye' : 'Match #' . esc($m['match_number']));
         if (! empty($m['group'])) {
             if ($m['group'] === 'atas') {
-                $html .= ' <span style="background: #eff6ff; color: #1d4ed8; border: 0.5px solid #bfdbfe; border-radius: 3px; padding: 0 4px; font-size: 5.2pt;">Bagan Atas</span>';
+                $html .= ' <span style="background: #eff6ff; color: #1d4ed8; border: 0.5px solid #bfdbfe; border-radius: 3px; padding: 0 4px; font-size: 5.5pt;">Bagan Atas</span>';
             } elseif ($m['group'] === 'bawah') {
-                $html .= ' <span style="background: #ecfdf5; color: #047857; border: 0.5px solid #a7f3d0; border-radius: 3px; padding: 0 4px; font-size: 5.2pt;">Bagan Bawah</span>';
+                $html .= ' <span style="background: #ecfdf5; color: #047857; border: 0.5px solid #a7f3d0; border-radius: 3px; padding: 0 4px; font-size: 5.5pt;">Bagan Bawah</span>';
             } elseif ($m['group'] === 'grand_final') {
-                $html .= ' <span style="background: #fffbeb; color: #b45309; border: 0.5px solid #fde68a; border-radius: 3px; padding: 0 4px; font-size: 5.2pt;">Grand Final</span>';
+                $html .= ' <span style="background: #fffbeb; color: #b45309; border: 0.5px solid #fde68a; border-radius: 3px; padding: 0 4px; font-size: 5.5pt;">Grand Final</span>';
             }
         }
         $html .= '</td>';
-        $html .= '<td style="padding: 2.5px 6px; font-weight: bold; font-size: 6.2pt; text-align: right; color: ' . $statusColor . ';">' . $statusText . '</td>';
+        $html .= '<td style="padding: 3px 6px; text-align: right;">' . $statusBadge . '</td>';
         $html .= '</tr>';
         $html .= '</table>';
 
         // Baris Peserta 1
         $p1Bg = $p1Win ? 'background: #ecfdf5;' : 'background: ' . $cardBg . ';';
         $seed1 = $p1 ? ($p1['seed'] ?? '1') : '-';
+        $seed1Bg = $p1Win ? 'background: #10b981; color: #ffffff;' : 'background: #e2e8f0; color: #475569;';
         $html .= '<table style="width: 100%; border-collapse: collapse; ' . $p1Bg . ' border-bottom: 1px solid #f1f5f9;">';
         $html .= '<tr>';
-        $html .= '<td style="width: 18px; padding: 3px 0 3px 5px; vertical-align: middle;">';
-        $html .= '<div style="width: 15px; height: 15px; line-height: 15px; text-align: center; background: #e2e8f0; color: #475569; font-size: 6.2pt; font-weight: bold; border-radius: 3px;">' . esc($seed1) . '</div>';
+        $html .= '<td style="width: 20px; padding: 3px 0 3px 6px; vertical-align: middle;">';
+        $html .= '<div style="width: 16px; height: 16px; line-height: 16px; text-align: center; ' . $seed1Bg . ' font-size: 6.5pt; font-weight: bold; border-radius: 3px;">' . esc($seed1) . '</div>';
         $html .= '</td>';
-        $html .= '<td style="padding: 2.5px 4px; vertical-align: middle;">';
-        $html .= '<div style="font-size: 7pt; font-weight: bold; color: ' . ($p1Win ? '#065f46' : '#1e293b') . ';">' . esc($p1['name'] ?? 'Menunggu Pemenang') . '</div>';
+        $html .= '<td style="padding: 3px 5px; vertical-align: middle;">';
+        $html .= '<div style="font-size: 7.5pt; font-weight: bold; color: ' . ($p1Win ? '#065f46' : '#0f172a') . ';">' . esc($p1['name'] ?? 'Menunggu Pemenang') . '</div>';
         if (! empty($p1['balai'])) {
-            $html .= '<div style="margin-top: 1px;"><span style="background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; border-radius: 3px; padding: 0 3px; font-size: 5.2pt;">' . esc($p1['balai']) . '</span></div>';
+            $html .= '<div style="margin-top: 1px;"><span style="background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; border-radius: 3px; padding: 0 4px; font-size: 5.5pt;">' . esc($p1['balai']) . '</span></div>';
         }
         $html .= '</td>';
-        $html .= '<td style="width: 32px; padding: 2px 5px 2px 2px; text-align: right; vertical-align: middle;">';
+        $html .= '<td style="width: 44px; padding: 2px 6px 2px 2px; text-align: right; vertical-align: middle;">';
         if ($isBye && $p1) {
-            $html .= '<span style="background: #ecfdf5; color: #065f46; font-size: 5.8pt; font-weight: bold; border: 0.5px solid #a7f3d0; border-radius: 3px; padding: 1px 4px;">Lolos</span>';
+            $html .= '<span style="background: #ecfdf5; color: #065f46; font-size: 6pt; font-weight: bold; border: 0.5px solid #a7f3d0; border-radius: 3px; padding: 1.5px 4px;">Lolos</span>';
         } elseif ($m['score1'] !== null) {
-            $html .= '<div style="display: inline-block; width: 20px; height: 16px; line-height: 16px; text-align: center; background: ' . ($p1Win ? '#d1fae5' : '#f8fafc') . '; border: 1px solid ' . ($p1Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p1Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 7.2pt; border-radius: 3px;">' . (int)$m['score1'] . '</div>';
+            $html .= '<div style="display: inline-block; width: 22px; height: 18px; line-height: 18px; text-align: center; background: ' . ($p1Win ? '#d1fae5' : '#f8fafc') . '; border: 1px solid ' . ($p1Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p1Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 7.8pt; border-radius: 3px; vertical-align: middle;">' . (int)$m['score1'] . '</div>';
+            if ($p1Win) {
+                $html .= '<span style="display: inline-block; width: 14px; height: 14px; line-height: 14px; text-align: center; background: #10b981; color: #ffffff; font-size: 6.5pt; border-radius: 50%; vertical-align: middle; margin-left: 2px;">✓</span>';
+            }
         } else {
-            $html .= '<div style="display: inline-block; width: 20px; height: 16px; line-height: 16px; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; font-size: 6.8pt; border-radius: 3px;">0</div>';
+            $html .= '<div style="display: inline-block; width: 22px; height: 18px; line-height: 18px; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; font-size: 7.2pt; border-radius: 3px; vertical-align: middle;">0</div>';
         }
         $html .= '</td>';
         $html .= '</tr>';
@@ -104,28 +105,32 @@ if (! function_exists('renderPdfMatchBox')) {
         // Baris Peserta 2
         $p2Bg = $p2Win ? 'background: #ecfdf5;' : 'background: ' . $cardBg . ';';
         $seed2 = $p2 ? ($p2['seed'] ?? '2') : '-';
+        $seed2Bg = $p2Win ? 'background: #10b981; color: #ffffff;' : 'background: #e2e8f0; color: #475569;';
         $html .= '<table style="width: 100%; border-collapse: collapse; ' . $p2Bg . '">';
         $html .= '<tr>';
-        $html .= '<td style="width: 18px; padding: 3px 0 3px 5px; vertical-align: middle;">';
-        $html .= '<div style="width: 15px; height: 15px; line-height: 15px; text-align: center; background: #e2e8f0; color: #475569; font-size: 6.2pt; font-weight: bold; border-radius: 3px;">' . esc($seed2) . '</div>';
+        $html .= '<td style="width: 20px; padding: 3px 0 3px 6px; vertical-align: middle;">';
+        $html .= '<div style="width: 16px; height: 16px; line-height: 16px; text-align: center; ' . $seed2Bg . ' font-size: 6.5pt; font-weight: bold; border-radius: 3px;">' . esc($seed2) . '</div>';
         $html .= '</td>';
-        $html .= '<td style="padding: 2.5px 4px; vertical-align: middle;">';
+        $html .= '<td style="padding: 3px 5px; vertical-align: middle;">';
         if ($p2 && ! empty($p2['is_bye'])) {
-            $html .= '<div style="font-size: 6.8pt; font-style: italic; color: #64748b;">(BYE) - Lolos Otomatis</div>';
+            $html .= '<div style="font-size: 7.2pt; font-style: italic; color: #64748b;">(BYE) - Lolos Otomatis</div>';
         } else {
-            $html .= '<div style="font-size: 7pt; font-weight: bold; color: ' . ($p2Win ? '#065f46' : '#1e293b') . ';">' . esc($p2['name'] ?? 'Menunggu Pemenang') . '</div>';
+            $html .= '<div style="font-size: 7.5pt; font-weight: bold; color: ' . ($p2Win ? '#065f46' : '#0f172a') . ';">' . esc($p2['name'] ?? 'Menunggu Pemenang') . '</div>';
             if (! empty($p2['balai'])) {
-                $html .= '<div style="margin-top: 1px;"><span style="background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; border-radius: 3px; padding: 0 3px; font-size: 5.2pt;">' . esc($p2['balai']) . '</span></div>';
+                $html .= '<div style="margin-top: 1px;"><span style="background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; border-radius: 3px; padding: 0 4px; font-size: 5.5pt;">' . esc($p2['balai']) . '</span></div>';
             }
         }
         $html .= '</td>';
-        $html .= '<td style="width: 32px; padding: 2px 5px 2px 2px; text-align: right; vertical-align: middle;">';
+        $html .= '<td style="width: 44px; padding: 2px 6px 2px 2px; text-align: right; vertical-align: middle;">';
         if ($p2 && ! empty($p2['is_bye'])) {
-            $html .= '<span style="background: #f1f5f9; color: #64748b; font-size: 5.5pt; border: 0.5px solid #cbd5e1; border-radius: 3px; padding: 1px 3px;">BYE</span>';
+            $html .= '<span style="background: #f1f5f9; color: #64748b; font-size: 5.8pt; border: 0.5px solid #cbd5e1; border-radius: 3px; padding: 1px 4px;">BYE</span>';
         } elseif ($m['score2'] !== null) {
-            $html .= '<div style="display: inline-block; width: 20px; height: 16px; line-height: 16px; text-align: center; background: ' . ($p2Win ? '#d1fae5' : '#f8fafc') . '; border: 1px solid ' . ($p2Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p2Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 7.2pt; border-radius: 3px;">' . (int)$m['score2'] . '</div>';
+            $html .= '<div style="display: inline-block; width: 22px; height: 18px; line-height: 18px; text-align: center; background: ' . ($p2Win ? '#d1fae5' : '#f8fafc') . '; border: 1px solid ' . ($p2Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p2Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 7.8pt; border-radius: 3px; vertical-align: middle;">' . (int)$m['score2'] . '</div>';
+            if ($p2Win) {
+                $html .= '<span style="display: inline-block; width: 14px; height: 14px; line-height: 14px; text-align: center; background: #10b981; color: #ffffff; font-size: 6.5pt; border-radius: 50%; vertical-align: middle; margin-left: 2px;">✓</span>';
+            }
         } else {
-            $html .= '<div style="display: inline-block; width: 20px; height: 16px; line-height: 16px; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; font-size: 6.8pt; border-radius: 3px;">0</div>';
+            $html .= '<div style="display: inline-block; width: 22px; height: 18px; line-height: 18px; text-align: center; background: #f8fafc; border: 1px solid #e2e8f0; color: #94a3b8; font-size: 7.2pt; border-radius: 3px; vertical-align: middle;">0</div>';
         }
         $html .= '</td>';
         $html .= '</tr>';
@@ -133,7 +138,7 @@ if (! function_exists('renderPdfMatchBox')) {
 
         // Catatan Alur
         if (! empty($m['note'])) {
-            $html .= '<div style="font-size: 5.5pt; color: #1e40af; padding: 2px 5px; background: #f8fafc; border-top: 1px solid #f1f5f9;">* ' . esc($m['note']) . '</div>';
+            $html .= '<div style="font-size: 5.8pt; color: #1e40af; padding: 2.5px 6px; background: #f8fafc; border-top: 1px solid #f1f5f9;">* ' . esc($m['note']) . '</div>';
         }
 
         $html .= '</div>';
@@ -172,14 +177,11 @@ if (! function_exists('renderPdfMatchBox10')) {
         }
 
         if ($isBye) {
-            $statusText = $isCompleted ? 'MENANG BYE' : 'MENUNGGU';
-            $statusColor = '#10b981';
+            $statusBadge = '<span style="background: #ecfdf5; color: #047857; border: 0.5px solid #a7f3d0; border-radius: 2px; padding: 0.5px 3px; font-weight: bold; font-size: 5pt;">' . ($isCompleted ? 'MENANG BYE' : 'MENUNGGU') . '</span>';
         } elseif ($isCompleted) {
-            $statusText = 'SELESAI';
-            $statusColor = '#10b981';
+            $statusBadge = '<span style="background: #ecfdf5; color: #047857; border: 0.5px solid #a7f3d0; border-radius: 2px; padding: 0.5px 3px; font-weight: bold; font-size: 5pt;">SELESAI</span>';
         } else {
-            $statusText = 'PENDING';
-            $statusColor = '#f59e0b';
+            $statusBadge = '<span style="background: #fffbeb; color: #b45309; border: 0.5px solid #fde68a; border-radius: 2px; padding: 0.5px 3px; font-weight: bold; font-size: 5pt;">PENDING</span>';
         }
 
         $html = '<div style="background: ' . $cardBg . '; border: ' . $cardBorder . '; border-radius: 5px; font-size: 6pt; width: 165px; box-sizing: border-box; overflow: hidden; font-family: Helvetica, Arial, sans-serif;">';
@@ -187,20 +189,21 @@ if (! function_exists('renderPdfMatchBox10')) {
         // Header Kartu
         $html .= '<table style="width: 100%; border-collapse: collapse; background: ' . $headerBg . '; border-bottom: 0.5px solid #e2e8f0;">';
         $html .= '<tr>';
-        $html .= '<td style="padding: 1.5px 4px; font-weight: bold; font-size: 5.5pt; color: ' . $headerColor . ';">';
+        $html .= '<td style="padding: 2px 4px; font-weight: bold; font-size: 5.6pt; color: ' . $headerColor . ';">';
         $html .= ($isBye ? 'Menang Bye' : 'Match #' . esc($m['match_number'])) . ' ' . $badgeGroup;
         $html .= '</td>';
-        $html .= '<td style="padding: 1.5px 4px; font-weight: bold; font-size: 5.2pt; text-align: right; color: ' . $statusColor . ';">' . $statusText . '</td>';
+        $html .= '<td style="padding: 2px 4px; text-align: right;">' . $statusBadge . '</td>';
         $html .= '</tr>';
         $html .= '</table>';
 
         // Baris Peserta 1
         $p1Bg = $p1Win ? 'background: #ecfdf5;' : 'background: ' . $cardBg . ';';
         $seed1 = $p1 ? ($p1['seed'] ?? '1') : '-';
+        $seed1Bg = $p1Win ? 'background: #10b981; color: #ffffff;' : 'background: #e2e8f0; color: #475569;';
         $html .= '<table style="width: 100%; border-collapse: collapse; ' . $p1Bg . ' border-bottom: 0.5px solid #f1f5f9;">';
         $html .= '<tr>';
-        $html .= '<td style="width: 14px; padding: 2px 0 2px 4px; vertical-align: middle;">';
-        $html .= '<div style="width: 12px; height: 12px; line-height: 12px; text-align: center; background: #e2e8f0; color: #475569; font-size: 5.2pt; font-weight: bold; border-radius: 2px;">' . esc($seed1) . '</div>';
+        $html .= '<td style="width: 15px; padding: 2px 0 2px 4px; vertical-align: middle;">';
+        $html .= '<div style="width: 12px; height: 12px; line-height: 12px; text-align: center; ' . $seed1Bg . ' font-size: 5.2pt; font-weight: bold; border-radius: 2px;">' . esc($seed1) . '</div>';
         $html .= '</td>';
         $html .= '<td style="padding: 1.5px 3px; vertical-align: middle;">';
         $html .= '<div style="font-size: 5.8pt; font-weight: bold; color: ' . ($p1Win ? '#065f46' : '#1e293b') . ';">' . esc($p1['name'] ?? 'Menunggu Pemenang') . '</div>';
@@ -208,13 +211,16 @@ if (! function_exists('renderPdfMatchBox10')) {
             $html .= '<div style="margin-top: 0.5px;"><span style="background: #eff6ff; color: #1e40af; border: 0.5px solid #bfdbfe; border-radius: 2px; padding: 0 2px; font-size: 4.5pt;">' . esc($p1['balai']) . '</span></div>';
         }
         $html .= '</td>';
-        $html .= '<td style="width: 24px; padding: 1.5px 4px 1.5px 1px; text-align: right; vertical-align: middle;">';
+        $html .= '<td style="width: 28px; padding: 1.5px 4px 1.5px 1px; text-align: right; vertical-align: middle;">';
         if ($isBye && $p1) {
             $html .= '<span style="background: #ecfdf5; color: #065f46; font-size: 4.8pt; font-weight: bold; border: 0.5px solid #a7f3d0; border-radius: 2px; padding: 0.5px 3px;">Lolos</span>';
         } elseif ($m['score1'] !== null) {
-            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: ' . ($p1Win ? '#d1fae5' : '#f8fafc') . '; border: 0.5px solid ' . ($p1Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p1Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 6pt; border-radius: 2px;">' . (int)$m['score1'] . '</div>';
+            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: ' . ($p1Win ? '#d1fae5' : '#f8fafc') . '; border: 0.5px solid ' . ($p1Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p1Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 6pt; border-radius: 2px; vertical-align: middle;">' . (int)$m['score1'] . '</div>';
+            if ($p1Win) {
+                $html .= '<span style="display: inline-block; width: 10px; height: 10px; line-height: 10px; text-align: center; background: #10b981; color: #ffffff; font-size: 5pt; border-radius: 50%; vertical-align: middle; margin-left: 1px;">✓</span>';
+            }
         } else {
-            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: #f8fafc; border: 0.5px solid #e2e8f0; color: #94a3b8; font-size: 5.5pt; border-radius: 2px;">0</div>';
+            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: #f8fafc; border: 0.5px solid #e2e8f0; color: #94a3b8; font-size: 5.5pt; border-radius: 2px; vertical-align: middle;">0</div>';
         }
         $html .= '</td>';
         $html .= '</tr>';
@@ -223,10 +229,11 @@ if (! function_exists('renderPdfMatchBox10')) {
         // Baris Peserta 2
         $p2Bg = $p2Win ? 'background: #ecfdf5;' : 'background: ' . $cardBg . ';';
         $seed2 = $p2 ? ($p2['seed'] ?? '2') : '-';
+        $seed2Bg = $p2Win ? 'background: #10b981; color: #ffffff;' : 'background: #e2e8f0; color: #475569;';
         $html .= '<table style="width: 100%; border-collapse: collapse; ' . $p2Bg . '">';
         $html .= '<tr>';
-        $html .= '<td style="width: 14px; padding: 2px 0 2px 4px; vertical-align: middle;">';
-        $html .= '<div style="width: 12px; height: 12px; line-height: 12px; text-align: center; background: #e2e8f0; color: #475569; font-size: 5.2pt; font-weight: bold; border-radius: 2px;">' . esc($seed2) . '</div>';
+        $html .= '<td style="width: 15px; padding: 2px 0 2px 4px; vertical-align: middle;">';
+        $html .= '<div style="width: 12px; height: 12px; line-height: 12px; text-align: center; ' . $seed2Bg . ' font-size: 5.2pt; font-weight: bold; border-radius: 2px;">' . esc($seed2) . '</div>';
         $html .= '</td>';
         $html .= '<td style="padding: 1.5px 3px; vertical-align: middle;">';
         if ($p2 && ! empty($p2['is_bye'])) {
@@ -238,13 +245,16 @@ if (! function_exists('renderPdfMatchBox10')) {
             }
         }
         $html .= '</td>';
-        $html .= '<td style="width: 24px; padding: 1.5px 4px 1.5px 1px; text-align: right; vertical-align: middle;">';
+        $html .= '<td style="width: 28px; padding: 1.5px 4px 1.5px 1px; text-align: right; vertical-align: middle;">';
         if ($p2 && ! empty($p2['is_bye'])) {
             $html .= '<span style="background: #f1f5f9; color: #64748b; font-size: 4.5pt; border: 0.5px solid #cbd5e1; border-radius: 2px; padding: 0.5px 2px;">BYE</span>';
         } elseif ($m['score2'] !== null) {
-            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: ' . ($p2Win ? '#d1fae5' : '#f8fafc') . '; border: 0.5px solid ' . ($p2Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p2Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 6pt; border-radius: 2px;">' . (int)$m['score2'] . '</div>';
+            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: ' . ($p2Win ? '#d1fae5' : '#f8fafc') . '; border: 0.5px solid ' . ($p2Win ? '#10b981' : '#cbd5e1') . '; color: ' . ($p2Win ? '#065f46' : '#0f172a') . '; font-weight: bold; font-size: 6pt; border-radius: 2px; vertical-align: middle;">' . (int)$m['score2'] . '</div>';
+            if ($p2Win) {
+                $html .= '<span style="display: inline-block; width: 10px; height: 10px; line-height: 10px; text-align: center; background: #10b981; color: #ffffff; font-size: 5pt; border-radius: 50%; vertical-align: middle; margin-left: 1px;">✓</span>';
+            }
         } else {
-            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: #f8fafc; border: 0.5px solid #e2e8f0; color: #94a3b8; font-size: 5.5pt; border-radius: 2px;">0</div>';
+            $html .= '<div style="display: inline-block; width: 16px; height: 13px; line-height: 13px; text-align: center; background: #f8fafc; border: 0.5px solid #e2e8f0; color: #94a3b8; font-size: 5.5pt; border-radius: 2px; vertical-align: middle;">0</div>';
         }
         $html .= '</td>';
         $html .= '</tr>';
@@ -458,7 +468,7 @@ $lineCol = '#0b3c74';
         /* BRACKET CANVAS TREE (5 PESERTA) */
         .bracket-canvas {
             position: relative;
-            width: 780px;
+            width: 940px;
             height: 310px;
             margin: 0 auto;
         }
@@ -466,7 +476,7 @@ $lineCol = '#0b3c74';
         .round-header {
             position: absolute;
             top: 0px;
-            width: 220px;
+            width: 260px;
             height: 26px;
             background: #002244;
             color: #ffffff;
@@ -477,7 +487,7 @@ $lineCol = '#0b3c74';
         }
 
         .round-header .rh-title {
-            font-size: 7.5pt;
+            font-size: 7.8pt;
             font-weight: 800;
             color: #f7a81b;
             text-transform: uppercase;
@@ -485,14 +495,14 @@ $lineCol = '#0b3c74';
         }
 
         .round-header .rh-sub {
-            font-size: 5.5pt;
+            font-size: 5.8pt;
             color: #94a3b8;
             font-weight: normal;
         }
         
         .match-card-wrapper {
             position: absolute;
-            width: 220px;
+            width: 260px;
         }
         
         .line-h {
@@ -732,11 +742,11 @@ $lineCol = '#0b3c74';
                 <div class="rh-title">BABAK I</div>
                 <div class="rh-sub">2 Pertandingan + 1 Bye</div>
             </div>
-            <div class="round-header" style="left: 280px;">
+            <div class="round-header" style="left: 340px;">
                 <div class="rh-title">SEMI FINAL</div>
                 <div class="rh-sub">1 Pertandingan + 1 Bye</div>
             </div>
-            <div class="round-header" style="left: 560px;">
+            <div class="round-header" style="left: 680px;">
                 <div class="rh-title">FINAL (BYE VS PEMENANG SF)</div>
                 <div class="rh-sub">Perebutan Juara 1 &amp; 2</div>
             </div>
@@ -754,37 +764,37 @@ $lineCol = '#0b3c74';
                 <?= renderPdfMatchBox($m1Bye); ?>
             </div>
 
-            <!-- CONNECTOR 1: BABAK I KE SEMI FINAL (X: 220 -> 280) -->
+            <!-- CONNECTOR 1: BABAK I KE SEMI FINAL (X: 260 -> 340) -->
             <!-- Match 1 langsung ke Semi Final Bye (Garis Lurus Y = 66) -->
-            <div class="line-h" style="left: 220px; top: 66px; width: 60px;"></div>
-            <div class="dot" style="left: 278px; top: 64px;"></div>
+            <div class="line-h" style="left: 260px; top: 66px; width: 80px;"></div>
+            <div class="dot" style="left: 338px; top: 64px;"></div>
 
             <!-- Match 2 (Y=158) dan Match 1Bye (Y=250) bersatu ke Match 3 (Y=204) -->
-            <div class="line-h" style="left: 220px; top: 158px; width: 30px;"></div>
-            <div class="line-h" style="left: 220px; top: 250px; width: 30px;"></div>
-            <div class="line-v" style="left: 250px; top: 158px; height: 92px;"></div>
-            <div class="line-h" style="left: 250px; top: 204px; width: 30px;"></div>
-            <div class="dot" style="left: 278px; top: 202px;"></div>
+            <div class="line-h" style="left: 260px; top: 158px; width: 40px;"></div>
+            <div class="line-h" style="left: 260px; top: 250px; width: 40px;"></div>
+            <div class="line-v" style="left: 300px; top: 158px; height: 92px;"></div>
+            <div class="line-h" style="left: 300px; top: 204px; width: 40px;"></div>
+            <div class="dot" style="left: 338px; top: 202px;"></div>
 
             <!-- COLUMN 2: SEMI FINAL MATCHES -->
-            <div class="match-card-wrapper" style="left: 280px; top: 34px;">
+            <div class="match-card-wrapper" style="left: 340px; top: 34px;">
                 <?= renderPdfMatchBox($m2Bye); ?>
             </div>
 
-            <div class="match-card-wrapper" style="left: 280px; top: 172px;">
+            <div class="match-card-wrapper" style="left: 340px; top: 172px;">
                 <?= renderPdfMatchBox($m3); ?>
             </div>
 
-            <!-- CONNECTOR 2: SEMI FINAL KE FINAL (X: 500 -> 560) -->
+            <!-- CONNECTOR 2: SEMI FINAL KE FINAL (X: 600 -> 680) -->
             <!-- Semi Final Bye (Y=66) dan Match 3 (Y=204) bersatu ke Final Match 4 (Y=135) -->
-            <div class="line-h" style="left: 500px; top: 66px; width: 30px;"></div>
-            <div class="line-h" style="left: 500px; top: 204px; width: 30px;"></div>
-            <div class="line-v" style="left: 530px; top: 66px; height: 138px;"></div>
-            <div class="line-h" style="left: 530px; top: 135px; width: 30px;"></div>
-            <div class="dot" style="left: 558px; top: 133px;"></div>
+            <div class="line-h" style="left: 600px; top: 66px; width: 40px;"></div>
+            <div class="line-h" style="left: 600px; top: 204px; width: 40px;"></div>
+            <div class="line-v" style="left: 640px; top: 66px; height: 138px;"></div>
+            <div class="line-h" style="left: 640px; top: 135px; width: 40px;"></div>
+            <div class="dot" style="left: 678px; top: 133px;"></div>
 
             <!-- COLUMN 3: FINAL MATCH -->
-            <div class="match-card-wrapper" style="left: 560px; top: 103px;">
+            <div class="match-card-wrapper" style="left: 680px; top: 103px;">
                 <?= renderPdfMatchBox($m4, true); ?>
             </div>
         </div>
