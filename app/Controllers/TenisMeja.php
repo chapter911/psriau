@@ -389,13 +389,20 @@ class TenisMeja extends BaseController
         }
 
         $catLabel = strtoupper(TenisMejaTournamentModel::getCategoryLabel($category));
+        $fileTitleMap = [
+            'putra'       => 'Turnamen Tenis Meja Putra',
+            'putri'       => 'Turnamen Tenis Meja Putri',
+            'ganda_putra' => 'Turnamen Tenis Meja Ganda Putra',
+            'ganda_putri' => 'Turnamen Tenis Meja Ganda Putri',
+        ];
+        $fileTitle = $fileTitleMap[$category] ?? ('Turnamen Tenis Meja ' . TenisMejaTournamentModel::getCategoryLabel($category));
         $orientation = strtolower(trim((string) ($this->request->getGet('orientation') ?? 'landscape')));
         if ($orientation !== 'portrait') {
             $orientation = 'landscape';
         }
 
         $data = [
-            'title'        => $tournament['title'] ?? ('Bagan Turnamen Tenis Meja ' . $catLabel),
+            'title'        => $fileTitle,
             'category'     => $category,
             'categoryLabel'=> $catLabel,
             'tournament'   => $tournament,
@@ -419,7 +426,7 @@ class TenisMeja extends BaseController
         $dompdf->setPaper('A4', $orientation);
         $dompdf->render();
 
-        $filename = 'Bagan_Turnamen_Tenis_Meja_' . $catLabel . '_' . ucfirst($orientation) . '_' . date('Ymd_His') . '.pdf';
+        $filename = $fileTitle . '.pdf';
 
         return $this->response
             ->setHeader('Content-Type', 'application/pdf')

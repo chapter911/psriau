@@ -2591,6 +2591,12 @@
         });
 
         // CETAK & EKSPOR PDF MODAL CONTROLS (DIGABUNGKAN - PILIHAN LANDSCAPE & PORTRAIT 1 HALAMAN PENUH)
+        let originalDocTitle = '';
+
+        function getCategoryPrintTitle(cat) {
+            return 'Turnamen Tenis Meja ' + getCategoryName(cat);
+        }
+
         function openPrintModal() {
             document.getElementById('printModal').classList.add('active');
         }
@@ -2607,6 +2613,12 @@
             const orient = (orientation === 'portrait') ? 'portrait' : 'landscape';
             currentPrintOrientation = orient;
             isExecutingCustomPrint = true;
+
+            // Simpan title asli dokumen & ubah title persis sesuai format penamaan file yang diminta
+            if (!originalDocTitle) {
+                originalDocTitle = document.title;
+            }
+            document.title = getCategoryPrintTitle(currentCategory);
 
             // Ukuran area cetak bersih 1 halaman A4 (margin 4mm) pada 96 DPI:
             // Landscape: 289mm x 202mm -> 1080px x 754px
@@ -2773,6 +2785,10 @@
             document.body.classList.remove('print-preview-mode');
             document.body.classList.remove('print-portrait-mode');
             document.body.classList.remove('print-landscape-mode');
+
+            if (originalDocTitle) {
+                document.title = originalDocTitle;
+            }
 
             const styleTag = document.getElementById('printOrientationStyle');
             if (styleTag) {
