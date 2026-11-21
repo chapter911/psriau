@@ -76,7 +76,10 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('/', 'Admin\\Dashboard::index');
 	$routes->get('tutorial', 'Admin\\Tutorial::index');
 	$routes->get('map', 'Admin\\Dashboard::map');
+	$routes->get('map/perjalanan', 'Admin\\Dashboard::mapPerjalanan');
 	$routes->get('dashboard/map', 'Admin\\Dashboard::map');
+	$routes->get('dashboard/map-perjalanan', 'Admin\\Dashboard::mapPerjalanan');
+	$routes->get('dashboard/map-perjalanan-data', 'Admin\\Dashboard::mapPerjalananData');
 	$routes->get('dashboard/map-data', 'Admin\\Dashboard::mapData');
 	$routes->get('dashboard/map-kecamatan-options', 'Admin\\Dashboard::mapKecamatanOptions');
 	$routes->get('dashboard/map-detail', 'Admin\\Dashboard::mapDetail');

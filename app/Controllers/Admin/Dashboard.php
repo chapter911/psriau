@@ -710,6 +710,233 @@ class Dashboard extends BaseController
         ]);
     }
 
+    public function mapPerjalanan(): string
+    {
+        $db = db_connect();
+
+        $mapTypes = $this->getMapTypes($db);
+        $defaultMapTypeId = 1;
+        foreach ($mapTypes as $mapType) {
+            if (stripos((string) ($mapType['map_name'] ?? ''), 'hybrid') !== false) {
+                $defaultMapTypeId = (int) ($mapType['id'] ?? 1);
+                break;
+            }
+        }
+
+        return view('admin/map_perjalanan', [
+            'pageTitle'    => 'Peta Rencana Perjalanan Labelisasi Aset BMN',
+            'mapTypes'     => $mapTypes,
+            'mapDefaultId' => $defaultMapTypeId,
+        ]);
+    }
+
+    public function mapPerjalananData()
+    {
+        $db = db_connect();
+
+        // Basecamp Satker PPS Riau (Pekanbaru)
+        $basecamp = [
+            'nama'      => 'Kantor Satker PPS Riau (Homebase)',
+            'lokasi'    => 'Jl. Bakti Ruko Mutiara Asri Garden, Marpoyan Damai, Pekanbaru',
+            'latitude'  => 0.507068,
+            'longitude' => 101.447779,
+        ];
+
+        // Definisi 8 Pekan Perjalanan (Target Tuntas Sebelum Ramadan 1448 H)
+        $pekanConfig = [
+            1 => [
+                'id'       => 1,
+                'label'    => 'Pekan 1: Kampar (PP Pekanbaru)',
+                'periode'  => '01 - 04 Des 2026',
+                'koridor'  => 'Tol Pekanbaru - Bangkinang (PP Hari yang Sama)',
+                'moda'     => 'Mobil Dinas via Jalan Tol',
+                'color'    => '#1E88E5',
+                'npsn_list' => [
+                    '60704423' => ['tgl' => 'Selasa, 01 Des 2026', 'aset' => 459, 'inap' => 'PP Pekanbaru'],
+                    '10499101' => ['tgl' => 'Rabu, 02 Des 2026', 'aset' => 326, 'inap' => 'PP Pekanbaru'],
+                    '10499119' => ['tgl' => 'Jumat, 04 Des 2026', 'aset' => 482, 'inap' => 'PP Pekanbaru'],
+                ],
+            ],
+            2 => [
+                'id'       => 2,
+                'label'    => 'Pekan 2: Kampar Kiri & Kuantan Singingi',
+                'periode'  => '08 - 12 Des 2026',
+                'koridor'  => 'Lintas Tengah (Lipat Kain - Singingi)',
+                'moda'     => 'Mobil Dinas Operasional',
+                'color'    => '#43A047',
+                'npsn_list' => [
+                    '10499113' => ['tgl' => 'Senin, 08 Des 2026', 'aset' => 573, 'inap' => 'Inap Teluk Kuantan'],
+                    '69993794' => ['tgl' => 'Selasa, 09 Des 2026', 'aset' => 500, 'inap' => 'Inap Teluk Kuantan'],
+                ],
+            ],
+            3 => [
+                'id'       => 3,
+                'label'    => 'Pekan 3: Dumai & Pulau Rupat',
+                'periode'  => '15 - 19 Des 2026',
+                'koridor'  => 'Tol Permai & Kapal RORO Dumai - P. Rupat',
+                'moda'     => 'Mobil Dinas + Kapal RORO KMP',
+                'color'    => '#FB8C00',
+                'npsn_list' => [
+                    '60704559' => ['tgl' => 'Selasa, 16 Des 2026', 'aset' => 500, 'inap' => 'Inap Kota Dumai'],
+                    '69725370' => ['tgl' => 'Rabu, 17 Des 2026', 'aset' => 500, 'inap' => 'Inap Pulau Rupat'],
+                ],
+            ],
+            4 => [
+                'id'       => 4,
+                'label'    => 'Pekan 4: Rokan Hulu',
+                'periode'  => '06 - 08 Jan 2027',
+                'koridor'  => 'Lintas Petapahan - Ujung Batu - Pasir Pengaraian',
+                'moda'     => 'Mobil Dinas Operasional',
+                'color'    => '#8E24AA',
+                'npsn_list' => [
+                    '10499209' => ['tgl' => 'Rabu, 06 Jan 2027', 'aset' => 376, 'inap' => 'Inap Pasir Pengaraian'],
+                    '69994814' => ['tgl' => 'Kamis, 07 Jan 2027', 'aset' => 630, 'inap' => 'Inap Ujung Batu / Duri'],
+                ],
+            ],
+            5 => [
+                'id'       => 5,
+                'label'    => 'Pekan 5: Kepulauan Meranti (PHTC Riau 8)',
+                'periode'  => '11 - 15 Jan 2027',
+                'koridor'  => 'Pelabuhan Buton - Speedboat ke Selatpanjang - Pompong Rangsang',
+                'moda'     => 'Mobil ke Buton + Speedboat + Pompong + Bentor',
+                'color'    => '#00ACC1',
+                'npsn_list' => [
+                    '60725148' => ['tgl' => 'Senin-Selasa, 11-12 Jan 2027', 'aset' => 635, 'inap' => 'Inap Selatpanjang'],
+                    '69994792' => ['tgl' => 'Selasa, 12 Jan 2027', 'aset' => 634, 'inap' => 'Inap Selatpanjang'],
+                ],
+            ],
+            6 => [
+                'id'       => 6,
+                'label'    => 'Pekan 6: Indragiri Hilir / Mandah (PHTC Riau 8)',
+                'periode'  => '18 - 22 Jan 2027',
+                'koridor'  => 'Lintas Timur ke Tembilahan - Speedboat Muara Sungai ke Mandah',
+                'moda'     => 'Mobil Dinas ke Tembilahan + Speedboat Carter',
+                'color'    => '#D81B60',
+                'npsn_list' => [
+                    '60704328' => ['tgl' => 'Selasa, 19 Jan 2027', 'aset' => 635, 'inap' => 'Inap Mandah / Tembilahan'],
+                    '10310974' => ['tgl' => 'Rabu, 20 Jan 2027', 'aset' => 634, 'inap' => 'Inap Kota Tembilahan'],
+                ],
+            ],
+            7 => [
+                'id'       => 7,
+                'label'    => 'Pekan 7: Pulau Bengkalis Bagian 1 (Kota Bengkalis)',
+                'periode'  => '25 - 29 Jan 2027',
+                'koridor'  => 'Tol Permai - Roro Sungai Pakning ke Air Putih Bengkalis',
+                'moda'     => 'Mobil Dinas Masuk Kapal RORO KMP',
+                'color'    => '#3949AB',
+                'npsn_list' => [
+                    '60725197' => ['tgl' => 'Selasa, 26 Jan 2027', 'aset' => 500, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730135' => ['tgl' => 'Selasa, 26 Jan 2027', 'aset' => 285, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730128' => ['tgl' => 'Rabu, 27 Jan 2027', 'aset' => 284, 'inap' => 'Inap Kota Bengkalis'],
+                    '69725477' => ['tgl' => 'Rabu, 27 Jan 2027', 'aset' => 284, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730134' => ['tgl' => 'Kamis, 28 Jan 2027', 'aset' => 284, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730133' => ['tgl' => 'Kamis, 28 Jan 2027', 'aset' => 284, 'inap' => 'Inap Kota Bengkalis'],
+                    '69725478' => ['tgl' => 'Kamis, 28 Jan 2027', 'aset' => 285, 'inap' => 'Inap Kota Bengkalis'],
+                ],
+            ],
+            8 => [
+                'id'       => 8,
+                'label'    => 'Pekan 8: Pulau Bengkalis Bagian 2 (Bantan & Muntai)',
+                'periode'  => '01 - 04 Feb 2027',
+                'koridor'  => 'Pulau Bengkalis - Selatbaru - Bantan - Komplek Muntai (TUNTAS PRA-RAMADAN)',
+                'moda'     => 'Mobil Dinas Operasional di Pulau',
+                'color'    => '#E53935',
+                'npsn_list' => [
+                    '60725101' => ['tgl' => 'Senin, 01 Feb 2027', 'aset' => 500, 'inap' => 'Inap Kota Bengkalis'],
+                    '60725151' => ['tgl' => 'Senin, 01 Feb 2027', 'aset' => 500, 'inap' => 'Inap Kota Bengkalis'],
+                    '69725480' => ['tgl' => 'Selasa, 02 Feb 2027', 'aset' => 174, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730126' => ['tgl' => 'Selasa, 02 Feb 2027', 'aset' => 174, 'inap' => 'Inap Kota Bengkalis'],
+                    '60729635' => ['tgl' => 'Selasa, 02 Feb 2027', 'aset' => 174, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730125' => ['tgl' => 'Rabu, 03 Feb 2027', 'aset' => 174, 'inap' => 'Inap Kota Bengkalis'],
+                    '69725290' => ['tgl' => 'Rabu, 03 Feb 2027', 'aset' => 174, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730132' => ['tgl' => 'Rabu, 03 Feb 2027', 'aset' => 173, 'inap' => 'Inap Kota Bengkalis'],
+                    '60730131' => ['tgl' => 'Rabu, 03 Feb 2027', 'aset' => 173, 'inap' => 'Inap Kota Bengkalis'],
+                    '69725486' => ['tgl' => 'Rabu, 03 Feb 2027', 'aset' => 173, 'inap' => 'Inap Kota Bengkalis'],
+                ],
+            ],
+        ];
+
+        // Ambil semua data sekolah aktif dari database
+        $allNpsn = [];
+        foreach ($pekanConfig as $p) {
+            $allNpsn = array_merge($allNpsn, array_keys($p['npsn_list']));
+        }
+
+        $sekolahRows = $db->table('mst_sekolah')
+            ->select('mst_sekolah.npsn, mst_sekolah.nama, mst_sekolah.kabupaten, mst_sekolah.kecamatan, mst_sekolah.latitude, mst_sekolah.longitude, mst_sekolah.paket_id, mp.nama_paket')
+            ->join('mst_paket mp', 'mp.id = mst_sekolah.paket_id', 'left')
+            ->whereIn('mst_sekolah.npsn', $allNpsn)
+            ->get()
+            ->getResultArray();
+
+        $sekolahByNpsn = [];
+        foreach ($sekolahRows as $row) {
+            $sekolahByNpsn[$row['npsn']] = $row;
+        }
+
+        // Susun data per pekan
+        $pekanData = [];
+        $totalAsetAll = 0;
+        $totalSekolahAll = 0;
+
+        foreach ($pekanConfig as $pId => $p) {
+            $sekolahs = [];
+            $pekanAset = 0;
+
+            foreach ($p['npsn_list'] as $npsn => $meta) {
+                $dbSekolah = $sekolahByNpsn[$npsn] ?? null;
+                if (! $dbSekolah) {
+                    continue;
+                }
+
+                $lat = (float) $dbSekolah['latitude'];
+                $lng = (float) $dbSekolah['longitude'];
+                if ($lat == 0.0 || $lng == 0.0) {
+                    continue;
+                }
+
+                $pekanAset += $meta['aset'];
+                $sekolahs[] = [
+                    'npsn'        => $npsn,
+                    'nama'        => $dbSekolah['nama'],
+                    'kabupaten'   => $dbSekolah['kabupaten'],
+                    'kecamatan'   => $dbSekolah['kecamatan'],
+                    'paket_id'    => (int) $dbSekolah['paket_id'],
+                    'nama_paket'  => $dbSekolah['nama_paket'] ?? ('PHTC Riau ' . $dbSekolah['paket_id']),
+                    'latitude'    => $lat,
+                    'longitude'   => $lng,
+                    'jadwal_tgl'  => $meta['tgl'],
+                    'estimasi_aset' => $meta['aset'],
+                    'status_inap' => $meta['inap'],
+                ];
+            }
+
+            $totalAsetAll += $pekanAset;
+            $totalSekolahAll += count($sekolahs);
+
+            $pekanData[] = [
+                'id'            => $pId,
+                'label'         => $p['label'],
+                'periode'       => $p['periode'],
+                'koridor'       => $p['koridor'],
+                'moda'          => $p['moda'],
+                'color'         => $p['color'],
+                'total_sekolah' => count($sekolahs),
+                'total_aset'    => $pekanAset,
+                'sekolah'       => $sekolahs,
+            ];
+        }
+
+        return $this->response->setJSON([
+            'status'         => 'ok',
+            'basecamp'       => $basecamp,
+            'total_pekan'    => count($pekanData),
+            'total_sekolah'  => $totalSekolahAll,
+            'total_aset'     => $totalAsetAll,
+            'pekan'          => $pekanData,
+        ]);
+    }
+
     public function mapKecamatanOptions()
     {
         $kabupaten = trim((string) $this->request->getGet('kabupaten'));

@@ -232,7 +232,10 @@ graph TD
             <div class="mermaid-container mb-4">
                 <pre class="mermaid">
 graph TD
-    A["Buka Menu Map (/admin/map)"] --> B["Eksplorasi Peta Interaktif &amp; Gunakan Filter (Tipe Map, NPSN, Wilayah, Paket)"]
+    A["Buka Menu Map di Sidebar"] --> A1{"Pilih Submenu Map"}
+    A1 -->|Submenu 1: Sebaran Sekolah| B["Peta Sebaran Sekolah (/admin/map) &amp; Filter (Tipe Map, NPSN, Wilayah, Paket)"]
+    A1 -->|Submenu 2: Rencana Perjalanan| B2["Peta Rencana Perjalanan (/admin/map/perjalanan): Visualisasi Koridor, Rute &amp; Jadwal 29 Sekolah"]
+    B2 --> B3["Filter Perjalanan per Pekan (1 s/d 8), Jalur Darat/Tol vs Jalur Laut Roro/Speedboat"]
     B --> C["Opsi 1: Klik Tombol 'Export Peta A3' di Header Halaman"]
     B --> D["Opsi 2: Klik Marker Sekolah &amp; Buka Modal Detail Sekolah"]
     D --> E["Klik Tombol 'Export Peta A3' pada Modal Detail"]
@@ -1591,6 +1594,15 @@ graph TD
                                 <h6 class="font-weight-bold text-primary"><i class="fas fa-map-marked-alt mr-1"></i> Peta Sebaran Sekolah (GIS &amp; Export Peta A3)</h6>
                                 <p class="small text-muted mb-2"><code>/admin/map</code></p>
                                 <p class="small mb-0">Halaman pemetaan interaktif sebaran sekolah binaan berbasis Leaflet Map dengan filter Tipe Map, NPSN, Nama Sekolah, Wilayah Administratif, Klasifikasi Kerusakan, dan Paket Proyek. Dilengkapi fasilitas <strong>Export Peta A3 Landscape</strong> dengan dialog input kustomisasi <strong>Judul Peta</strong> (default: <em>PETA SEBARAN SEKOLAH RAKYAT PROVINSI RIAU</em>), pilihan opsi kartografi <em>Dengan Kontur</em> atau <em>Tanpa Kontur</em>, kompas mata angin, skala bar dinamis, legenda sebaran sekolah, peta indeks (inset) Provinsi Riau, serta blok tanda tangan pengesahan resmi.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="font-weight-bold text-primary"><i class="fas fa-route mr-1"></i> Peta Rencana Perjalanan Labelisasi Aset BMN</h6>
+                                <p class="small text-muted mb-2"><code>/admin/map/perjalanan</code></p>
+                                <p class="small mb-0">Halaman visualisasi spasial rencana perjalanan monitoring dan pemasangan label aset BMN mencakup 29 sekolah sasaran (11.455 aset) pada paket PHTC Riau 2, 5, 6, 7, dan 8. Dilengkapi filter interaktif 8 Pekan Dinas (Target Selesai Pra-Ramadan per 4 Februari 2027), garis rute perjalanan darat/tol dan jalur perairan (RORO/Speedboat), penanda urutan sekolah, rincian jadwal kunjungan, moda transportasi, status menginap/PP, dan tautan unduh draf jadwal Excel resmi.</p>
                             </div>
                         </div>
                     </div>
