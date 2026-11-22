@@ -374,32 +374,511 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Peta jalur koridor utama & waypoint navigasi air Riau
+    const CORRIDORS = {
+        pekanbaru_bangkinang: [
+            [0.507068, 101.447779],
+            [0.4420, 101.3250],
+            [0.3700, 101.3100],
+            [0.3620, 101.2400],
+            [0.3400, 101.0350]
+        ],
+        pekanbaru_dumai: [
+            [0.507068, 101.447779],
+            [0.6120, 101.4180], // GT Muara Fajar
+            [0.7200, 101.4300], // Minas
+            [0.9650, 101.2400], // Kandis
+            [1.1800, 101.2600], // Pinggir / Duri Selatan
+            [1.3300, 101.2150], // Bathin Solapan
+            [1.5200, 101.3700], // GT Bukit Kapur Dumai
+            [1.6700, 101.4400]  // Dumai Kota
+        ],
+        pekanbaru_teluk_kuantan: [
+            [0.507068, 101.447779],
+            [0.4500, 101.4500], // Marpoyan
+            [0.3550, 101.4850], // Simpang Beringin
+            [-0.0050, 101.3200], // Lipat Kain
+            [-0.2450, 101.3500], // Muara Lembu
+            [-0.3973, 101.3491]  // Singingi
+        ],
+        pekanbaru_rohul: [
+            [0.507068, 101.447779],
+            [0.4800, 101.3500], // Garuda Sakti
+            [0.5500, 101.0700], // Petapahan
+            [0.6700, 100.8600], // Suram
+            [0.5900, 100.6000], // Tandun
+            [0.7100, 100.5250], // Ujung Batu
+            [0.8650, 100.3050], // Pasir Pengaraian
+            [1.0280, 100.4685]  // Kepenuhan Hulu
+        ],
+        pekanbaru_buton: [
+            [0.507068, 101.447779],
+            [0.6120, 101.4180],
+            [0.6650, 101.6200], // Perawang
+            [0.7100, 101.7800], // Km 11 Siak
+            [0.7950, 102.0450], // Kota Siak
+            [0.9125, 102.2965]  // Pelabuhan Buton
+        ],
+        pekanbaru_tembilahan: [
+            [0.507068, 101.447779],
+            [0.4300, 101.5500],
+            [0.4000, 101.8600], // Pangkalan Kerinci
+            [0.1700, 102.0800], // Sorek
+            [-0.4000, 102.3200], // Simpang Japura
+            [-0.3700, 102.5400], // Rengat
+            [-0.3200, 103.1550]  // Pelabuhan Tembilahan
+        ],
+        pekanbaru_pakning: [
+            [0.507068, 101.447779],
+            [0.6120, 101.4180],
+            [0.9650, 101.2400], // Tol Kandis
+            [1.2800, 101.3600], // Simpang Kulim Duri
+            [1.2300, 101.7600], // Siak Kecil
+            [1.3000, 102.0500], // Bukit Batu
+            [1.3435, 102.1558]  // Pelabuhan Sei Pakning
+        ],
+        // Waypoint air (nautical waypoints)
+        air_dumai_rupat: [
+            [1.6854, 101.4289], // Pelabuhan Dumai
+            [1.6820, 101.4420], // Perairan Selat Rupat
+            [1.6738, 101.4552]  // Pelabuhan Tanjung Kapal
+        ],
+        air_pakning_bengkalis: [
+            [1.3435, 102.1558], // Pelabuhan Sei Pakning
+            [1.4050, 102.1220], // Selat Bengkalis tengah
+            [1.4746, 102.0864]  // Pelabuhan Air Putih
+        ],
+        air_buton_selatpanjang: [
+            [0.9125, 102.2965], // Pelabuhan Buton
+            [0.9350, 102.3900], // Selat Lalang
+            [0.9850, 102.5400], // Selat Asam Barat
+            [1.0125, 102.7150]  // Pelabuhan Selatpanjang
+        ],
+        air_selatpanjang_rangsang: [
+            [1.0125, 102.7150], // Pelabuhan Selatpanjang
+            [1.0280, 102.7180], // Selat Air Hitam
+            [1.0450, 102.7200]  // Dermaga Peranggas
+        ],
+        air_tembilahan_mandah: [
+            [-0.3200, 103.1550], // Pelabuhan Tembilahan
+            [-0.2400, 103.2600], // Muara Sungai Indragiri
+            [-0.1000, 103.4100], // Tanjung Pasir Muara Mandah
+            [0.0150, 103.4900]   // Dermaga Khairiah Mandah
+        ]
+    };
+
     // Helper: Query OSRM untuk mendapatkan garis jalan raya sebenarnya
     async function getRoadGeometry(start, end) {
-        const cacheKey = `${start[0]},${start[1]}_${end[0]},${end[1]}`;
+        const cacheKey = `${Number(start[0]).toFixed(4)},${Number(start[1]).toFixed(4)}_${Number(end[0]).toFixed(4)},${Number(end[1]).toFixed(4)}`;
         if (osrmRouteCache[cacheKey]) {
             return osrmRouteCache[cacheKey];
         }
 
+        const fallback = [start, end];
         const url = `https://router.project-osrm.org/route/v1/driving/${start[1]},${start[0]};${end[1]},${end[0]}?overview=simplified&geometries=geojson`;
+
         try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error('OSRM network error');
-            const data = await res.json();
-            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
-                // Konversi [lng, lat] ke Leaflet [lat, lng]
-                const latLngs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                osrmRouteCache[cacheKey] = latLngs;
-                return latLngs;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3500);
+            const res = await fetch(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    const latLngs = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                    osrmRouteCache[cacheKey] = latLngs;
+                    return latLngs;
+                }
             }
         } catch (e) {
-            console.warn('Fallback straight line used for:', start, end);
+            // Silently fallback without console error
         }
 
-        // Fallback garis lurus
-        const fallback = [start, end];
         osrmRouteCache[cacheKey] = fallback;
         return fallback;
+    }
+
+    // Konstruksi logistik riil per pekan (pergi, transit antarmoda, kembali)
+    function buildPekanLegs(p, allData) {
+        const legs = [];
+        const basecamp = allData.basecamp;
+        const hubs = allData.transit_hubs;
+        const schools = p.sekolah || [];
+        if (!basecamp || schools.length === 0) return legs;
+
+        const basecampCoord = [basecamp.latitude, basecamp.longitude];
+
+        if (p.id === 1) {
+            // Pekan 1: Kampar via Tol Bangkinang
+            let prevCoord = basecampCoord;
+            let prevName = basecamp.nama;
+            schools.forEach(s => {
+                legs.push({
+                    fromName: prevName,
+                    toName: s.nama,
+                    fromCoord: prevCoord,
+                    toCoord: [s.latitude, s.longitude],
+                    mode: 'mobil',
+                    isWater: false
+                });
+                prevCoord = [s.latitude, s.longitude];
+                prevName = s.nama;
+            });
+            legs.push({
+                fromName: prevName,
+                toName: basecamp.nama,
+                fromCoord: prevCoord,
+                toCoord: basecampCoord,
+                mode: 'mobil',
+                isWater: false
+            });
+        } else if (p.id === 2) {
+            // Pekan 2: Kampar Kiri & Kuansing
+            let prevCoord = basecampCoord;
+            let prevName = basecamp.nama;
+            schools.forEach(s => {
+                legs.push({
+                    fromName: prevName,
+                    toName: s.nama,
+                    fromCoord: prevCoord,
+                    toCoord: [s.latitude, s.longitude],
+                    mode: 'mobil',
+                    isWater: false
+                });
+                prevCoord = [s.latitude, s.longitude];
+                prevName = s.nama;
+            });
+            legs.push({
+                fromName: prevName,
+                toName: basecamp.nama,
+                fromCoord: prevCoord,
+                toCoord: basecampCoord,
+                mode: 'mobil',
+                isWater: false
+            });
+        } else if (p.id === 3) {
+            // Pekan 3: Dumai & Pulau Rupat
+            const dumaiSchool = schools.find(s => !s.kabupaten.includes('Rupat')) || schools[0];
+            const rupatSchool = schools.find(s => s.kabupaten.includes('Rupat')) || schools[1] || dumaiSchool;
+
+            // 1. Basecamp -> Sekolah Dumai (Tol Permai)
+            legs.push({
+                fromName: basecamp.nama,
+                toName: dumaiSchool.nama,
+                fromCoord: basecampCoord,
+                toCoord: [dumaiSchool.latitude, dumaiSchool.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 2. Sekolah Dumai -> Pelabuhan Sri Junjungan Dumai
+            legs.push({
+                fromName: dumaiSchool.nama,
+                toName: hubs.pelabuhan_dumai.nama,
+                fromCoord: [dumaiSchool.latitude, dumaiSchool.longitude],
+                toCoord: [hubs.pelabuhan_dumai.latitude, hubs.pelabuhan_dumai.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 3. Pelabuhan Dumai -> Pelabuhan Rupat (Kapal RORO KMP Selat Rupat)
+            legs.push({
+                fromName: hubs.pelabuhan_dumai.nama,
+                toName: hubs.pelabuhan_rupat.nama,
+                fromCoord: [hubs.pelabuhan_dumai.latitude, hubs.pelabuhan_dumai.longitude],
+                toCoord: [hubs.pelabuhan_rupat.latitude, hubs.pelabuhan_rupat.longitude],
+                mode: 'roro',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_dumai_rupat
+            });
+            // 4. Pelabuhan Rupat -> Sekolah Rupat
+            legs.push({
+                fromName: hubs.pelabuhan_rupat.nama,
+                toName: rupatSchool.nama,
+                fromCoord: [hubs.pelabuhan_rupat.latitude, hubs.pelabuhan_rupat.longitude],
+                toCoord: [rupatSchool.latitude, rupatSchool.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 5. Sekolah Rupat -> Pelabuhan Rupat
+            legs.push({
+                fromName: rupatSchool.nama,
+                toName: hubs.pelabuhan_rupat.nama,
+                fromCoord: [rupatSchool.latitude, rupatSchool.longitude],
+                toCoord: [hubs.pelabuhan_rupat.latitude, hubs.pelabuhan_rupat.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 6. Pelabuhan Rupat -> Pelabuhan Dumai (Kapal RORO Balik)
+            legs.push({
+                fromName: hubs.pelabuhan_rupat.nama,
+                toName: hubs.pelabuhan_dumai.nama,
+                fromCoord: [hubs.pelabuhan_rupat.latitude, hubs.pelabuhan_rupat.longitude],
+                toCoord: [hubs.pelabuhan_dumai.latitude, hubs.pelabuhan_dumai.longitude],
+                mode: 'roro',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_dumai_rupat.slice().reverse()
+            });
+            // 7. Pelabuhan Dumai -> Basecamp (Tol Permai Balik)
+            legs.push({
+                fromName: hubs.pelabuhan_dumai.nama,
+                toName: basecamp.nama,
+                fromCoord: [hubs.pelabuhan_dumai.latitude, hubs.pelabuhan_dumai.longitude],
+                toCoord: basecampCoord,
+                mode: 'mobil',
+                isWater: false
+            });
+        } else if (p.id === 4) {
+            // Pekan 4: Rokan Hulu
+            let prevCoord = basecampCoord;
+            let prevName = basecamp.nama;
+            schools.forEach(s => {
+                legs.push({
+                    fromName: prevName,
+                    toName: s.nama,
+                    fromCoord: prevCoord,
+                    toCoord: [s.latitude, s.longitude],
+                    mode: 'mobil',
+                    isWater: false
+                });
+                prevCoord = [s.latitude, s.longitude];
+                prevName = s.nama;
+            });
+            legs.push({
+                fromName: prevName,
+                toName: basecamp.nama,
+                fromCoord: prevCoord,
+                toCoord: basecampCoord,
+                mode: 'mobil',
+                isWater: false
+            });
+        } else if (p.id === 5) {
+            // Pekan 5: Kepulauan Meranti
+            const tebingSchool = schools.find(s => s.kecamatan.includes('Tebing')) || schools[0];
+            const rangsangSchool = schools.find(s => s.kecamatan.includes('Rangsang')) || schools[1] || tebingSchool;
+
+            // 1. Basecamp -> Pelabuhan Buton Siak (Darat)
+            legs.push({
+                fromName: basecamp.nama,
+                toName: hubs.pelabuhan_buton.nama,
+                fromCoord: basecampCoord,
+                toCoord: [hubs.pelabuhan_buton.latitude, hubs.pelabuhan_buton.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 2. Pelabuhan Buton -> Pelabuhan Selatpanjang (Speedboat Selat)
+            legs.push({
+                fromName: hubs.pelabuhan_buton.nama,
+                toName: hubs.pelabuhan_selatpanjang.nama,
+                fromCoord: [hubs.pelabuhan_buton.latitude, hubs.pelabuhan_buton.longitude],
+                toCoord: [hubs.pelabuhan_selatpanjang.latitude, hubs.pelabuhan_selatpanjang.longitude],
+                mode: 'speedboat',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_buton_selatpanjang
+            });
+            // 3. Pelabuhan Selatpanjang -> Sekolah Tebing Tinggi
+            legs.push({
+                fromName: hubs.pelabuhan_selatpanjang.nama,
+                toName: tebingSchool.nama,
+                fromCoord: [hubs.pelabuhan_selatpanjang.latitude, hubs.pelabuhan_selatpanjang.longitude],
+                toCoord: [tebingSchool.latitude, tebingSchool.longitude],
+                mode: 'bentor',
+                isWater: false
+            });
+            legs.push({
+                fromName: tebingSchool.nama,
+                toName: hubs.pelabuhan_selatpanjang.nama,
+                fromCoord: [tebingSchool.latitude, tebingSchool.longitude],
+                toCoord: [hubs.pelabuhan_selatpanjang.latitude, hubs.pelabuhan_selatpanjang.longitude],
+                mode: 'bentor',
+                isWater: false
+            });
+            // 4. Pelabuhan Selatpanjang -> Dermaga Peranggas Rangsang (Pompong)
+            legs.push({
+                fromName: hubs.pelabuhan_selatpanjang.nama,
+                toName: hubs.pelabuhan_rangsang.nama,
+                fromCoord: [hubs.pelabuhan_selatpanjang.latitude, hubs.pelabuhan_selatpanjang.longitude],
+                toCoord: [hubs.pelabuhan_rangsang.latitude, hubs.pelabuhan_rangsang.longitude],
+                mode: 'pompong',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_selatpanjang_rangsang
+            });
+            // 5. Dermaga Peranggas -> MAN 2 Rangsang Barat
+            legs.push({
+                fromName: hubs.pelabuhan_rangsang.nama,
+                toName: rangsangSchool.nama,
+                fromCoord: [hubs.pelabuhan_rangsang.latitude, hubs.pelabuhan_rangsang.longitude],
+                toCoord: [rangsangSchool.latitude, rangsangSchool.longitude],
+                mode: 'bentor',
+                isWater: false
+            });
+            legs.push({
+                fromName: rangsangSchool.nama,
+                toName: hubs.pelabuhan_rangsang.nama,
+                fromCoord: [rangsangSchool.latitude, rangsangSchool.longitude],
+                toCoord: [hubs.pelabuhan_rangsang.latitude, hubs.pelabuhan_rangsang.longitude],
+                mode: 'bentor',
+                isWater: false
+            });
+            // 6. Dermaga Peranggas -> Pelabuhan Selatpanjang (Pompong Balik)
+            legs.push({
+                fromName: hubs.pelabuhan_rangsang.nama,
+                toName: hubs.pelabuhan_selatpanjang.nama,
+                fromCoord: [hubs.pelabuhan_rangsang.latitude, hubs.pelabuhan_rangsang.longitude],
+                toCoord: [hubs.pelabuhan_selatpanjang.latitude, hubs.pelabuhan_selatpanjang.longitude],
+                mode: 'pompong',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_selatpanjang_rangsang.slice().reverse()
+            });
+            // 7. Pelabuhan Selatpanjang -> Pelabuhan Buton (Speedboat Balik)
+            legs.push({
+                fromName: hubs.pelabuhan_selatpanjang.nama,
+                toName: hubs.pelabuhan_buton.nama,
+                fromCoord: [hubs.pelabuhan_selatpanjang.latitude, hubs.pelabuhan_selatpanjang.longitude],
+                toCoord: [hubs.pelabuhan_buton.latitude, hubs.pelabuhan_buton.longitude],
+                mode: 'speedboat',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_buton_selatpanjang.slice().reverse()
+            });
+            // 8. Pelabuhan Buton -> Basecamp (Darat Pulang)
+            legs.push({
+                fromName: hubs.pelabuhan_buton.nama,
+                toName: basecamp.nama,
+                fromCoord: [hubs.pelabuhan_buton.latitude, hubs.pelabuhan_buton.longitude],
+                toCoord: basecampCoord,
+                mode: 'mobil',
+                isWater: false
+            });
+        } else if (p.id === 6) {
+            // Pekan 6: Indragiri Hilir / Mandah
+            // 1. Basecamp -> Pelabuhan Tembilahan (Darat Lintas Timur)
+            legs.push({
+                fromName: basecamp.nama,
+                toName: hubs.pelabuhan_tembilahan.nama,
+                fromCoord: basecampCoord,
+                toCoord: [hubs.pelabuhan_tembilahan.latitude, hubs.pelabuhan_tembilahan.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 2. Pelabuhan Tembilahan -> Dermaga Khairiah Mandah (Speedboat Sungai Mandah)
+            legs.push({
+                fromName: hubs.pelabuhan_tembilahan.nama,
+                toName: hubs.pelabuhan_mandah.nama,
+                fromCoord: [hubs.pelabuhan_tembilahan.latitude, hubs.pelabuhan_tembilahan.longitude],
+                toCoord: [hubs.pelabuhan_mandah.latitude, hubs.pelabuhan_mandah.longitude],
+                mode: 'speedboat',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_tembilahan_mandah
+            });
+            // 3. Sekolah di Mandah (MAN 3 & MIN 2)
+            let prevMandahCoord = [hubs.pelabuhan_mandah.latitude, hubs.pelabuhan_mandah.longitude];
+            let prevMandahName = hubs.pelabuhan_mandah.nama;
+            schools.forEach(s => {
+                legs.push({
+                    fromName: prevMandahName,
+                    toName: s.nama,
+                    fromCoord: prevMandahCoord,
+                    toCoord: [s.latitude, s.longitude],
+                    mode: 'pompong',
+                    isWater: false
+                });
+                prevMandahCoord = [s.latitude, s.longitude];
+                prevMandahName = s.nama;
+            });
+            // 4. Dari sekolah terakhir balik ke Dermaga Khairiah Mandah
+            legs.push({
+                fromName: prevMandahName,
+                toName: hubs.pelabuhan_mandah.nama,
+                fromCoord: prevMandahCoord,
+                toCoord: [hubs.pelabuhan_mandah.latitude, hubs.pelabuhan_mandah.longitude],
+                mode: 'pompong',
+                isWater: false
+            });
+            // 5. Dermaga Khairiah Mandah -> Pelabuhan Tembilahan (Speedboat Air Balik)
+            legs.push({
+                fromName: hubs.pelabuhan_mandah.nama,
+                toName: hubs.pelabuhan_tembilahan.nama,
+                fromCoord: [hubs.pelabuhan_mandah.latitude, hubs.pelabuhan_mandah.longitude],
+                toCoord: [hubs.pelabuhan_tembilahan.latitude, hubs.pelabuhan_tembilahan.longitude],
+                mode: 'speedboat',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_tembilahan_mandah.slice().reverse()
+            });
+            // 6. Pelabuhan Tembilahan -> Basecamp (Darat Pulang Lintas Timur)
+            legs.push({
+                fromName: hubs.pelabuhan_tembilahan.nama,
+                toName: basecamp.nama,
+                fromCoord: [hubs.pelabuhan_tembilahan.latitude, hubs.pelabuhan_tembilahan.longitude],
+                toCoord: basecampCoord,
+                mode: 'mobil',
+                isWater: false
+            });
+        } else if (p.id === 7 || p.id === 8) {
+            // Pekan 7 & 8: Pulau Bengkalis
+            // 1. Basecamp -> Pelabuhan Roro Sei Pakning (Tol Permai)
+            legs.push({
+                fromName: basecamp.nama,
+                toName: hubs.pelabuhan_pakning.nama,
+                fromCoord: basecampCoord,
+                toCoord: [hubs.pelabuhan_pakning.latitude, hubs.pelabuhan_pakning.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 2. Pelabuhan Sei Pakning -> Pelabuhan Air Putih (Kapal RORO KMP Selat Bengkalis)
+            legs.push({
+                fromName: hubs.pelabuhan_pakning.nama,
+                toName: hubs.pelabuhan_air_putih.nama,
+                fromCoord: [hubs.pelabuhan_pakning.latitude, hubs.pelabuhan_pakning.longitude],
+                toCoord: [hubs.pelabuhan_air_putih.latitude, hubs.pelabuhan_air_putih.longitude],
+                mode: 'roro',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_pakning_bengkalis
+            });
+            // 3. Sekolah di dalam Pulau Bengkalis (Mobil Dinas)
+            let prevBengkalisCoord = [hubs.pelabuhan_air_putih.latitude, hubs.pelabuhan_air_putih.longitude];
+            let prevBengkalisName = hubs.pelabuhan_air_putih.nama;
+            schools.forEach(s => {
+                legs.push({
+                    fromName: prevBengkalisName,
+                    toName: s.nama,
+                    fromCoord: prevBengkalisCoord,
+                    toCoord: [s.latitude, s.longitude],
+                    mode: 'mobil',
+                    isWater: false
+                });
+                prevBengkalisCoord = [s.latitude, s.longitude];
+                prevBengkalisName = s.nama;
+            });
+            // 4. Dari sekolah terakhir balik ke Pelabuhan Air Putih
+            legs.push({
+                fromName: prevBengkalisName,
+                toName: hubs.pelabuhan_air_putih.nama,
+                fromCoord: prevBengkalisCoord,
+                toCoord: [hubs.pelabuhan_air_putih.latitude, hubs.pelabuhan_air_putih.longitude],
+                mode: 'mobil',
+                isWater: false
+            });
+            // 5. Pelabuhan Air Putih -> Pelabuhan Sei Pakning (Kapal RORO KMP Balik)
+            legs.push({
+                fromName: hubs.pelabuhan_air_putih.nama,
+                toName: hubs.pelabuhan_pakning.nama,
+                fromCoord: [hubs.pelabuhan_air_putih.latitude, hubs.pelabuhan_air_putih.longitude],
+                toCoord: [hubs.pelabuhan_pakning.latitude, hubs.pelabuhan_pakning.longitude],
+                mode: 'roro',
+                isWater: true,
+                nauticalWaypoints: CORRIDORS.air_pakning_bengkalis.slice().reverse()
+            });
+            // 6. Pelabuhan Sei Pakning -> Basecamp (Tol Permai Pulang)
+            legs.push({
+                fromName: hubs.pelabuhan_pakning.nama,
+                toName: basecamp.nama,
+                fromCoord: [hubs.pelabuhan_pakning.latitude, hubs.pelabuhan_pakning.longitude],
+                toCoord: basecampCoord,
+                mode: 'mobil',
+                isWater: false
+            });
+        }
+
+        return legs;
     }
 
     async function renderMapData(pekanList, filterPekanId) {
@@ -419,42 +898,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 continue;
             }
 
-            const isWaterPekan = (p.id === 3 || p.id === 5 || p.id === 6 || p.id === 7 || p.id === 8);
-
-            // Titik simpul rute
-            const waypoints = [];
-            if (allData && allData.basecamp) {
-                waypoints.push({
-                    name: allData.basecamp.nama,
-                    coord: [allData.basecamp.latitude, allData.basecamp.longitude],
-                    isHub: false
-                });
-            }
-
-            // Tambahkan transit hub bila pekan ini melibatkan rute laut/penyeberangan
-            if (p.id === 3 && allData.transit_hubs) {
-                // Dumai & Rupat
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_dumai.nama, coord: [allData.transit_hubs.pelabuhan_dumai.latitude, allData.transit_hubs.pelabuhan_dumai.longitude], isHub: true });
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_rupat.nama, coord: [allData.transit_hubs.pelabuhan_rupat.latitude, allData.transit_hubs.pelabuhan_rupat.longitude], isHub: true, isWater: true });
-            } else if (p.id === 5 && allData.transit_hubs) {
-                // Meranti
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_buton.nama, coord: [allData.transit_hubs.pelabuhan_buton.latitude, allData.transit_hubs.pelabuhan_buton.longitude], isHub: true });
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_selatpanjang.nama, coord: [allData.transit_hubs.pelabuhan_selatpanjang.latitude, allData.transit_hubs.pelabuhan_selatpanjang.longitude], isHub: true, isWater: true });
-            } else if (p.id === 6 && allData.transit_hubs) {
-                // Inhil Mandah
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_tembilahan.nama, coord: [allData.transit_hubs.pelabuhan_tembilahan.latitude, allData.transit_hubs.pelabuhan_tembilahan.longitude], isHub: true });
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_mandah.nama, coord: [allData.transit_hubs.pelabuhan_mandah.latitude, allData.transit_hubs.pelabuhan_mandah.longitude], isHub: true, isWater: true });
-            } else if ((p.id === 7 || p.id === 8) && allData.transit_hubs) {
-                // Pulau Bengkalis
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_pakning.nama, coord: [allData.transit_hubs.pelabuhan_pakning.latitude, allData.transit_hubs.pelabuhan_pakning.longitude], isHub: true });
-                waypoints.push({ name: allData.transit_hubs.pelabuhan_air_putih.nama, coord: [allData.transit_hubs.pelabuhan_air_putih.latitude, allData.transit_hubs.pelabuhan_air_putih.longitude], isHub: true, isWater: true });
-            }
-
+            // Render Marker Sekolah
             p.sekolah.forEach(s => {
                 totalRendered++;
                 const latLng = [s.latitude, s.longitude];
                 bounds.extend(latLng);
-                waypoints.push({ name: s.nama, coord: latLng, isHub: false });
 
                 // Custom Div Marker Sekolah
                 const markerHtml = `
@@ -496,52 +944,53 @@ document.addEventListener('DOMContentLoaded', function() {
                 markersLayer.addLayer(marker);
             });
 
-            // Jalur penutup kembali ke Basecamp
-            if (allData && allData.basecamp) {
-                waypoints.push({
-                    name: allData.basecamp.nama,
-                    coord: [allData.basecamp.latitude, allData.basecamp.longitude],
-                    isHub: false
-                });
-            }
+            // Susun ruas logistik (legs) terstruktur
+            const legs = buildPekanLegs(p, allData);
 
-            // Gambar Garis Rute (Mengikuti Jalan OSRM untuk darat, atau Garis Putus-putus untuk Laut)
-            for (let i = 0; i < waypoints.length - 1; i++) {
-                const wStart = waypoints[i];
-                const wEnd = waypoints[i + 1];
-
-                // Cek apakah ruas ini adalah penyeberangan perairan (air)
-                const isWaterSegment = (wStart.isWater || wEnd.isWater);
-
-                if (isWaterSegment) {
-                    // Jalur Penyeberangan Laut / Sungai
-                    const waterLine = L.polyline([wStart.coord, wEnd.coord], {
+            for (const leg of legs) {
+                if (leg.isWater) {
+                    // Jalur Penyeberangan Air (Nautical Line)
+                    const waterCoords = leg.nauticalWaypoints || [leg.fromCoord, leg.toCoord];
+                    const waterLine = L.polyline(waterCoords, {
                         color: p.color,
                         weight: 4,
                         opacity: 0.9,
                         dashArray: '8, 8'
                     });
-                    waterLine.bindTooltip(`🚢 Jalur Laut/Perairan: ${wStart.name} ➔ ${wEnd.name}`, { sticky: true });
+                    waterLine.bindTooltip(`🚢 Jalur Air/Penyeberangan: ${leg.fromName} ➔ ${leg.toName}`, { sticky: true });
                     routesLayer.addLayer(waterLine);
 
-                    // Pasang Ikon Kapal / Speedboat di tengah jalur penyeberangan
-                    const midLat = (wStart.coord[0] + wEnd.coord[0]) / 2;
-                    const midLng = (wStart.coord[1] + wEnd.coord[1]) / 2;
+                    // Badge Ikon Air di tengah perairan
+                    const midIndex = Math.floor(waterCoords.length / 2);
+                    const midCoord = waterCoords[midIndex];
+
+                    let pillClass = 'transport-pill-ship';
+                    let pillIcon = 'fa-ship';
+                    let pillText = 'Kapal RORO';
+
+                    if (leg.mode === 'speedboat') {
+                        pillIcon = 'fa-ferry';
+                        pillText = 'Speedboat';
+                    } else if (leg.mode === 'pompong') {
+                        pillIcon = 'fa-water';
+                        pillText = 'Pompong';
+                    }
+
                     const shipPillIcon = L.divIcon({
                         className: 'transport-pill-wrapper',
-                        html: `<div class="transport-pill-icon transport-pill-ship"><i class="fas fa-ship"></i> Kapal RORO / Laut</div>`,
-                        iconSize: [120, 24],
-                        iconAnchor: [60, 12]
+                        html: `<div class="transport-pill-icon ${pillClass}"><i class="fas ${pillIcon}"></i> ${pillText}</div>`,
+                        iconSize: [110, 24],
+                        iconAnchor: [55, 12]
                     });
-                    const pillMarker = L.marker([midLat, midLng], { icon: shipPillIcon })
-                        .bindPopup(`<strong>Penyeberangan Laut / Muara</strong><br>${wStart.name} ➔ ${wEnd.name}<br>Moda: Kapal RORO KMP / Speedboat`);
+                    const pillMarker = L.marker(midCoord, { icon: shipPillIcon })
+                        .bindPopup(`<strong>Penyeberangan Laut / Muara</strong><br>${leg.fromName} ➔ ${leg.toName}<br>Moda: ${pillText}`);
                     badgesLayer.addLayer(pillMarker);
 
                 } else {
-                    // Jalur Darat (Ikuti Garis Jalan via OSRM bila aktif)
-                    let roadCoords = [wStart.coord, wEnd.coord];
+                    // Jalur Darat
+                    let roadCoords = [leg.fromCoord, leg.toCoord];
                     if (followRoads) {
-                        roadCoords = await getRoadGeometry(wStart.coord, wEnd.coord);
+                        roadCoords = await getRoadGeometry(leg.fromCoord, leg.toCoord);
                     }
 
                     const roadLine = L.polyline(roadCoords, {
@@ -549,21 +998,23 @@ document.addEventListener('DOMContentLoaded', function() {
                         weight: 4,
                         opacity: 0.8
                     });
-                    roadLine.bindTooltip(`🚗 Jalur Darat / Tol: ${wStart.name} ➔ ${wEnd.name}`, { sticky: true });
+                    roadLine.bindTooltip(`🚗 Jalur Darat: ${leg.fromName} ➔ ${leg.toName}`, { sticky: true });
                     routesLayer.addLayer(roadLine);
 
-                    // Pasang Ikon Mobil di tengah jalan utama jika jarak cukup jauh
-                    if (roadCoords.length > 5) {
+                    // Pasang Ikon Mobil / Motor di tengah rute jika ruas signifikan
+                    if (roadCoords.length > 5 || (!followRoads && Math.hypot(leg.fromCoord[0] - leg.toCoord[0], leg.fromCoord[1] - leg.toCoord[1]) > 0.1)) {
                         const midIndex = Math.floor(roadCoords.length / 2);
                         const midPoint = roadCoords[midIndex];
+
+                        const isBentor = (leg.mode === 'bentor');
                         const carPillIcon = L.divIcon({
                             className: 'transport-pill-wrapper',
-                            html: `<div class="transport-pill-icon transport-pill-car"><i class="fas fa-car-side"></i> Mobil Dinas</div>`,
-                            iconSize: [95, 24],
-                            iconAnchor: [48, 12]
+                            html: `<div class="transport-pill-icon transport-pill-car"><i class="fas ${isBentor ? 'fa-motorcycle' : 'fa-car-side'}"></i> ${isBentor ? 'Bentor / Motor' : 'Mobil Dinas'}</div>`,
+                            iconSize: [105, 24],
+                            iconAnchor: [52, 12]
                         });
                         const carMarker = L.marker(midPoint, { icon: carPillIcon })
-                            .bindPopup(`<strong>Rute Jalan Darat / Tol</strong><br>Moda: Mobil Dinas Operasional Satker<br>Dari: ${wStart.name}<br>Menuju: ${wEnd.name}`);
+                            .bindPopup(`<strong>Rute Jalan Darat</strong><br>Moda: ${isBentor ? 'Bentor / Sepeda Motor Lokal' : 'Mobil Operasional Satker'}<br>Dari: ${leg.fromName}<br>Menuju: ${leg.toName}`);
                         badgesLayer.addLayer(carMarker);
                     }
                 }
