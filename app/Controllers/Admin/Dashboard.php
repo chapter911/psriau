@@ -742,6 +742,82 @@ class Dashboard extends BaseController
             'longitude' => 101.447779,
         ];
 
+        // Titik-titik Simpul Transportasi & Pelabuhan Transit
+        $transitHubs = [
+            'pelabuhan_dumai' => [
+                'nama'      => 'Pelabuhan Roro Dumai (Bandar Sri Junjungan)',
+                'tipe'      => 'pelabuhan_roro',
+                'icon'      => 'fas fa-ship',
+                'latitude'  => 1.6854,
+                'longitude' => 101.4289,
+                'keterangan' => 'Dermaga Penyeberangan Kapal RORO KMP ke Pulau Rupat',
+            ],
+            'pelabuhan_rupat' => [
+                'nama'      => 'Pelabuhan Roro Tanjung Kapal (Pulau Rupat)',
+                'tipe'      => 'pelabuhan_roro',
+                'icon'      => 'fas fa-ship',
+                'latitude'  => 1.6738,
+                'longitude' => 101.4552,
+                'keterangan' => 'Pintu Masuk Pulau Rupat dari Dumai (Kapal RORO KMP)',
+            ],
+            'pelabuhan_buton' => [
+                'nama'      => 'Pelabuhan Mengkapan Tanjung Buton (Kab. Siak)',
+                'tipe'      => 'pelabuhan_speedboat',
+                'icon'      => 'fas fa-anchor',
+                'latitude'  => 0.9125,
+                'longitude' => 102.2965,
+                'keterangan' => 'Titik Parkir Inap Mobil Dinas & Naik Speedboat ke Selatpanjang',
+            ],
+            'pelabuhan_selatpanjang' => [
+                'nama'      => 'Pelabuhan Tanjung Harapan (Selatpanjang)',
+                'tipe'      => 'pelabuhan_speedboat',
+                'icon'      => 'fas fa-ferry',
+                'latitude'  => 1.0125,
+                'longitude' => 102.7150,
+                'keterangan' => 'Pelabuhan Utama Kep. Meranti (Speedboat & Pompong)',
+            ],
+            'pelabuhan_rangsang' => [
+                'nama'      => 'Dermaga Peranggas (Pulau Rangsang Barat)',
+                'tipe'      => 'dermaga_pompong',
+                'icon'      => 'fas fa-water',
+                'latitude'  => 1.0450,
+                'longitude' => 102.7200,
+                'keterangan' => 'Dermaga Penyeberangan Pompong dari Selatpanjang',
+            ],
+            'pelabuhan_pakning' => [
+                'nama'      => 'Pelabuhan Roro Sungai Pakning (Bukit Batu)',
+                'tipe'      => 'pelabuhan_roro',
+                'icon'      => 'fas fa-ship',
+                'latitude'  => 1.3435,
+                'longitude' => 102.1558,
+                'keterangan' => 'Dermaga RORO KMP Daratan Riau ke Pulau Bengkalis (Mobil Ikut Menyeberang)',
+            ],
+            'pelabuhan_air_putih' => [
+                'nama'      => 'Pelabuhan Roro Air Putih (Pulau Bengkalis)',
+                'tipe'      => 'pelabuhan_roro',
+                'icon'      => 'fas fa-ship',
+                'latitude'  => 1.4746,
+                'longitude' => 102.0864,
+                'keterangan' => 'Pintu Masuk Pulau Bengkalis (KMP RORO Sei Pakning)',
+            ],
+            'pelabuhan_tembilahan' => [
+                'nama'      => 'Pelabuhan Tembilahan (Indragiri Hilir)',
+                'tipe'      => 'pelabuhan_speedboat',
+                'icon'      => 'fas fa-anchor',
+                'latitude'  => -0.3200,
+                'longitude' => 103.1550,
+                'keterangan' => 'Titik Titip Mobil Dinas & Naik Speedboat Carter Muara ke Mandah',
+            ],
+            'pelabuhan_mandah' => [
+                'nama'      => 'Dermaga Khairiah Mandah (Inhil)',
+                'tipe'      => 'dermaga_speedboat',
+                'icon'      => 'fas fa-water',
+                'latitude'  => 0.0150,
+                'longitude' => 103.4900,
+                'keterangan' => 'Pintu Masuk Perairan Kecamatan Mandah via Speedboat Sungai',
+            ],
+        ];
+
         // Definisi 8 Pekan Perjalanan (Target Tuntas Sebelum Ramadan 1448 H)
         $pekanConfig = [
             1 => [
@@ -930,6 +1006,7 @@ class Dashboard extends BaseController
         return $this->response->setJSON([
             'status'         => 'ok',
             'basecamp'       => $basecamp,
+            'transit_hubs'   => $transitHubs,
             'total_pekan'    => count($pekanData),
             'total_sekolah'  => $totalSekolahAll,
             'total_aset'     => $totalAsetAll,
