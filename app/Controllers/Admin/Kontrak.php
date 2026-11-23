@@ -782,6 +782,22 @@ class Kontrak extends BaseController
 
             $folderName = $memberCleanName . ($kontrakClean !== '' ? ' (' . $kontrakClean . ')' : '');
 
+            $jabatanVal = trim((string) ($kiData['jabatan'] ?? ''));
+            $paketVal = trim((string) ($paket['nama_paket'] ?? ''));
+            if (stripos($paketVal, 'pekerjaan ') === 0) {
+                $paketNamaVal = trim(substr($paketVal, 10));
+            } else {
+                $paketNamaVal = $paketVal;
+            }
+
+            $formattedNamaPekerjaan = 'Konsultan Individual ' . $jabatanVal . ($paketNamaVal !== '' ? ', Pekerjaan ' . $paketNamaVal : '');
+
+            $kiNamaPekerjaan = trim((string) ($kiData['nama_pekerjaan'] ?? ''));
+            if ($kiNamaPekerjaan === '') {
+                $kiData['nama_pekerjaan'] = $formattedNamaPekerjaan;
+            }
+            $kiData['jenis_pembayaran'] = 'Lumsum';
+
             $data = (object) array_merge($kiData, [
                 'nama_paket' => $paket['nama_paket'] ?? '',
                 'kop_surat_id' => isset($paket['kop_surat_id']) ? (int) $paket['kop_surat_id'] : null,
@@ -7689,6 +7705,22 @@ class Kontrak extends BaseController
             ->where('id', $paketId)
             ->get()
             ->getRowArray();
+
+        $jabatanVal = trim((string) ($kiData['jabatan'] ?? ''));
+        $paketVal = trim((string) ($paket['nama_paket'] ?? ''));
+        if (stripos($paketVal, 'pekerjaan ') === 0) {
+            $paketNamaVal = trim(substr($paketVal, 10));
+        } else {
+            $paketNamaVal = $paketVal;
+        }
+
+        $formattedNamaPekerjaan = 'Konsultan Individual ' . $jabatanVal . ($paketNamaVal !== '' ? ', Pekerjaan ' . $paketNamaVal : '');
+
+        $kiNamaPekerjaan = trim((string) ($kiData['nama_pekerjaan'] ?? ''));
+        if ($kiNamaPekerjaan === '') {
+            $kiData['nama_pekerjaan'] = $formattedNamaPekerjaan;
+        }
+        $kiData['jenis_pembayaran'] = 'Lumsum';
 
         $data = (object) array_merge($kiData, [
             'nama_paket' => $paket['nama_paket'] ?? '',

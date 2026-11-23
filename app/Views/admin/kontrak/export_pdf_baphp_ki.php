@@ -45,6 +45,27 @@ $tanggal_pemeriksaan = sprintf(
 $total_nominal_terbilang = terbilang_rupiah($data->nominal_kontrak);
 $pekerjaan_baphp = $pekerjaan_baphp ?? [];
 
+$jabatanVal = trim((string) ($data->jabatan ?? ''));
+$paketVal = trim((string) ($data->nama_paket ?? ''));
+if ($paketVal === '') {
+    $paketVal = trim((string) ($data->nama_pekerjaan ?? ''));
+}
+if (stripos($paketVal, 'pekerjaan ') === 0) {
+    $paketVal = trim(substr($paketVal, 10));
+}
+
+if ($jabatanVal !== '' && $paketVal !== '') {
+    $nama_pekerjaan_lengkap = 'Konsultan Individual ' . $jabatanVal . ', Pekerjaan ' . $paketVal;
+} elseif ($jabatanVal !== '') {
+    $nama_pekerjaan_lengkap = 'Konsultan Individual ' . $jabatanVal;
+} elseif ($paketVal !== '') {
+    $nama_pekerjaan_lengkap = 'Pekerjaan ' . $paketVal;
+} else {
+    $nama_pekerjaan_lengkap = 'Konsultan Individual';
+}
+
+$jenis_pembayaran = 'Lumsum';
+
 $defaultJabatanTimTeknis = 'Tim Pengawas Swakelola';
 $timTeknisList = [];
 if (!empty($tim_teknis_ppk) && is_array($tim_teknis_ppk)) {
@@ -216,7 +237,7 @@ $ttdHeight = $divHeight + 4;
     </div>
 
     <div class="text-justify mb-2">
-        Pada hari ini <?= $tanggal_pemeriksaan; ?>, telah dilaksanakan pemeriksaan hasil pekerjaan, dengan ini telah mengadakan penelitian dan pemeriksaan antara konsultan perencanaan dan pejabat penandatangan kontrak, dan tim pendukung atas Pekerjaan <b><?= htmlspecialchars($data->nama_pekerjaan, ENT_QUOTES, 'UTF-8'); ?></b>.
+        Pada hari ini <?= $tanggal_pemeriksaan; ?>, telah dilaksanakan pemeriksaan hasil pekerjaan, dengan ini telah mengadakan penelitian dan pemeriksaan antara konsultan perencanaan dan pejabat penandatangan kontrak, dan tim pendukung atas <b><?= htmlspecialchars($nama_pekerjaan_lengkap, ENT_QUOTES, 'UTF-8'); ?></b>.
     </div>
 
     <div class="mb-1">Berdasarkan:</div>
@@ -256,7 +277,7 @@ $ttdHeight = $divHeight + 4;
 
     <div class="mb-1">Menyatakan Bahwa:</div>
     <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: <?= $mb2; ?>px; padding-left: 20px;">
-        <li>Pekerjaan <b><?= htmlspecialchars($data->nama_pekerjaan, ENT_QUOTES, 'UTF-8'); ?></b>, telah melaksanakan pekerjaan sesuai kontrak yang telah disepakati bersama dengan sistem pembayaran yaitu <?= htmlspecialchars($data->jenis_pembayaran, ENT_QUOTES, 'UTF-8'); ?>.</li>
+        <li><b><?= htmlspecialchars($nama_pekerjaan_lengkap, ENT_QUOTES, 'UTF-8'); ?></b>, telah melaksanakan pekerjaan sesuai kontrak yang telah disepakati bersama dengan sistem pembayaran yaitu <?= htmlspecialchars($jenis_pembayaran, ENT_QUOTES, 'UTF-8'); ?>.</li>
     </ol>
 
     <div class="text-justify mb-2">
