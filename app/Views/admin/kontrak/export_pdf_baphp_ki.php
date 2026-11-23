@@ -59,13 +59,13 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         }
 
         body {
-            font-size: 11pt;
-            line-height: 1.2;
+            font-size: 10.5pt;
+            line-height: 1.15;
             margin: 0;
         }
 
         @page {
-            margin: 1cm 2cm 2cm 2cm;
+            margin: 0.8cm 1.8cm 1cm 1.8cm;
         }
 
         .text-center { text-align: center; }
@@ -73,14 +73,14 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         .text-justify { text-align: justify; }
         .bold { font-weight: bold; }
         .underline { text-decoration: underline; }
-        .mb-1 { margin-bottom: 5px; }
-        .mb-2 { margin-bottom: 15px; }
+        .mb-1 { margin-bottom: 3px; }
+        .mb-2 { margin-bottom: 7px; }
         .ml-2 { margin-left: 20px; }
         .box-highlight {
             background: #fff58d;
             padding: 6px 10px;
             border: 1px solid #000;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             display: inline-block;
         }
         .header-table, .content-table, .signature-table {
@@ -98,24 +98,28 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
             vertical-align: top;
             padding: 4px;
         }
-        .signature-name { margin-top: 60px; }
-        .ttd-table td {
+        .signature-name { margin-top: 40px; }
+        .ttd-table {
+            page-break-inside: avoid;
+        }
+        .ttd-table th, .ttd-table td {
             vertical-align: middle;
-            padding: 6px 6px;
+            padding: 3px 5px;
+            font-size: 10pt;
         }
         .ttd-cell {
-            height: 48px;
+            height: 32px;
         }
     </style>
 </head>
 <body>
-    <div class="header-img-container" style="text-align: center; margin-bottom: 10px;">
-        <?= kop_surat_img_tag('header-img', 'width: 100%; max-height: 120px; object-fit: contain;', 'Kop Surat', isset($data->kop_surat_id) ? (int) $data->kop_surat_id : null); ?>
+    <div class="header-img-container" style="text-align: center; margin-bottom: 6px;">
+        <?= kop_surat_img_tag('header-img', 'width: 100%; max-height: 100px; object-fit: contain;', 'Kop Surat', isset($data->kop_surat_id) ? (int) $data->kop_surat_id : null); ?>
     </div>
 
-    <div class="text-center bold" style="font-size: 12pt; margin-bottom: 8px;">BERITA ACARA PEMERIKSAAN HASIL PEKERJAAN (BAPHP)</div>
+    <div class="text-center bold" style="font-size: 11.5pt; margin-bottom: 4px;">BERITA ACARA PEMERIKSAAN HASIL PEKERJAAN (BAPHP)</div>
 
-    <div class="text-center mb-2">
+    <div class="text-center mb-2" style="font-size: 10.5pt;">
         Nomor: <?= htmlspecialchars($nomor_baphp, ENT_QUOTES, 'UTF-8'); ?>
     </div>
 
@@ -124,21 +128,21 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
     </div>
 
     <div class="mb-1">Berdasarkan:</div>
-    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 15px; padding-left: 22px;">
+    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 7px; padding-left: 20px;">
         <li>Surat Perintah Kerja (SPK)/Kontrak nomor <?= htmlspecialchars($nomor_spk, ENT_QUOTES, 'UTF-8'); ?>, tanggal <?= $tanggal_spk; ?></li>
     </ol>
 
-    <div class="mb-2">
+    <div class="mb-1">
         <span>Dengan Hasil Pemeriksaan Sebagai Berikut :</span>
     </div>
 
-    <table class="content-table" style="margin-bottom: 15px;">
+    <table class="content-table" style="margin-bottom: 7px; font-size: 10pt;">
         <thead style="background-color: #f0f0f0;">
             <tr>
                 <th width="5%" rowspan="2" style=" vertical-align: middle; text-align: center;">No</th>
-                <th width="40%" rowspan="2" style=" vertical-align: middle; text-align: center;">Uraian Pekerjaan</th>
+                <th width="45%" rowspan="2" style=" vertical-align: middle; text-align: center;">Uraian Pekerjaan</th>
                 <th width="20%" colspan="2" style=" vertical-align: middle; text-align: center;">Hasil Pemeriksaan</th>
-                <th width="35%" rowspan="2" style=" vertical-align: middle; text-align: center;">Keterangan</th>
+                <th width="30%" rowspan="2" style=" vertical-align: middle; text-align: center;">Keterangan</th>
             </tr>
             <tr>
                 <th style=" vertical-align: middle; text-align: center;">Sesuai</th>
@@ -159,7 +163,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
     </table>
 
     <div class="mb-1">Menyatakan Bahwa:</div>
-    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 15px; padding-left: 22px;">
+    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 7px; padding-left: 20px;">
         <li>Pekerjaan <b><?= htmlspecialchars($data->nama_pekerjaan, ENT_QUOTES, 'UTF-8'); ?></b>, telah melaksanakan pekerjaan sesuai kontrak yang telah disepakati bersama dengan sistem pembayaran yaitu <?= htmlspecialchars($data->jenis_pembayaran, ENT_QUOTES, 'UTF-8'); ?>.</li>
     </ol>
 
@@ -167,13 +171,13 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         Demikian Berita Acara Pemeriksaan Hasil Pekerjaan ini dibuat dan apabila dikemudian hari terdapat kekeliruan di dalamnya maka akan ditinjau dan diperbaiki sebagaimana mestinya.
     </div>
 
-    <table class="content-table ttd-table" style="margin-bottom: 15px;">
+    <table class="content-table ttd-table" style="margin-bottom: 6px;">
         <thead style="background-color: #f0f0f0;">
             <tr>
                 <th width="5%" style="vertical-align: middle; text-align: center;">No</th>
-                <th width="33%" style="vertical-align: middle; text-align: center;">Nama</th>
-                <th width="32%" style="vertical-align: middle; text-align: center;">Jabatan</th>
-                <th width="30%" style="vertical-align: middle; text-align: center;">Tanda Tangan</th>
+                <th width="38%" style="vertical-align: middle; text-align: center;">Nama</th>
+                <th width="37%" style="vertical-align: middle; text-align: center;">Jabatan</th>
+                <th width="20%" style="vertical-align: middle; text-align: center;">Tanda Tangan</th>
             </tr>
         </thead>
         <tbody>
@@ -181,7 +185,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
                 <td class="text-center">1</td>
                 <td><?= htmlspecialchars((string) ($data->pejabat_ppk ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
                 <td>Pejabat Penandatangan Kontrak</td>
-                <td class="ttd-cell" height="48"><div style="height: 42px; line-height: 42px;">&nbsp;</div></td>
+                <td class="ttd-cell" height="32"><div style="height: 28px; line-height: 28px;">&nbsp;</div></td>
             </tr>
             <?php
             $defaultJabatanTimTeknis = 'Tim Pengawas Swakelola';
@@ -206,8 +210,6 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
             if (empty($timTeknisList)) {
                 $timTeknisList = [
                     ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
-                    ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
-                    ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
                 ];
             }
             $noTtd = 2;
@@ -217,7 +219,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
                     <td class="text-center"><?= $noTtd++; ?></td>
                     <td><?= htmlspecialchars($rowTimTeknis['nama'], ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?= htmlspecialchars($rowTimTeknis['jabatan'], ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td class="ttd-cell" height="48"><div style="height: 42px; line-height: 42px;">&nbsp;</div></td>
+                    <td class="ttd-cell" height="32"><div style="height: 28px; line-height: 28px;">&nbsp;</div></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
