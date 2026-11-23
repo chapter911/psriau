@@ -608,9 +608,11 @@ graph TD
     A["Akses Portal /gateball"] --> B["Pilih Tab Kategori: PUTRA / PUTRI"]
     B --> C["Lihat Jadwal Pertandingan & Klasemen Live (Auto-Sync 3 Detik & Animasi Perpindahan Posisi)"]
     B --> D["Klik Pertandingan / Tombol Update Skor"]
+    B --> D0["Drag & Drop Badge UNOR di Tabel Jadwal untuk Tukar Posisi Langsung"]
+    D0 --> E
     D --> E["Input Password Otorisasi (Mode Operator)"]
     E --> F["Pilih Mode: Update Cepat ATAU Buka Halaman Timer & Papan Skor (/gateball/match/{id})"]
-    F --> G1["Hasil Undian: Klik 'Tukar Posisi' jika tim Merah/Putih bertukar posisi"]
+    F --> G1["Hasil Undian: Drag & Drop Kartu Tim / Tombol 'Tukar Posisi' (Merah ⇄ Putih)"]
     G1 --> G["Di Halaman Pertandingan: Kontrol Timer 30:00 (Start, Pause, Reset, Peluit/Buzzer)"]
     G --> H["Catat Poin per Bola (G1, G2, G3, Agari) / Tombol Skor (+1, +2, -1)"]
     H --> I["Klik Selesaikan & Kunci Hasil Pertandingan"]
@@ -704,10 +706,10 @@ graph TD
     B3 --> F6["Proses Pengembalian Aset Sekaligus (Update Kondisi Fisik, Catatan &amp; Pemulihan Seluruh Status Aset Induk ke Gudang)"]
     B3 --> F7["Filter Interaktif Tahun &amp; Status: Penyaringan Berdasarkan Tahun Anggaran Pinjam, Status Transaksi, Penyesuaian Metrik Widgets Otomatis &amp; Export Excel Terfilter"]
 
-    B4 --> E1["4 Sistem Tab Terpadu: 1. Rekapitulasi BMN PHTC (Paket 1-9), 2. Madrasah Sasaran &amp; Acuan Dokumen (DED &amp; RAB Fisik Final), 3. Rincian Meubelair (ASP), 4. Master Sekolah Binaan"]
-    B4 --> E2["Rekapitulasi 9 Paket PHTC Riau: Kontrak Fisik ATR (Rp 245,7 M), Kontraktor Pelaksana, Status Adendum (Adendum 1-2 / Final), MK/Supervisi, Peralatan Mesin ASP (Rp 25,1 M) &amp; Total Investasi Rp 270,8 M"]
-    B4 --> E3["Pemetaan 53 Madrasah Sasaran: Nilai Fisik ATR per Sekolah, Acuan Perencanaan DED (49 berkas) &amp; Acuan RAB Fisik Final / Adendum Kontrak"]
-    B4 --> E4["Katalog Meubelair ASP (18.881 Unit: Meja/Kursi Siswa &amp; Guru, Lemari, Whiteboard) &amp; Ekspor Excel 4-Sheet (Format Asli BMN 1:1, Rekap Paket, Madrasah &amp; DED/RAB, Katalog ASP) &amp; Cetak PDF Resmi"]
+    B4 --> E1["Sistem Tab 100% Sesuai Berkas Asli BMN: Tab Riau All, Rekap PHTC, Riau 1 s/d Riau 9, Acuan DED &amp; RAB Fisik, serta Master Sekolah"]
+    B4 --> E2["Tabel Riau All &amp; Rekap PHTC: Rekapitulasi 9 Paket ATR (17 Kolom Resmi) &amp; Rekapitulasi Lokasi Wilayah (ATR, ASP, Total ATR+PM)"]
+    B4 --> E3["Tabel Rincian Riau 1 s/d 9: Format 1:1 Dokumen Asli (Baris ATR, Sub-baris Madrasah Negeri/Swasta, Subtotal ATR, Rincian Meubelair ASP, Subtotal ASP &amp; Total ATR+PM)"]
+    B4 --> E4["Ekspor Excel Multi-Sheet 100% Identik Berkas RINCIAN_PHTC_PPS-Riau.xlsx (11 Sheet Asli: Riau All, Rekap PHTC, Riau 1-9 + DED/RAB &amp; Katalog ASP) &amp; Cetak PDF"]
 
     B5 --> G1["Pencatatan Inventaris Non-BMN / Operasional Satker (P.C Unit, Printer, AC, Lemari Es, dll.)"]
     B5 --> G2["Penetapan Lokasi Penempatan Aset (Terintegrasi Master Ruangan Kantor &amp; Input Detail Ruang)"]
@@ -1819,16 +1821,18 @@ graph TD
                                 <h6 class="font-weight-bold text-info"><i class="fas fa-school mr-1"></i> 4. Inventaris Sarpras &amp; Hasil Penelitian BMN Madrasah (PHTC)</h6>
                                 <p class="small text-muted mb-2"><code>/admin/inventaris/sekolah</code> (Menu Lv2 Inventarisasi)</p>
                                 <ol class="pl-3 small mb-0">
-                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Sekolah</strong>. Modul ini difungsikan untuk penatausahaan hasil penelitian Barang Milik Negara (BMN) pekerjaan Rehabilitasi &amp; Renovasi Madrasah (PHTC) Paket Riau 1 s/d 9, integrasi dokumen acuan perencanaan DED &amp; RAB Fisik Final (Adendum Kontrak), serta sarpras madrasah binaan di Satker PPS Riau.</li>
-                                    <li><strong>Sistem 4 Tab Terpadu:</strong>
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Sekolah</strong>. Modul ini difungsikan untuk penatausahaan hasil penelitian Barang Milik Negara (BMN) pekerjaan Rehabilitasi &amp; Renovasi Madrasah (PHTC) Paket Riau 1 s/d 9 dengan struktur tab dan tabel yang <strong>100% sama persis</strong> dengan berkas acuan resmi <code>RINCIAN_PHTC_PPS-Riau.xlsx</code>.</li>
+                                    <li><strong>Sistem Tab &amp; Tabel 100% Identik Berkas Asli BMN:</strong>
                                         <ul class="pl-3 mt-1 mb-1">
-                                            <li><strong>Tab 1: Rekapitulasi Paket BMN:</strong> Menampilkan tabel perbandingan 9 Paket PHTC (Nilai Kontrak Fisik ATR Rp 245,71 Miliar, Penyedia Jasa / Kontraktor Pelaksana, Status Adendum Fisik, MK/Supervisi, Peralatan &amp; Mesin ASP Rp 25,11 Miliar, dan Total Akumulasi Nilai BMN Rp 270,83 Miliar) beserta rekapitulasi per wilayah kabupaten.</li>
-                                            <li><strong>Tab 2: Madrasah Sasaran &amp; Acuan Dokumen (DED &amp; RAB):</strong> Menampilkan 53 madrasah sasaran (28 Negeri &amp; 25 Swasta) lengkap dengan kabupaten, Nilai Fisik ATR per sekolah, status ketersediaan berkas acuan perencanaan DED (49 berkas PDF &amp; RAR), serta berkas acuan RAB Fisik Final / Adendum Kontrak (Excel &amp; PDF SPSE).</li>
-                                            <li><strong>Tab 3: Rincian Meubelair (ASP):</strong> Menyajikan katalog lengkap 18.881 unit peralatan &amp; mesin ruang kelas/guru (Meja Siswa, Kursi Siswa, Meja Guru, Kursi Guru, Lemari Besi, Whiteboard) beserta kode BMN, merk/tipe, volume, harga satuan, dan total nilai kontrak fisik.</li>
-                                            <li><strong>Tab 4: Master Sekolah Binaan:</strong> Data master sekolah binaan untuk pemetaan wilayah kabupaten/kecamatan dan paket proyek.</li>
+                                            <li><strong>Tab 1: Riau All:</strong> Menampilkan tabel resmi 17 kolom rekapitulasi seluruh 9 Paket ATR Provinsi Riau (No, Uraian, Tahun, Jenis BMN, Kode BMN, Merk/Type, Kondisi Baik/RR/RB, Satuan, Jumlah, Harga Satuan, Total Nilai Fisik, DED, MK/Supervisi, Nilai Perolehan, Keterangan) beserta baris Subtotal ATR (Rp 245,71 Miliar) dan Total ATR + PM.</li>
+                                            <li><strong>Tab 2: Rekap PHTC:</strong> Menampilkan tabel rekapitulasi per wilayah/lokasi (No, Lokasi, Jumlah ATR, Jumlah ASP, Total ATR + PM) dengan akumulasi Rp 270,83 Miliar.</li>
+                                            <li><strong>Tab 3 s/d 11: Riau 1 s/d Riau 9:</strong> Menampilkan rincian paket per sheet individual secara hierarkis: Baris 1 Kontrak Fisik ATR $\rightarrow$ sub-baris nama-nama madrasah sasaran dengan status Negeri/Swasta $\rightarrow$ Subtotal ATR $\rightarrow$ rincian item Peralatan &amp; Mesin ASP (Lemari Besi, White Board, Meja Siswa, Meja Guru, Kursi Guru, Kursi Siswa) $\rightarrow$ Subtotal ASP $\rightarrow$ TOTAL ATR + PM per paket.</li>
+                                            <li><strong>Tab Acuan Dokumen (DED &amp; RAB Fisik Final):</strong> Menampilkan pemetaan 53 madrasah sasaran dengan alokasi Nilai Fisik ATR per sekolah, status berkas perencanaan DED (49 berkas PDF &amp; RAR), dan berkas RAB Fisik Final (Adendum Kontrak).</li>
+                                            <li><strong>Tab Katalog Meubelair (ASP):</strong> Menampilkan katalog lengkap 18.881 unit barang dengan fitur filter paket dan jenis meubelair.</li>
+                                            <li><strong>Tab Master Sekolah Binaan:</strong> Data master madrasah untuk pemetaan wilayah kabupaten/kecamatan dan paket proyek.</li>
                                         </ul>
                                     </li>
-                                    <li><strong>Ekspor Laporan Resmi:</strong> Tersedia tombol <strong>Ekspor Excel (4 Sheet)</strong> (berisi <em>Sheet 1: FORMAT_ASLI_BMN</em> berstruktur hierarkis 1:1 identik dengan dokumen lampiran asli BMN, <em>Sheet 2: REKAP_PAKET_ANALITIS</em> dengan Kontraktor &amp; Adendum, <em>Sheet 3: MADRASAH_DAN_DED_RAB</em> dengan Nilai ATR, DED &amp; RAB Fisik, dan <em>Sheet 4: RINCIAN_ASP_MEUBELAIR</em> katalog 18.881 unit) serta <strong>Cetak PDF</strong> resmi landscape A4 yang dilengkapi kolom tanda tangan PPK dan Tim Pengurus Barang BMN.</li>
+                                    <li><strong>Ekspor Laporan Excel 11 Sheet (Sesuai Asli):</strong> Tombol <strong>Ekspor Excel</strong> mengunduh file spreadsheet dengan sheet-sheet yang persis sama dengan berkas resmi: <code>Riau All</code>, <code>Rekap PHTC</code>, <code>Riau 1</code> s/d <code>Riau 9</code>, ditambah sheet <code>DED_DAN_RAB_FISIK</code> dan <code>KATALOG_MEUBELAIR_ASP</code>, serta tombol <strong>Cetak PDF</strong> resmi landscape A4.</li>
                                 </ol>
                             </div>
                         </div>
@@ -2009,6 +2013,7 @@ graph TD
                                     <li>Tabel kiri menampilkan 10 daftar jadwal pertandingan beserta skor & status pertandingan.</li>
                                     <li>Tabel kanan menampilkan klasemen 5 UNOR (PS, BWSS III, BPBPK, BP2JK, BPJN) lengkap dengan kolom Main, M (Menang), K (Kalah), S (Seri), POINT, dan SCORE (Selisih Skor).</li>
                                     <li>Halaman dilengkapi fitur <strong>Live Sync Real-time</strong> (3 detik) dengan <strong>Notifikasi Alert Auto-Close</strong> saat terjadi pembaruan skor di lapangan, serta tombol <strong>Fullscreen</strong> dan <strong>Cetak PDF</strong>.</li>
+                                    <li><strong>Tukar Posisi Tim via Drag & Drop di Jadwal:</strong> Operator dapat langsung menyeret (<em>drag and drop</em>) lencana nama UNOR 1 ke UNOR 2 (atau ke badge VS di tengah) pada baris jadwal untuk menukar posisi tim sesuai hasil undian bola ganjil/genap tanpa harus membuka halaman skor.</li>
                                 </ol>
                             </div>
                         </div>
@@ -2022,7 +2027,7 @@ graph TD
                                     <li>Klik baris pertandingan mana saja pada tabel jadwal untuk langsung membuka halaman <strong>Papan Skor & Timer Pertandingan</strong> (bebas dilihat siapa saja secara live tanpa password).</li>
                                     <li>Saat operator ingin melakukan perubahan (menjalankan timer, menambah poin bola, atau mereset), sistem akan meminta verifikasi password otorisasi resmi turnamen.</li>
                                     <li>Klasemen turnamen otomatis ter-update secara <em>real-time</em> saat pertandingan sedang berlangsung meskipun laga belum selesai, lengkap dengan <strong>Animasi Meluncur Halus (FLIP)</strong> saat posisi klasemen berubah.</li>
-                                    <li>Gunakan tombol <strong>Tukar Posisi (Merah ⇄ Putih)</strong> di toolbar atas atau di bawah lingkaran VS untuk menukar posisi tim sesuai hasil undian bola ganjil/genap sebelum laga dimulai.</li>
+                                    <li><strong>Tukar Posisi Tim (Merah ⇄ Putih) dengan Drag & Drop:</strong> Gunakan fitur <strong>Drag & Drop</strong> (tarik pegangan / kartu tim ke arah tim lawan atau lingkaran VS di tengah) ataupun klik tombol <strong>Tukar Posisi</strong> untuk menukar posisi tim sesuai hasil undian bola ganjil/genap sebelum laga dimulai.</li>
                                     <li>Gunakan <strong>Digital Timer 30:00</strong> dengan kontrol Start, Pause, Reset, Tambah/Kurang Waktu, serta Suara Peluit / Buzzer.</li>
                                     <li>Jalankan timer terlebih dahulu, lalu catat poin tim dengan menekan kartu bola yang masuk (sistem mewajibkan timer sedang berjalan sebelum poin dapat diinput, serta otomatis menghitung siklus resmi: <strong>1 pt &rarr; 2 pts &rarr; 3 pts &rarr; 5 pts (Agari)</strong> dengan indikator target gate).</li>
                                     <li>Klik <strong>Selesaikan & Kunci Hasil Pertandingan</strong> untuk menyelesaikan laga dan mengunci hasil akhir turnamen.</li>

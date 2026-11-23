@@ -798,6 +798,93 @@
             transition: transform 0.35s ease;
         }
 
+        /* Drag and Drop Team Swap Styling */
+        .team-drag-handle {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #475569;
+            background: #ffffff;
+            border: 1.5px dashed #94a3b8;
+            border-radius: 9999px;
+            margin-bottom: 10px;
+            cursor: grab;
+            user-select: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            touch-action: none;
+        }
+        .team-drag-handle:hover {
+            background: #f8fafc;
+            color: #0f172a;
+            border-color: #0284c7;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+        }
+        .team-drag-handle:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+        }
+        .team-drag-handle i {
+            color: #0284c7;
+            font-size: 0.8rem;
+        }
+        .team-box {
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
+            position: relative;
+        }
+        .team-box.is-dragging {
+            opacity: 0.45;
+            transform: scale(0.98);
+            border-style: dashed;
+        }
+        .team-box.drag-target-hover {
+            border: 3px dashed #0284c7 !important;
+            background: #eff6ff !important;
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(2, 132, 199, 0.35) !important;
+        }
+        .drag-drop-pill-hint {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: linear-gradient(135deg, #0284c7, #0369a1);
+            color: #ffffff;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 4px 14px;
+            border-radius: 9999px;
+            white-space: nowrap;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 25;
+            box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
+        }
+        .team-box.drag-target-hover .drag-drop-pill-hint,
+        .vs-center-col.drag-target-hover .drag-drop-pill-hint {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .vs-circle {
+            transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+            cursor: pointer;
+        }
+        .vs-circle.drag-target-hover,
+        .vs-center-col.drag-target-hover .vs-circle {
+            transform: scale(1.22) rotate(180deg);
+            background: linear-gradient(135deg, #0284c7, #0369a1) !important;
+            box-shadow: 0 0 24px rgba(2, 132, 199, 0.7) !important;
+        }
+
         /* Bottom Action Footer */
         .bottom-action-bar {
             display: flex;
@@ -1218,7 +1305,11 @@
     <section class="scoreboard-grid">
 
         <!-- Red Team / Tim 1 (Bola Ganjil 1, 3, 5, 7, 9) -->
-        <div class="team-box team-red-box">
+        <div class="team-box team-red-box" id="teamBoxRed" data-team-pos="1">
+            <div class="drag-drop-pill-hint"><i class="fas fa-arrows-rotate"></i> Lepaskan untuk Tukar Posisi</div>
+            <div class="team-drag-handle" id="dragHandleRed" draggable="true" title="Klik dan seret (Drag & Drop) untuk menukar posisi tim">
+                <i class="fas fa-grip-vertical"></i> <span>Drag untuk Tukar Posisi</span>
+            </div>
             <div class="team-jersey-badge jersey-red">TIM MERAH (BOLA GANJIL)</div>
             <h2 class="team-name"><?= esc($match['team1']); ?></h2>
             
@@ -1254,12 +1345,20 @@
         </div>
 
         <!-- Center VS Column -->
-        <div class="vs-center-col">
-            <div class="vs-circle">VS</div>
+        <div class="vs-center-col" id="vsCenterCol" data-team-pos="vs">
+            <div class="vs-circle" id="vsCircle" title="Tarik tim ke sini atau ke tim lawan untuk tukar posisi">VS</div>
+            <div class="drag-drop-pill-hint"><i class="fas fa-arrows-rotate"></i> Lepaskan untuk Tukar Posisi</div>
+            <button type="button" class="btn-swap-teams" id="btnSwapTeamsCenter" title="Tukar Posisi Tim (Merah ⇄ Putih)">
+                <i class="fas fa-arrows-rotate"></i> <span>Tukar</span>
+            </button>
         </div>
 
         <!-- White Team / Tim 2 (Bola Genap 2, 4, 6, 8, 10) -->
-        <div class="team-box team-white-box">
+        <div class="team-box team-white-box" id="teamBoxWhite" data-team-pos="2">
+            <div class="drag-drop-pill-hint"><i class="fas fa-arrows-rotate"></i> Lepaskan untuk Tukar Posisi</div>
+            <div class="team-drag-handle" id="dragHandleWhite" draggable="true" title="Klik dan seret (Drag & Drop) untuk menukar posisi tim">
+                <i class="fas fa-grip-vertical"></i> <span>Drag untuk Tukar Posisi</span>
+            </div>
             <div class="team-jersey-badge jersey-white">TIM PUTIH (BOLA GENAP)</div>
             <h2 class="team-name"><?= esc($match['team2']); ?></h2>
             
@@ -2063,11 +2162,155 @@
     const btnSwap = document.getElementById('btnSwapTeams');
     if (btnSwap) btnSwap.addEventListener('click', handleSwapTeams);
 
+    const btnSwapCenter = document.getElementById('btnSwapTeamsCenter');
+    if (btnSwapCenter) btnSwapCenter.addEventListener('click', handleSwapTeams);
+
     const btnSwapTimer = document.getElementById('btnSwapTeamsTimer');
     if (btnSwapTimer) btnSwapTimer.addEventListener('click', handleSwapTeams);
 
     const btnSwapBottom = document.getElementById('btnSwapTeamsBottom');
     if (btnSwapBottom) btnSwapBottom.addEventListener('click', handleSwapTeams);
+
+    // Initialize HTML5 and Touch Drag & Drop for Team Swap
+    function initMatchDragAndDrop() {
+        const teamBoxRed = document.getElementById('teamBoxRed');
+        const teamBoxWhite = document.getElementById('teamBoxWhite');
+        const vsCenterCol = document.getElementById('vsCenterCol');
+        const dragHandleRed = document.getElementById('dragHandleRed');
+        const dragHandleWhite = document.getElementById('dragHandleWhite');
+
+        if (!teamBoxRed || !teamBoxWhite) return;
+
+        let draggedTeam = null; // '1' or '2'
+        const dropTargets = [teamBoxRed, teamBoxWhite, vsCenterCol].filter(Boolean);
+
+        function clearDragClasses() {
+            teamBoxRed.classList.remove('is-dragging', 'drag-target-hover');
+            teamBoxWhite.classList.remove('is-dragging', 'drag-target-hover');
+            if (vsCenterCol) vsCenterCol.classList.remove('drag-target-hover');
+        }
+
+        // HTML5 Drag handlers for Desktop
+        [dragHandleRed, dragHandleWhite].forEach(handle => {
+            if (!handle) return;
+            handle.addEventListener('dragstart', (e) => {
+                draggedTeam = handle.id === 'dragHandleRed' ? '1' : '2';
+                e.dataTransfer.setData('text/plain', draggedTeam);
+                e.dataTransfer.effectAllowed = 'move';
+                const parentBox = draggedTeam === '1' ? teamBoxRed : teamBoxWhite;
+                requestAnimationFrame(() => {
+                    parentBox.classList.add('is-dragging');
+                });
+            });
+
+            handle.addEventListener('dragend', () => {
+                clearDragClasses();
+                draggedTeam = null;
+            });
+        });
+
+        dropTargets.forEach(target => {
+            target.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (!draggedTeam) return;
+                const targetPos = target.getAttribute('data-team-pos');
+                if (targetPos !== draggedTeam) {
+                    e.dataTransfer.dropEffect = 'move';
+                    target.classList.add('drag-target-hover');
+                }
+            });
+
+            target.addEventListener('dragleave', (e) => {
+                if (!target.contains(e.relatedTarget)) {
+                    target.classList.remove('drag-target-hover');
+                }
+            });
+
+            target.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const droppedSource = e.dataTransfer.getData('text/plain') || draggedTeam;
+                const targetPos = target.getAttribute('data-team-pos');
+                clearDragClasses();
+                draggedTeam = null;
+
+                if (droppedSource && targetPos !== droppedSource) {
+                    handleSwapTeams();
+                }
+            });
+        });
+
+        // Touch Drag & Drop support for mobile/tablet devices
+        [dragHandleRed, dragHandleWhite].forEach(handle => {
+            if (!handle) return;
+            let touchGhost = null;
+            let touchSourceTeam = null;
+
+            handle.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                touchSourceTeam = handle.id === 'dragHandleRed' ? '1' : '2';
+                const parentBox = touchSourceTeam === '1' ? teamBoxRed : teamBoxWhite;
+                parentBox.classList.add('is-dragging');
+
+                touchGhost = document.createElement('div');
+                touchGhost.innerHTML = `<i class="fas fa-arrows-rotate mr-1"></i> Tukar Tim`;
+                touchGhost.style.position = 'fixed';
+                touchGhost.style.left = `${touch.clientX - 45}px`;
+                touchGhost.style.top = `${touch.clientY - 20}px`;
+                touchGhost.style.padding = '8px 16px';
+                touchGhost.style.background = '#0284c7';
+                touchGhost.style.color = '#ffffff';
+                touchGhost.style.fontFamily = 'Montserrat, sans-serif';
+                touchGhost.style.fontWeight = '800';
+                touchGhost.style.fontSize = '0.78rem';
+                touchGhost.style.borderRadius = '9999px';
+                touchGhost.style.boxShadow = '0 8px 24px rgba(2, 132, 199, 0.45)';
+                touchGhost.style.pointerEvents = 'none';
+                touchGhost.style.zIndex = '9999';
+                document.body.appendChild(touchGhost);
+            }, { passive: true });
+
+            handle.addEventListener('touchmove', (e) => {
+                if (!touchGhost) return;
+                const touch = e.touches[0];
+                touchGhost.style.left = `${touch.clientX - 45}px`;
+                touchGhost.style.top = `${touch.clientY - 20}px`;
+
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                dropTargets.forEach(dt => dt.classList.remove('drag-target-hover'));
+                if (el) {
+                    const matchTarget = dropTargets.find(dt => dt === el || dt.contains(el));
+                    if (matchTarget && matchTarget.getAttribute('data-team-pos') !== touchSourceTeam) {
+                        matchTarget.classList.add('drag-target-hover');
+                    }
+                }
+            }, { passive: true });
+
+            handle.addEventListener('touchend', (e) => {
+                if (touchGhost) {
+                    touchGhost.remove();
+                    touchGhost = null;
+                }
+                const touch = e.changedTouches[0];
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                let shouldSwap = false;
+                if (el) {
+                    const matchTarget = dropTargets.find(dt => dt === el || dt.contains(el));
+                    if (matchTarget && matchTarget.getAttribute('data-team-pos') !== touchSourceTeam) {
+                        shouldSwap = true;
+                    }
+                }
+                clearDragClasses();
+                const source = touchSourceTeam;
+                touchSourceTeam = null;
+
+                if (shouldSwap && source) {
+                    handleSwapTeams();
+                }
+            }, { passive: true });
+        });
+    }
+
+    initMatchDragAndDrop();
 
     // Reset Match Entirely
     document.getElementById('btnResetMatch').addEventListener('click', async () => {

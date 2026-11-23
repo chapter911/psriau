@@ -405,6 +405,43 @@
             letter-spacing: 0.3px;
         }
 
+        .unor-badge.unor-drag-badge {
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 6px;
+            border: 1.5px dashed transparent;
+            touch-action: none;
+        }
+        .unor-badge.unor-drag-badge:hover {
+            transform: translateY(-2px);
+            background: #e0f2fe;
+            border-color: #0284c7;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.15);
+        }
+        .unor-badge.unor-drag-badge:active {
+            cursor: grabbing;
+            transform: scale(0.96);
+        }
+        .unor-badge.is-dragging {
+            opacity: 0.4;
+            transform: scale(0.94);
+            border-style: dashed;
+            border-color: #0284c7;
+        }
+        .unor-badge.drag-target-hover,
+        .vs-badge.drag-target-hover {
+            border: 2px dashed #0284c7 !important;
+            background: #0284c7 !important;
+            color: #ffffff !important;
+            transform: scale(1.1);
+            box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+        }
+
         .vs-badge {
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
@@ -413,6 +450,7 @@
             background: #e2e8f0;
             padding: 2px 8px;
             border-radius: 4px;
+            transition: all 0.2s ease;
         }
 
         /* Standings Table Highlighting */
@@ -1063,9 +1101,9 @@
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td><span class="unor-badge"><?= esc($match['team1']); ?></span></td>
-                                <td><span class="vs-badge">VS</span></td>
-                                <td><span class="unor-badge"><?= esc($match['team2']); ?></span></td>
+                                <td><span class="unor-badge unor-drag-badge" draggable="true" data-match-id="<?= (int) $match['id']; ?>" data-team-pos="1" onclick="event.stopPropagation()" title="Drag & drop ke tim lawan untuk menukar posisi tim"><?= esc($match['team1']); ?></span></td>
+                                <td><span class="vs-badge vs-drag-target" data-match-id="<?= (int) $match['id']; ?>" onclick="event.stopPropagation()" title="Drop di sini untuk menukar posisi">VS</span></td>
+                                <td><span class="unor-badge unor-drag-badge" draggable="true" data-match-id="<?= (int) $match['id']; ?>" data-team-pos="2" onclick="event.stopPropagation()" title="Drag & drop ke tim lawan untuk menukar posisi tim"><?= esc($match['team2']); ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -1190,9 +1228,9 @@
                                         </div>
                                     <?php endif; ?>
                                 </td>
-                                <td><span class="unor-badge"><?= esc($match['team1']); ?></span></td>
-                                <td><span class="vs-badge">VS</span></td>
-                                <td><span class="unor-badge"><?= esc($match['team2']); ?></span></td>
+                                <td><span class="unor-badge unor-drag-badge" draggable="true" data-match-id="<?= (int) $match['id']; ?>" data-team-pos="1" onclick="event.stopPropagation()" title="Drag & drop ke tim lawan untuk menukar posisi tim"><?= esc($match['team1']); ?></span></td>
+                                <td><span class="vs-badge vs-drag-target" data-match-id="<?= (int) $match['id']; ?>" onclick="event.stopPropagation()" title="Drop di sini untuk menukar posisi">VS</span></td>
+                                <td><span class="unor-badge unor-drag-badge" draggable="true" data-match-id="<?= (int) $match['id']; ?>" data-team-pos="2" onclick="event.stopPropagation()" title="Drag & drop ke tim lawan untuk menukar posisi tim"><?= esc($match['team2']); ?></span></td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
@@ -1323,6 +1361,7 @@
     const API_URL_BATCH = '<?= site_url("gateball/api/batch-update"); ?>';
     const API_URL_RESET = '<?= site_url("gateball/api/reset"); ?>';
     const API_URL_VERIFY = '<?= site_url("gateball/api/verify-auth"); ?>';
+    const API_URL_SWAP = '<?= site_url("gateball/api/match/"); ?>';
     const MATCH_PAGE_URL = '<?= site_url("gateball/match/"); ?>';
 
     let currentCategory = 'putra';
@@ -1584,13 +1623,14 @@
                 <tr class="match-row-clickable" data-match-id="${m.id}" data-match-num="${m.match_number}" onclick="openMatchScoreboard(${m.id})" title="Klik untuk membuka Timer & Papan Skor Pertandingan #${m.match_number}">
                     <td><strong>${m.match_number}.</strong></td>
                     <td>${scoreTimerHtml}</td>
-                    <td><span class="unor-badge">${escapeHtml(m.team1)}</span></td>
-                    <td><span class="vs-badge">VS</span></td>
-                    <td><span class="unor-badge">${escapeHtml(m.team2)}</span></td>
+                    <td><span class="unor-badge unor-drag-badge" draggable="true" data-match-id="${m.id}" data-team-pos="1" onclick="event.stopPropagation()" title="Drag & drop ke tim lawan untuk menukar posisi tim">${escapeHtml(m.team1)}</span></td>
+                    <td><span class="vs-badge vs-drag-target" data-match-id="${m.id}" onclick="event.stopPropagation()" title="Drop di sini untuk menukar posisi">VS</span></td>
+                    <td><span class="unor-badge unor-drag-badge" draggable="true" data-match-id="${m.id}" data-team-pos="2" onclick="event.stopPropagation()" title="Drag & drop ke tim lawan untuk menukar posisi tim">${escapeHtml(m.team2)}</span></td>
                 </tr>
             `;
         });
         tbody.innerHTML = html;
+        initScheduleDragAndDrop();
     }
 
     // Global 1-second ticker to decrement running match timers on dashboard smoothly
@@ -1707,9 +1747,233 @@
     }
 
     // Open single match scoreboard page directly (tanpa perlu password untuk melihat jadwal/laga)
+    let isDraggingBadge = false;
     function openMatchScoreboard(matchId) {
+        if (isDraggingBadge) return;
         window.location.href = MATCH_PAGE_URL + matchId;
     }
+
+    // Tukar Posisi Tim Pertandingan di Jadwal (Merah ⇄ Putih)
+    async function handleSwapMatchInSchedule(matchId, cat) {
+        const matches = matchesData[cat] || [];
+        const match = matches.find(m => parseInt(m.id) === parseInt(matchId));
+        if (!match) return;
+
+        let pwd = savedPassword;
+        if (!pwd) {
+            const { value: enteredPwd } = await Swal.fire({
+                title: 'Otorisasi Operator Turnamen',
+                text: 'Masukkan password resmi untuk menukar posisi tim:',
+                input: 'password',
+                inputPlaceholder: 'Password otorisasi',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
+                },
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-key"></i> Verifikasi',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#002244'
+            });
+            if (!enteredPwd) return;
+            pwd = enteredPwd.trim();
+        }
+
+        const confirm = await Swal.fire({
+            title: `Tukar Posisi Laga #${match.match_number}?`,
+            html: `
+                <div style="font-size: 0.95rem; margin-top: 8px; text-align: left; background: #f8fafc; padding: 14px; border-radius: 10px; border: 2px solid #cbd5e1;">
+                    <p style="margin-bottom: 8px; color: #475569; font-weight: 600;">Posisi tim pada Pertandingan #${match.match_number} (${cat.toUpperCase()}) akan ditukar:</p>
+                    <div style="margin-bottom: 6px;">🔴 <strong>Tim Merah (UNOR 1):</strong> <span style="color:#dc2626;font-weight:800;">${escapeHtml(match.team2)}</span></div>
+                    <div>⚪ <strong>Tim Putih (UNOR 2):</strong> <span style="color:#0284c7;font-weight:800;">${escapeHtml(match.team1)}</span></div>
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-arrows-rotate"></i> Ya, Tukar Posisi',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#0284c7',
+            cancelButtonColor: '#64748b'
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        const formData = new FormData();
+        formData.append('password', pwd);
+
+        try {
+            const resp = await fetch(`${API_URL_SWAP}${matchId}/swap-teams`, {
+                method: 'POST',
+                body: formData
+            });
+            const res = await resp.json();
+            if (res.status === 'success') {
+                savedPassword = pwd;
+                sessionStorage.setItem('gateball_pwd', pwd);
+                await fetchData(false);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Posisi Tim Berhasil Ditukar!',
+                    html: `Pertandingan #${match.match_number} (${cat.toUpperCase()})<br>🔴 <strong>${escapeHtml(res.data.team1)}</strong> ⇄ ⚪ <strong>${escapeHtml(res.data.team2)}</strong>`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                if (resp.status === 403) {
+                    savedPassword = '';
+                    sessionStorage.removeItem('gateball_pwd');
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menukar Posisi',
+                    text: res.message || 'Password salah atau otorisasi gagal.',
+                    confirmButtonColor: '#002244'
+                });
+            }
+        } catch (e) {
+            console.error('Swap error:', e);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi ke server bermasalah.' });
+        }
+    }
+
+    // Initialize HTML5 and Touch Drag & Drop for Schedule Table Badges
+    function initScheduleDragAndDrop() {
+        document.querySelectorAll('.unor-drag-badge').forEach(badge => {
+            badge.addEventListener('dragstart', (e) => {
+                isDraggingBadge = true;
+                const matchId = badge.getAttribute('data-match-id');
+                const teamPos = badge.getAttribute('data-team-pos');
+                e.dataTransfer.setData('text/plain', JSON.stringify({ matchId, teamPos }));
+                e.dataTransfer.effectAllowed = 'move';
+                badge.classList.add('is-dragging');
+            });
+
+            badge.addEventListener('dragend', () => {
+                setTimeout(() => { isDraggingBadge = false; }, 250);
+                document.querySelectorAll('.unor-drag-badge, .vs-drag-target').forEach(el => {
+                    el.classList.remove('is-dragging', 'drag-target-hover');
+                });
+            });
+
+            badge.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+                badge.classList.add('drag-target-hover');
+            });
+
+            badge.addEventListener('dragleave', (e) => {
+                badge.classList.remove('drag-target-hover');
+            });
+
+            badge.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                badge.classList.remove('drag-target-hover');
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+                    const targetMatchId = badge.getAttribute('data-match-id');
+                    const targetPos = badge.getAttribute('data-team-pos');
+                    if (data.matchId && data.matchId === targetMatchId && data.teamPos !== targetPos) {
+                        handleSwapMatchInSchedule(targetMatchId, currentCategory);
+                    }
+                } catch(err){}
+            });
+
+            // Touch Drag for Mobile / Tablet
+            let touchGhost = null;
+            badge.addEventListener('touchstart', (e) => {
+                isDraggingBadge = true;
+                const touch = e.touches[0];
+                const matchId = badge.getAttribute('data-match-id');
+                const teamPos = badge.getAttribute('data-team-pos');
+
+                touchGhost = document.createElement('div');
+                touchGhost.textContent = badge.textContent.trim();
+                touchGhost.style.position = 'fixed';
+                touchGhost.style.left = `${touch.clientX - 30}px`;
+                touchGhost.style.top = `${touch.clientY - 15}px`;
+                touchGhost.style.padding = '4px 10px';
+                touchGhost.style.background = '#0284c7';
+                touchGhost.style.color = '#ffffff';
+                touchGhost.style.fontWeight = '800';
+                touchGhost.style.fontSize = '0.8rem';
+                touchGhost.style.borderRadius = '6px';
+                touchGhost.style.pointerEvents = 'none';
+                touchGhost.style.zIndex = '9999';
+                touchGhost.style.boxShadow = '0 4px 12px rgba(2, 132, 199, 0.4)';
+                document.body.appendChild(touchGhost);
+            }, { passive: true });
+
+            badge.addEventListener('touchmove', (e) => {
+                if (!touchGhost) return;
+                const touch = e.touches[0];
+                touchGhost.style.left = `${touch.clientX - 30}px`;
+                touchGhost.style.top = `${touch.clientY - 15}px`;
+
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                document.querySelectorAll('.unor-drag-badge, .vs-drag-target').forEach(el => el.classList.remove('drag-target-hover'));
+                if (el) {
+                    const targetBadge = el.closest('.unor-drag-badge, .vs-drag-target');
+                    if (targetBadge && targetBadge !== badge && targetBadge.getAttribute('data-match-id') === badge.getAttribute('data-match-id')) {
+                        targetBadge.classList.add('drag-target-hover');
+                    }
+                }
+            }, { passive: true });
+
+            badge.addEventListener('touchend', (e) => {
+                if (touchGhost) {
+                    touchGhost.remove();
+                    touchGhost = null;
+                }
+                const touch = e.changedTouches[0];
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                let targetMatchId = null;
+                if (el) {
+                    const targetBadge = el.closest('.unor-drag-badge, .vs-drag-target');
+                    if (targetBadge && targetBadge !== badge && targetBadge.getAttribute('data-match-id') === badge.getAttribute('data-match-id')) {
+                        targetMatchId = targetBadge.getAttribute('data-match-id');
+                    }
+                }
+                document.querySelectorAll('.unor-drag-badge, .vs-drag-target').forEach(el => el.classList.remove('drag-target-hover'));
+                setTimeout(() => { isDraggingBadge = false; }, 250);
+
+                if (targetMatchId) {
+                    handleSwapMatchInSchedule(targetMatchId, currentCategory);
+                }
+            }, { passive: true });
+        });
+
+        document.querySelectorAll('.vs-drag-target').forEach(vs => {
+            vs.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+                vs.classList.add('drag-target-hover');
+            });
+
+            vs.addEventListener('dragleave', () => {
+                vs.classList.remove('drag-target-hover');
+            });
+
+            vs.addEventListener('drop', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                vs.classList.remove('drag-target-hover');
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+                    const targetMatchId = vs.getAttribute('data-match-id');
+                    if (data.matchId && data.matchId === targetMatchId) {
+                        handleSwapMatchInSchedule(targetMatchId, currentCategory);
+                    }
+                } catch(err){}
+            });
+        });
+    }
+
+    // Initial run on server-rendered rows
+    initScheduleDragAndDrop();
 
     // Modal Update Skor Cepat - Selalu minta verifikasi password setiap kali diklik
     document.getElementById('btnOpenUpdateModal').addEventListener('click', async () => {
