@@ -44,6 +44,97 @@ $tanggal_pemeriksaan = sprintf(
 );
 $total_nominal_terbilang = terbilang_rupiah($data->nominal_kontrak);
 $pekerjaan_baphp = $pekerjaan_baphp ?? [];
+
+$defaultJabatanTimTeknis = 'Tim Pengawas Swakelola';
+$timTeknisList = [];
+if (!empty($tim_teknis_ppk) && is_array($tim_teknis_ppk)) {
+    foreach ($tim_teknis_ppk as $item) {
+        if (is_array($item)) {
+            $namaTrim = trim((string) ($item['nama'] ?? ''));
+            $jabatanTrim = trim((string) ($item['jabatan'] ?? ''));
+        } else {
+            $namaTrim = trim((string) $item);
+            $jabatanTrim = '';
+        }
+        if ($namaTrim !== '') {
+            $timTeknisList[] = [
+                'nama' => $namaTrim,
+                'jabatan' => $jabatanTrim !== '' ? $jabatanTrim : $defaultJabatanTimTeknis,
+            ];
+        }
+    }
+}
+if (empty($timTeknisList)) {
+    $timTeknisList = [
+        ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
+    ];
+}
+
+$totalPekerjaan = max(1, count($pekerjaan_baphp));
+$totalSigners = 1 + count($timTeknisList); // 1 PPK + Tim Teknis
+
+// Tata letak adaptif agar dokumen mengisi halaman penuh sampai bawah dan tetap 1 halaman
+if ($totalSigners >= 8) {
+    $divHeight = 32;
+    $mb2 = 6;
+    $mb1 = 3;
+    $tablePadding = '2px 4px';
+    $lineHeight = 1.15;
+    $fontSize = '10pt';
+} elseif ($totalSigners === 7) {
+    if ($totalPekerjaan > 4) {
+        $divHeight = 38;
+        $mb2 = 7;
+        $mb1 = 3;
+        $tablePadding = '2px 4px';
+        $lineHeight = 1.15;
+        $fontSize = '10pt';
+    } else {
+        $divHeight = 47;
+        $mb2 = 8;
+        $mb1 = 4;
+        $tablePadding = '2px 4px';
+        $lineHeight = 1.16;
+        $fontSize = '10.5pt';
+    }
+} elseif ($totalSigners === 6) {
+    $divHeight = 56;
+    $mb2 = 9;
+    $mb1 = 4;
+    $tablePadding = '3px 4px';
+    $lineHeight = 1.18;
+    $fontSize = '10.5pt';
+} elseif ($totalSigners === 5) {
+    $divHeight = 68;
+    $mb2 = 11;
+    $mb1 = 5;
+    $tablePadding = '3px 5px';
+    $lineHeight = 1.20;
+    $fontSize = '10.5pt';
+} elseif ($totalSigners === 4) {
+    $divHeight = 82;
+    $mb2 = 13;
+    $mb1 = 6;
+    $tablePadding = '3px 5px';
+    $lineHeight = 1.22;
+    $fontSize = '10.5pt';
+} elseif ($totalSigners === 3) {
+    $divHeight = 98;
+    $mb2 = 15;
+    $mb1 = 6;
+    $tablePadding = '4px 5px';
+    $lineHeight = 1.24;
+    $fontSize = '11pt';
+} else {
+    // 1 atau 2 penandatangan
+    $divHeight = 115;
+    $mb2 = 18;
+    $mb1 = 7;
+    $tablePadding = '4px 5px';
+    $lineHeight = 1.25;
+    $fontSize = '11pt';
+}
+$ttdHeight = $divHeight + 4;
 ?>
 
 <!DOCTYPE html>
@@ -59,8 +150,8 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         }
 
         body {
-            font-size: 10.5pt;
-            line-height: 1.15;
+            font-size: <?= $fontSize; ?>;
+            line-height: <?= $lineHeight; ?>;
             margin: 0;
         }
 
@@ -73,8 +164,8 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         .text-justify { text-align: justify; }
         .bold { font-weight: bold; }
         .underline { text-decoration: underline; }
-        .mb-1 { margin-bottom: 3px; }
-        .mb-2 { margin-bottom: 7px; }
+        .mb-1 { margin-bottom: <?= $mb1; ?>px; }
+        .mb-2 { margin-bottom: <?= $mb2; ?>px; }
         .ml-2 { margin-left: 20px; }
         .box-highlight {
             background: #fff58d;
@@ -89,7 +180,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         }
         .header-table td, .content-table td, .content-table th {
             vertical-align: top;
-            padding: 2px 4px;
+            padding: <?= $tablePadding; ?>;
         }
         .content-table th, .content-table td {
             border: 1px solid #000;
@@ -101,14 +192,15 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         .signature-name { margin-top: 40px; }
         .ttd-table {
             page-break-inside: avoid;
+            margin-bottom: 0;
         }
         .ttd-table th, .ttd-table td {
             vertical-align: middle;
-            padding: 3px 5px;
+            padding: 2px 4px;
             font-size: 10pt;
         }
         .ttd-cell {
-            height: 32px;
+            height: <?= $ttdHeight; ?>px;
         }
     </style>
 </head>
@@ -128,7 +220,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
     </div>
 
     <div class="mb-1">Berdasarkan:</div>
-    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 7px; padding-left: 20px;">
+    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: <?= $mb2; ?>px; padding-left: 20px;">
         <li>Surat Perintah Kerja (SPK)/Kontrak nomor <?= htmlspecialchars($nomor_spk, ENT_QUOTES, 'UTF-8'); ?>, tanggal <?= $tanggal_spk; ?></li>
     </ol>
 
@@ -136,7 +228,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         <span>Dengan Hasil Pemeriksaan Sebagai Berikut :</span>
     </div>
 
-    <table class="content-table" style="margin-bottom: 7px; font-size: 10pt;">
+    <table class="content-table" style="margin-bottom: <?= $mb2; ?>px; font-size: 10pt;">
         <thead style="background-color: #f0f0f0;">
             <tr>
                 <th width="5%" rowspan="2" style=" vertical-align: middle; text-align: center;">No</th>
@@ -163,7 +255,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
     </table>
 
     <div class="mb-1">Menyatakan Bahwa:</div>
-    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: 7px; padding-left: 20px;">
+    <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: <?= $mb2; ?>px; padding-left: 20px;">
         <li>Pekerjaan <b><?= htmlspecialchars($data->nama_pekerjaan, ENT_QUOTES, 'UTF-8'); ?></b>, telah melaksanakan pekerjaan sesuai kontrak yang telah disepakati bersama dengan sistem pembayaran yaitu <?= htmlspecialchars($data->jenis_pembayaran, ENT_QUOTES, 'UTF-8'); ?>.</li>
     </ol>
 
@@ -171,7 +263,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
         Demikian Berita Acara Pemeriksaan Hasil Pekerjaan ini dibuat dan apabila dikemudian hari terdapat kekeliruan di dalamnya maka akan ditinjau dan diperbaiki sebagaimana mestinya.
     </div>
 
-    <table class="content-table ttd-table" style="margin-bottom: 6px;">
+    <table class="content-table ttd-table">
         <thead style="background-color: #f0f0f0;">
             <tr>
                 <th width="5%" style="vertical-align: middle; text-align: center;">No</th>
@@ -185,33 +277,9 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
                 <td class="text-center">1</td>
                 <td><?= htmlspecialchars((string) ($data->pejabat_ppk ?? '-'), ENT_QUOTES, 'UTF-8'); ?></td>
                 <td>Pejabat Penandatangan Kontrak</td>
-                <td class="ttd-cell" height="32"><div style="height: 28px; line-height: 28px;">&nbsp;</div></td>
+                <td class="ttd-cell" height="<?= $ttdHeight; ?>"><div style="height: <?= $divHeight; ?>px; line-height: <?= $divHeight; ?>px;">&nbsp;</div></td>
             </tr>
             <?php
-            $defaultJabatanTimTeknis = 'Tim Pengawas Swakelola';
-            $timTeknisList = [];
-            if (!empty($tim_teknis_ppk) && is_array($tim_teknis_ppk)) {
-                foreach ($tim_teknis_ppk as $item) {
-                    if (is_array($item)) {
-                        $namaTrim = trim((string) ($item['nama'] ?? ''));
-                        $jabatanTrim = trim((string) ($item['jabatan'] ?? ''));
-                    } else {
-                        $namaTrim = trim((string) $item);
-                        $jabatanTrim = '';
-                    }
-                    if ($namaTrim !== '') {
-                        $timTeknisList[] = [
-                            'nama' => $namaTrim,
-                            'jabatan' => $jabatanTrim !== '' ? $jabatanTrim : $defaultJabatanTimTeknis,
-                        ];
-                    }
-                }
-            }
-            if (empty($timTeknisList)) {
-                $timTeknisList = [
-                    ['nama' => '', 'jabatan' => $defaultJabatanTimTeknis],
-                ];
-            }
             $noTtd = 2;
             foreach ($timTeknisList as $rowTimTeknis):
             ?>
@@ -219,7 +287,7 @@ $pekerjaan_baphp = $pekerjaan_baphp ?? [];
                     <td class="text-center"><?= $noTtd++; ?></td>
                     <td><?= htmlspecialchars($rowTimTeknis['nama'], ENT_QUOTES, 'UTF-8'); ?></td>
                     <td><?= htmlspecialchars($rowTimTeknis['jabatan'], ENT_QUOTES, 'UTF-8'); ?></td>
-                    <td class="ttd-cell" height="32"><div style="height: 28px; line-height: 28px;">&nbsp;</div></td>
+                    <td class="ttd-cell" height="<?= $ttdHeight; ?>"><div style="height: <?= $divHeight; ?>px; line-height: <?= $divHeight; ?>px;">&nbsp;</div></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>
