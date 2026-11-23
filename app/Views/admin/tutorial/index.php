@@ -608,8 +608,10 @@ graph TD
     A["Akses Portal /gateball"] --> B["Pilih Tab Kategori: PUTRA / PUTRI"]
     B --> C["Lihat Jadwal Pertandingan & Klasemen Live (Auto-Sync 3 Detik & Animasi Perpindahan Posisi)"]
     B --> D["Klik Pertandingan / Tombol Update Skor"]
-    B --> D0["Drag & Drop Badge UNOR di Tabel Jadwal untuk Tukar Posisi Langsung"]
+    B --> D0["Drag & Drop Badge UNOR (Kiri-Kanan) di Jadwal untuk Tukar Posisi Tim"]
+    B --> D1["Drag & Drop Baris Laga (Atas-Bawah) untuk Mengubah Urutan Jadwal Pertandingan"]
     D0 --> E
+    D1 --> E
     D --> E["Input Password Otorisasi (Mode Operator)"]
     E --> F["Pilih Mode: Update Cepat ATAU Buka Halaman Timer & Papan Skor (/gateball/match/{id})"]
     F --> G1["Hasil Undian: Drag & Drop Kartu Tim / Tombol 'Tukar Posisi' (Merah ⇄ Putih)"]
@@ -2013,7 +2015,8 @@ graph TD
                                     <li>Tabel kiri menampilkan 10 daftar jadwal pertandingan beserta skor & status pertandingan.</li>
                                     <li>Tabel kanan menampilkan klasemen 5 UNOR (PS, BWSS III, BPBPK, BP2JK, BPJN) lengkap dengan kolom Main, M (Menang), K (Kalah), S (Seri), POINT, dan SCORE (Selisih Skor).</li>
                                     <li>Halaman dilengkapi fitur <strong>Live Sync Real-time</strong> (3 detik) dengan <strong>Notifikasi Alert Auto-Close</strong> saat terjadi pembaruan skor di lapangan, serta tombol <strong>Fullscreen</strong> dan <strong>Cetak PDF</strong>.</li>
-                                    <li><strong>Tukar Posisi Tim via Drag & Drop di Jadwal:</strong> Operator dapat langsung menyeret (<em>drag and drop</em>) lencana nama UNOR 1 ke UNOR 2 (atau ke badge VS di tengah) pada baris jadwal untuk menukar posisi tim sesuai hasil undian bola ganjil/genap tanpa harus membuka halaman skor.</li>
+                                    <li><strong>Tukar Posisi Tim via Drag & Drop di Jadwal (Kiri-Kanan):</strong> Operator dapat langsung menyeret (<em>drag and drop</em>) lencana nama UNOR 1 ke UNOR 2 (atau ke badge VS di tengah) pada baris jadwal untuk menukar posisi tim sesuai hasil undian bola ganjil/genap tanpa harus membuka halaman skor.</li>
+                                    <li><strong>Ubah Urutan Laga via Drag & Drop Atas-Bawah:</strong> Operator dapat menggeser urutan pertandingan ke atas atau ke bawah dengan menarik pegangan nomor laga (<em>grip icon</em>) pada kolom pertama tabel jadwal. Susunan baris jadwal dan penomoran laga otomatis diperbarui secara urut.</li>
                                 </ol>
                             </div>
                         </div>

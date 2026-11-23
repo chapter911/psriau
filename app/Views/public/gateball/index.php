@@ -442,6 +442,50 @@
             box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
         }
 
+        /* Drag and Drop Urutan Jadwal Atas-Bawah */
+        .row-drag-handle {
+            cursor: grab;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            color: #475569;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            transition: all 0.2s ease;
+            touch-action: none;
+            user-select: none;
+        }
+        .row-drag-handle:hover {
+            background: #e0f2fe;
+            color: #0284c7;
+            border-color: #0284c7;
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
+        }
+        .row-drag-handle:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+        .row-drag-handle i {
+            font-size: 0.72rem;
+            color: #64748b;
+        }
+        .row-drag-handle:hover i {
+            color: #0284c7;
+        }
+        tr.match-row-dragging {
+            opacity: 0.35 !important;
+            background-color: #e2e8f0 !important;
+        }
+        tr.row-drop-above td {
+            border-top: 3px solid #0284c7 !important;
+        }
+        tr.row-drop-below td {
+            border-bottom: 3px solid #0284c7 !important;
+        }
+
         .vs-badge {
             font-family: 'Montserrat', sans-serif;
             font-weight: 800;
@@ -1062,7 +1106,7 @@
                                 $timeFormatted = sprintf('%02d:%02d', $minPart, $secPart);
                             ?>
                             <tr class="match-row-clickable" data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>" onclick="openMatchScoreboard(<?= (int) $match['id']; ?>)" title="Klik untuk membuka Timer & Papan Skor Pertandingan #<?= (int) $match['match_number']; ?>">
-                                <td><strong><?= (int) $match['match_number']; ?>.</strong></td>
+                                <td><span class="row-drag-handle" draggable="true" data-match-id="<?= (int) $match['id']; ?>" onclick="event.stopPropagation()" title="Klik dan seret (drag & drop) ke atas atau ke bawah untuk memindahkan urutan pertandingan"><i class="fas fa-grip-vertical"></i> <strong><?= (int) $match['match_number']; ?>.</strong></span></td>
                                 <td>
                                     <?php if ($isCompleted): ?>
                                         <div class="match-score-and-timer">
@@ -1189,7 +1233,7 @@
                                 $timeFormatted = sprintf('%02d:%02d', $minPart, $secPart);
                             ?>
                             <tr class="match-row-clickable" data-match-id="<?= (int) $match['id']; ?>" data-match-num="<?= (int) $match['match_number']; ?>" onclick="openMatchScoreboard(<?= (int) $match['id']; ?>)" title="Klik untuk membuka Timer & Papan Skor Pertandingan #<?= (int) $match['match_number']; ?>">
-                                <td><strong><?= (int) $match['match_number']; ?>.</strong></td>
+                                <td><span class="row-drag-handle" draggable="true" data-match-id="<?= (int) $match['id']; ?>" onclick="event.stopPropagation()" title="Klik dan seret (drag & drop) ke atas atau ke bawah untuk memindahkan urutan pertandingan"><i class="fas fa-grip-vertical"></i> <strong><?= (int) $match['match_number']; ?>.</strong></span></td>
                                 <td>
                                     <?php if ($isCompleted): ?>
                                         <div class="match-score-and-timer">
@@ -1362,6 +1406,7 @@
     const API_URL_RESET = '<?= site_url("gateball/api/reset"); ?>';
     const API_URL_VERIFY = '<?= site_url("gateball/api/verify-auth"); ?>';
     const API_URL_SWAP = '<?= site_url("gateball/api/match/"); ?>';
+    const API_URL_REORDER = '<?= site_url("gateball/api/reorder-matches"); ?>';
     const MATCH_PAGE_URL = '<?= site_url("gateball/match/"); ?>';
 
     let currentCategory = 'putra';
@@ -1621,7 +1666,7 @@
 
             html += `
                 <tr class="match-row-clickable" data-match-id="${m.id}" data-match-num="${m.match_number}" onclick="openMatchScoreboard(${m.id})" title="Klik untuk membuka Timer & Papan Skor Pertandingan #${m.match_number}">
-                    <td><strong>${m.match_number}.</strong></td>
+                    <td><span class="row-drag-handle" draggable="true" data-match-id="${m.id}" onclick="event.stopPropagation()" title="Klik dan seret (drag & drop) ke atas atau ke bawah untuk memindahkan urutan pertandingan"><i class="fas fa-grip-vertical"></i> <strong>${m.match_number}.</strong></span></td>
                     <td>${scoreTimerHtml}</td>
                     <td><span class="unor-badge unor-drag-badge" draggable="true" data-match-id="${m.id}" data-team-pos="1" onclick="event.stopPropagation()" title="Drag & drop ke tim lawan untuk menukar posisi tim">${escapeHtml(m.team1)}</span></td>
                     <td><span class="vs-badge vs-drag-target" data-match-id="${m.id}" onclick="event.stopPropagation()" title="Drop di sini untuk menukar posisi">VS</span></td>
@@ -1631,6 +1676,7 @@
         });
         tbody.innerHTML = html;
         initScheduleDragAndDrop();
+        initRowVerticalDragAndDrop();
     }
 
     // Global 1-second ticker to decrement running match timers on dashboard smoothly
@@ -1972,8 +2018,263 @@
         });
     }
 
+    // Ubah Urutan Jadwal Pertandingan Atas-Bawah
+    async function handleReorderMatches(cat, newIds) {
+        if (!newIds || newIds.length === 0) return;
+
+        let pwd = savedPassword;
+        if (!pwd) {
+            const { value: enteredPwd } = await Swal.fire({
+                title: 'Otorisasi Operator Turnamen',
+                text: 'Masukkan password resmi untuk mengubah urutan jadwal pertandingan:',
+                input: 'password',
+                inputPlaceholder: 'Password otorisasi',
+                inputAttributes: {
+                    autocapitalize: 'off',
+                    autocorrect: 'off'
+                },
+                showCancelButton: true,
+                confirmButtonText: '<i class="fas fa-key"></i> Verifikasi',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#002244'
+            });
+            if (!enteredPwd) {
+                renderAllTables();
+                return;
+            }
+            pwd = enteredPwd.trim();
+        }
+
+        const confirm = await Swal.fire({
+            title: `Simpan Urutan Jadwal Baru (${cat.toUpperCase()})?`,
+            text: 'Nomor dan urutan pertandingan pada kategori ini akan diperbarui sesuai susunan yang baru.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fas fa-save"></i> Ya, Simpan Urutan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#002244',
+            cancelButtonColor: '#64748b'
+        });
+
+        if (!confirm.isConfirmed) {
+            renderAllTables();
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('password', pwd);
+        formData.append('category', cat);
+        newIds.forEach(id => {
+            formData.append('match_ids[]', id);
+        });
+
+        try {
+            const resp = await fetch(API_URL_REORDER, {
+                method: 'POST',
+                body: formData
+            });
+            const res = await resp.json();
+            if (res.status === 'success') {
+                savedPassword = pwd;
+                sessionStorage.setItem('gateball_pwd', pwd);
+                await fetchData(false);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Urutan Jadwal Berhasil Diperbarui!',
+                    text: res.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                if (resp.status === 403) {
+                    savedPassword = '';
+                    sessionStorage.removeItem('gateball_pwd');
+                }
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Mengubah Urutan',
+                    text: res.message || 'Password salah atau otorisasi gagal.',
+                    confirmButtonColor: '#002244'
+                });
+                renderAllTables();
+            }
+        } catch (e) {
+            console.error('Reorder error:', e);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Koneksi ke server bermasalah.' });
+            renderAllTables();
+        }
+    }
+
+    // Initialize Vertical Drag and Drop (Atas-Bawah) for Match Rows
+    function initRowVerticalDragAndDrop() {
+        let draggedRow = null;
+
+        document.querySelectorAll('.row-drag-handle').forEach(handle => {
+            handle.addEventListener('dragstart', (e) => {
+                isDraggingBadge = true;
+                draggedRow = handle.closest('tr');
+                if (draggedRow) {
+                    draggedRow.classList.add('match-row-dragging');
+                    e.dataTransfer.setData('text/row-id', draggedRow.getAttribute('data-match-id'));
+                    e.dataTransfer.effectAllowed = 'move';
+                }
+            });
+
+            handle.addEventListener('dragend', () => {
+                setTimeout(() => { isDraggingBadge = false; }, 250);
+                if (draggedRow) {
+                    draggedRow.classList.remove('match-row-dragging');
+                    draggedRow = null;
+                }
+                document.querySelectorAll('tr.row-drop-above, tr.row-drop-below').forEach(tr => {
+                    tr.classList.remove('row-drop-above', 'row-drop-below');
+                });
+            });
+
+            // Touch Drag for Mobile / Tablets
+            let touchGhost = null;
+            let currentHoverRow = null;
+            let dropPosition = 'below';
+
+            handle.addEventListener('touchstart', (e) => {
+                isDraggingBadge = true;
+                draggedRow = handle.closest('tr');
+                if (!draggedRow) return;
+                draggedRow.classList.add('match-row-dragging');
+
+                const touch = e.touches[0];
+                touchGhost = document.createElement('div');
+                const num = draggedRow.getAttribute('data-match-num');
+                touchGhost.innerHTML = `<i class="fas fa-arrows-up-down mr-1"></i> Pindahkan Laga #${num}`;
+                touchGhost.style.position = 'fixed';
+                touchGhost.style.left = `${touch.clientX - 50}px`;
+                touchGhost.style.top = `${touch.clientY - 20}px`;
+                touchGhost.style.padding = '6px 14px';
+                touchGhost.style.background = '#002244';
+                touchGhost.style.color = '#ffffff';
+                touchGhost.style.fontFamily = 'Montserrat, sans-serif';
+                touchGhost.style.fontWeight = '800';
+                touchGhost.style.fontSize = '0.78rem';
+                touchGhost.style.borderRadius = '9999px';
+                touchGhost.style.pointerEvents = 'none';
+                touchGhost.style.zIndex = '9999';
+                touchGhost.style.boxShadow = '0 6px 18px rgba(0, 34, 68, 0.45)';
+                document.body.appendChild(touchGhost);
+            }, { passive: true });
+
+            handle.addEventListener('touchmove', (e) => {
+                if (!touchGhost || !draggedRow) return;
+                const touch = e.touches[0];
+                touchGhost.style.left = `${touch.clientX - 50}px`;
+                touchGhost.style.top = `${touch.clientY - 20}px`;
+
+                document.querySelectorAll('tr.row-drop-above, tr.row-drop-below').forEach(tr => {
+                    tr.classList.remove('row-drop-above', 'row-drop-below');
+                });
+
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (el) {
+                    const row = el.closest('tr.match-row-clickable');
+                    if (row && row !== draggedRow && row.parentElement === draggedRow.parentElement) {
+                        currentHoverRow = row;
+                        const rect = row.getBoundingClientRect();
+                        const mid = rect.top + rect.height / 2;
+                        if (touch.clientY < mid) {
+                            dropPosition = 'above';
+                            row.classList.add('row-drop-above');
+                        } else {
+                            dropPosition = 'below';
+                            row.classList.add('row-drop-below');
+                        }
+                    } else {
+                        currentHoverRow = null;
+                    }
+                }
+            }, { passive: true });
+
+            handle.addEventListener('touchend', (e) => {
+                if (touchGhost) {
+                    touchGhost.remove();
+                    touchGhost = null;
+                }
+                document.querySelectorAll('tr.row-drop-above, tr.row-drop-below').forEach(tr => {
+                    tr.classList.remove('row-drop-above', 'row-drop-below');
+                });
+                setTimeout(() => { isDraggingBadge = false; }, 250);
+
+                if (draggedRow && currentHoverRow && draggedRow !== currentHoverRow) {
+                    const tbody = draggedRow.parentElement;
+                    if (dropPosition === 'above') {
+                        tbody.insertBefore(draggedRow, currentHoverRow);
+                    } else {
+                        tbody.insertBefore(draggedRow, currentHoverRow.nextSibling);
+                    }
+                    const newIds = Array.from(tbody.querySelectorAll('tr[data-match-id]')).map(r => r.getAttribute('data-match-id'));
+                    draggedRow.classList.remove('match-row-dragging');
+                    draggedRow = null;
+                    currentHoverRow = null;
+                    handleReorderMatches(currentCategory, newIds);
+                } else if (draggedRow) {
+                    draggedRow.classList.remove('match-row-dragging');
+                    draggedRow = null;
+                }
+            }, { passive: true });
+        });
+
+        // Desktop dragover / drop targets for every table row
+        document.querySelectorAll('.table-custom tbody tr.match-row-clickable').forEach(row => {
+            row.addEventListener('dragover', (e) => {
+                if (!draggedRow || draggedRow === row || draggedRow.parentElement !== row.parentElement) return;
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+
+                const rect = row.getBoundingClientRect();
+                const mid = rect.top + rect.height / 2;
+                if (e.clientY < mid) {
+                    row.classList.add('row-drop-above');
+                    row.classList.remove('row-drop-below');
+                } else {
+                    row.classList.add('row-drop-below');
+                    row.classList.remove('row-drop-above');
+                }
+            });
+
+            row.addEventListener('dragleave', (e) => {
+                if (!row.contains(e.relatedTarget)) {
+                    row.classList.remove('row-drop-above', 'row-drop-below');
+                }
+            });
+
+            row.addEventListener('drop', (e) => {
+                if (!draggedRow || draggedRow === row || draggedRow.parentElement !== row.parentElement) return;
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isAbove = row.classList.contains('row-drop-above');
+                row.classList.remove('row-drop-above', 'row-drop-below');
+                const tbody = row.parentElement;
+
+                if (isAbove) {
+                    tbody.insertBefore(draggedRow, row);
+                } else {
+                    tbody.insertBefore(draggedRow, row.nextSibling);
+                }
+
+                const newIds = Array.from(tbody.querySelectorAll('tr[data-match-id]')).map(r => r.getAttribute('data-match-id'));
+                if (draggedRow) {
+                    draggedRow.classList.remove('match-row-dragging');
+                    draggedRow = null;
+                }
+                handleReorderMatches(currentCategory, newIds);
+            });
+        });
+    }
+
     // Initial run on server-rendered rows
     initScheduleDragAndDrop();
+    initRowVerticalDragAndDrop();
 
     // Modal Update Skor Cepat - Selalu minta verifikasi password setiap kali diklik
     document.getElementById('btnOpenUpdateModal').addEventListener('click', async () => {

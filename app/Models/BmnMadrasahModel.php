@@ -83,12 +83,97 @@ class BmnMadrasahModel extends Model
     }
 
     /**
+     * Memastikan kolom-kolom baru tersedia di database agar tidak menimbulkan error jika migrasi belum dijalankan
+     */
+    protected function ensureColumnsExist(): void
+    {
+        try {
+            $forge = \Config\Database::forge();
+            if ($this->db->tableExists('trn_bmn_madrasah_paket')) {
+                $fieldsPaket = [];
+                if (! $this->db->fieldExists('penyedia_jasa', 'trn_bmn_madrasah_paket')) {
+                    $fieldsPaket['penyedia_jasa'] = [
+                        'type'       => 'VARCHAR',
+                        'constraint' => 255,
+                        'null'       => true,
+                        'after'      => 'wilayah',
+                    ];
+                }
+                if (! $this->db->fieldExists('status_adendum', 'trn_bmn_madrasah_paket')) {
+                    $fieldsPaket['status_adendum'] = [
+                        'type'       => 'VARCHAR',
+                        'constraint' => 100,
+                        'default'    => 'Kontrak Fisik Definitif',
+                        'null'       => true,
+                        'after'      => 'penyedia_jasa',
+                    ];
+                }
+                if (! $this->db->fieldExists('acuan_rab_fisik', 'trn_bmn_madrasah_paket')) {
+                    $fieldsPaket['acuan_rab_fisik'] = [
+                        'type'       => 'VARCHAR',
+                        'constraint' => 255,
+                        'null'       => true,
+                        'after'      => 'status_adendum',
+                    ];
+                }
+                if (! empty($fieldsPaket)) {
+                    $forge->addColumn('trn_bmn_madrasah_paket', $fieldsPaket);
+                }
+            }
+
+            if ($this->db->tableExists('trn_bmn_madrasah_sekolah')) {
+                $fieldsSekolah = [];
+                if (! $this->db->fieldExists('nilai_rab_fisik', 'trn_bmn_madrasah_sekolah')) {
+                    $fieldsSekolah['nilai_rab_fisik'] = [
+                        'type'       => 'DECIMAL',
+                        'constraint' => '18,2',
+                        'default'    => 0.00,
+                        'null'       => false,
+                        'after'      => 'kabupaten',
+                    ];
+                }
+                if (! $this->db->fieldExists('acuan_rab_fisik', 'trn_bmn_madrasah_sekolah')) {
+                    $fieldsSekolah['acuan_rab_fisik'] = [
+                        'type'       => 'VARCHAR',
+                        'constraint' => 255,
+                        'null'       => true,
+                        'after'      => 'acuan_ded',
+                    ];
+                }
+                if (! empty($fieldsSekolah)) {
+                    $forge->addColumn('trn_bmn_madrasah_sekolah', $fieldsSekolah);
+                }
+            }
+        } catch (\Throwable $e) {
+            // Silently handle if user lacks ALTER TABLE privileges
+        }
+    }
+
+    /**
      * Mengambil daftar madrasah sasaran PHTC beserta paket dan acuan DED
      */
     public function getSekolahList(?string $paketId = null, ?string $status = null, ?string $kabupaten = null, ?string $keyword = null): array
     {
+        $this->ensureColumnsExist();
+
+        $selectFields = 's.*, p.no_paket, p.nama_paket, p.wilayah AS wilayah_paket';
+        try {
+            if ($this->db->fieldExists('status_adendum', 'trn_bmn_madrasah_paket')) {
+                $selectFields .= ', p.status_adendum AS status_adendum_paket';
+            } else {
+                $selectFields .= ", 'Kontrak Fisik Definitif' AS status_adendum_paket";
+            }
+            if ($this->db->fieldExists('penyedia_jasa', 'trn_bmn_madrasah_paket')) {
+                $selectFields .= ', p.penyedia_jasa AS penyedia_jasa_paket';
+            } else {
+                $selectFields .= ", '-' AS penyedia_jasa_paket";
+            }
+        } catch (\Throwable $e) {
+            $selectFields .= ", 'Kontrak Fisik Definitif' AS status_adendum_paket, '-' AS penyedia_jasa_paket";
+        }
+
         $builder = $this->db->table('trn_bmn_madrasah_sekolah s')
-            ->select('s.*, p.no_paket, p.nama_paket, p.wilayah AS wilayah_paket, p.status_adendum AS status_adendum_paket, p.penyedia_jasa AS penyedia_jasa_paket')
+            ->select($selectFields)
             ->join('trn_bmn_madrasah_paket p', 'p.id = s.paket_id', 'left');
 
         if ($paketId !== null && $paketId !== '' && $paketId !== '*') {

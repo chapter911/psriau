@@ -43,6 +43,7 @@ $routes->post('gateball/api/match/(:num)/update', 'Gateball::apiUpdateMatchLive/
 $routes->match(['get', 'post'], 'gateball/api/match/(:num)/swap-teams', 'Gateball::apiSwapMatchTeams/$1');
 $routes->post('gateball/api/update-score', 'Gateball::apiUpdateScore');
 $routes->post('gateball/api/batch-update', 'Gateball::apiBatchUpdate');
+$routes->post('gateball/api/reorder-matches', 'Gateball::apiReorderMatches');
 $routes->post('gateball/api/reset', 'Gateball::apiReset');
 
 // Tenis Meja Tournament Routes (Public - No Login Required)

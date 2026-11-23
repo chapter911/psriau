@@ -486,6 +486,58 @@ class Gateball extends BaseController
     }
 
     /**
+     * API: Reorder matches schedule (drag and drop urutan atas-bawah)
+     */
+    public function apiReorderMatches()
+    {
+        $password = trim((string) ($this->request->getPost('password') ?? $this->request->getVar('password')));
+        $isSessionAuth = session()->get('gateball_authorized') === true;
+
+        if ($password !== self::UPDATE_PASSWORD && ! $isSessionAuth) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_FORBIDDEN)->setJSON([
+                'status'  => 'error',
+                'message' => 'Password salah atau sesi belum terotorisasi.',
+            ]);
+        }
+
+        $category = trim((string) $this->request->getPost('category'));
+        if (! in_array($category, ['putra', 'putri'], true)) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
+                'status'  => 'error',
+                'message' => 'Kategori pertandingan tidak valid.',
+            ]);
+        }
+
+        $matchIds = $this->request->getPost('match_ids');
+        if (! is_array($matchIds) || empty($matchIds)) {
+            return $this->response->setStatusCode(ResponseInterface::HTTP_BAD_REQUEST)->setJSON([
+                'status'  => 'error',
+                'message' => 'Daftar id pertandingan tidak valid.',
+            ]);
+        }
+
+        foreach ($matchIds as $index => $matchId) {
+            $newMatchNum = $index + 1;
+            $this->matchModel->update((int) $matchId, [
+                'match_number' => $newMatchNum,
+                'updated_at'   => date('Y-m-d H:i:s'),
+            ]);
+        }
+
+        $matches   = $this->matchModel->getMatchesByCategory($category);
+        $this->attachLiveTimerInfo($matches);
+        $standings = $this->matchModel->getStandings($category);
+
+        return $this->response->setJSON([
+            'status'    => 'success',
+            'message'   => 'Urutan jadwal pertandingan ' . strtoupper($category) . ' berhasil diperbarui.',
+            'category'  => $category,
+            'matches'   => $matches,
+            'standings' => $standings,
+        ]);
+    }
+
+    /**
      * API: Reset scores
      */
     public function apiReset()
