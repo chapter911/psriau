@@ -237,16 +237,16 @@ $ttdHeight = $divHeight + 4;
     </div>
 
     <div class="text-justify mb-2">
-        Pada hari ini <?= $tanggal_pemeriksaan; ?>, telah dilaksanakan pemeriksaan hasil pekerjaan, dengan ini telah mengadakan penelitian dan pemeriksaan antara konsultan perencanaan dan pejabat penandatangan kontrak, dan tim pendukung atas <b><?= htmlspecialchars($nama_pekerjaan_lengkap, ENT_QUOTES, 'UTF-8'); ?></b>.
+        Pada hari ini <?= $tanggal_pemeriksaan; ?>, telah dilaksanakan penelitian dan pemeriksaan bersama antara Pejabat Penandatangan Kontrak, Tim Pengawas/Teknis, dan Penyedia Jasa terhadap hasil pelaksanaan <b><?= htmlspecialchars($nama_pekerjaan_lengkap, ENT_QUOTES, 'UTF-8'); ?></b>.
     </div>
 
     <div class="mb-1">Berdasarkan:</div>
     <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: <?= $mb2; ?>px; padding-left: 20px;">
-        <li>Surat Perintah Kerja (SPK)/Kontrak nomor <?= htmlspecialchars($nomor_spk, ENT_QUOTES, 'UTF-8'); ?>, tanggal <?= $tanggal_spk; ?></li>
+        <li>Surat Perintah Kerja (SPK)/Kontrak Nomor: <?= htmlspecialchars($nomor_spk, ENT_QUOTES, 'UTF-8'); ?>, tanggal <?= $tanggal_spk; ?></li>
     </ol>
 
     <div class="mb-1">
-        <span>Dengan Hasil Pemeriksaan Sebagai Berikut :</span>
+        <span>Dengan hasil pemeriksaan sebagai berikut:</span>
     </div>
 
     <table class="content-table" style="margin-bottom: <?= $mb2; ?>px; font-size: 10pt;">
@@ -277,11 +277,11 @@ $ttdHeight = $divHeight + 4;
 
     <div class="mb-1">Menyatakan Bahwa:</div>
     <ol class="mb-2 text-justify" style="margin-top: 0; margin-bottom: <?= $mb2; ?>px; padding-left: 20px;">
-        <li><b><?= htmlspecialchars($nama_pekerjaan_lengkap, ENT_QUOTES, 'UTF-8'); ?></b>, telah melaksanakan pekerjaan sesuai kontrak yang telah disepakati bersama dengan sistem pembayaran yaitu <?= htmlspecialchars($jenis_pembayaran, ENT_QUOTES, 'UTF-8'); ?>.</li>
+        <li><b><?= htmlspecialchars($nama_pekerjaan_lengkap, ENT_QUOTES, 'UTF-8'); ?></b>, telah selesai dilaksanakan sesuai ketentuan kontrak yang disepakati bersama, dengan sistem pembayaran <b><?= htmlspecialchars($jenis_pembayaran, ENT_QUOTES, 'UTF-8'); ?></b>.</li>
     </ol>
 
     <div class="text-justify mb-2">
-        Demikian Berita Acara Pemeriksaan Hasil Pekerjaan ini dibuat dan apabila dikemudian hari terdapat kekeliruan di dalamnya maka akan ditinjau dan diperbaiki sebagaimana mestinya.
+        Demikian Berita Acara Pemeriksaan Hasil Pekerjaan ini dibuat, dan apabila di kemudian hari terdapat kekeliruan di dalamnya, maka akan ditinjau dan diperbaiki sebagaimana mestinya.
     </div>
 
     <table class="content-table ttd-table">
