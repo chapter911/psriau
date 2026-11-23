@@ -561,6 +561,8 @@ $routes->group('admin', ['filter' => 'auth:admin,editor'], static function ($rou
 	$routes->get('inventaris/pinjam-pakai/get-next-no-surat', 'Admin\InventarisPinjamPakai::getNextNoSurat');
 
 	$routes->get('inventaris/sekolah', 'Admin\InventarisSekolah::index');
+	$routes->get('inventaris/sekolah/export-excel', 'Admin\InventarisSekolah::exportExcel');
+	$routes->get('inventaris/sekolah/cetak-pdf', 'Admin\InventarisSekolah::cetakPdf');
 
 	// Modul Inventarisasi - Aset Tidak Terdata (Non-BMN / Operasional Kantor)
 	$routes->get('inventaris/tidak-terdata', 'Admin\InventarisTidakTerdata::index');

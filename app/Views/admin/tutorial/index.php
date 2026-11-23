@@ -704,8 +704,10 @@ graph TD
     B3 --> F6["Proses Pengembalian Aset Sekaligus (Update Kondisi Fisik, Catatan &amp; Pemulihan Seluruh Status Aset Induk ke Gudang)"]
     B3 --> F7["Filter Interaktif Tahun &amp; Status: Penyaringan Berdasarkan Tahun Anggaran Pinjam, Status Transaksi, Penyesuaian Metrik Widgets Otomatis &amp; Export Excel Terfilter"]
 
-    B4 --> E1["Monitoring Sarpras &amp; Distribusi Mobiler Sekolah Binaan"]
-    B4 --> E2["Pemetaan Wilayah Kabupaten / Kecamatan / Paket Proyek"]
+    B4 --> E1["4 Sistem Tab Terpadu: 1. Rekapitulasi BMN PHTC (Paket 1-9), 2. Madrasah Sasaran &amp; Acuan DED, 3. Rincian Meubelair (ASP), 4. Master Sekolah Binaan"]
+    B4 --> E2["Rekapitulasi 9 Paket PHTC Riau: Kontrak Fisik ATR (Rp 245,7 M), MK/Supervisi, Peralatan Mesin ASP (Rp 25,1 M) &amp; Total Investasi Rp 270,8 M"]
+    B4 --> E3["Pemetaan 53 Madrasah Sasaran (Negeri &amp; Swasta) &amp; Status Acuan Berkas Perencanaan DED (PDF/RAR)"]
+    B4 --> E4["Katalog Meubelair ASP (18.881 Unit: Meja/Kursi Siswa &amp; Guru, Lemari, Whiteboard) &amp; Ekspor Excel 3-Sheet / Cetak PDF Resmi"]
 
     B5 --> G1["Pencatatan Inventaris Non-BMN / Operasional Satker (P.C Unit, Printer, AC, Lemari Es, dll.)"]
     B5 --> G2["Penetapan Lokasi Penempatan Aset (Terintegrasi Master Ruangan Kantor &amp; Input Detail Ruang)"]
@@ -1814,13 +1816,19 @@ graph TD
                     <div class="col-lg-6 col-md-12 mb-3">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body">
-                                <h6 class="font-weight-bold text-info"><i class="fas fa-school mr-1"></i> 4. Inventaris Sekolah</h6>
+                                <h6 class="font-weight-bold text-info"><i class="fas fa-school mr-1"></i> 4. Inventaris Sarpras &amp; Hasil Penelitian BMN Madrasah (PHTC)</h6>
                                 <p class="small text-muted mb-2"><code>/admin/inventaris/sekolah</code> (Menu Lv2 Inventarisasi)</p>
                                 <ol class="pl-3 small mb-0">
-                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Sekolah</strong>.</li>
-                                    <li>Halaman menampilkan seluruh sekolah binaan Satker PPS Riau yang telah terdata dalam paket rehabilitasi/renovasi prasarana strategis dan penerima bantuan mobiler pendidikan.</li>
-                                    <li>Gunakan filter <strong>Paket Proyek</strong>, <strong>Kabupaten</strong>, atau <strong>Kata Kunci</strong> (NPSN / Nama Sekolah) untuk memetakan inventaris sarpras dan mobiler per lokasi sekolah binaan.</li>
-                                    <li>Status sarpras sekolah terpantau secara terintegrasi dengan data paket proyek prasarana sekolah.</li>
+                                    <li>Masuk ke menu <strong>Inventarisasi &gt; Inventaris Sekolah</strong>. Modul ini difungsikan untuk penatausahaan hasil penelitian Barang Milik Negara (BMN) pekerjaan Rehabilitasi &amp; Renovasi Madrasah (PHTC) Paket Riau 1 s/d 9 serta sarpras madrasah binaan di Satker PPS Riau.</li>
+                                    <li><strong>Sistem 4 Tab Terpadu:</strong>
+                                        <ul class="pl-3 mt-1 mb-1">
+                                            <li><strong>Tab 1: Rekapitulasi Paket BMN:</strong> Menampilkan tabel perbandingan 9 Paket PHTC (Nilai Kontrak Fisik ATR Rp 245,71 Miliar, MK/Supervisi, Peralatan &amp; Mesin ASP Rp 25,11 Miliar, dan Total Akumulasi Nilai BMN Rp 270,83 Miliar) beserta rekapitulasi per wilayah kabupaten.</li>
+                                            <li><strong>Tab 2: Madrasah Sasaran &amp; Acuan DED:</strong> Menampilkan 53 madrasah sasaran (28 Negeri &amp; 25 Swasta) lengkap dengan kabupaten dan status ketersediaan berkas acuan perencanaan DED (49 berkas PDF &amp; RAR).</li>
+                                            <li><strong>Tab 3: Rincian Meubelair (ASP):</strong> Menyajikan katalog lengkap 18.881 unit peralatan &amp; mesin ruang kelas/guru (Meja Siswa, Kursi Siswa, Meja Guru, Kursi Guru, Lemari Besi, Whiteboard) beserta kode BMN, merk/tipe, volume, harga satuan, dan total nilai kontrak fisik.</li>
+                                            <li><strong>Tab 4: Master Sekolah Binaan:</strong> Data master sekolah binaan untuk pemetaan wilayah kabupaten/kecamatan dan paket proyek.</li>
+                                        </ul>
+                                    </li>
+                                    <li><strong>Ekspor Laporan Resmi:</strong> Tersedia tombol <strong>Ekspor Excel (3 Sheet)</strong> (berisi sheet Rekap Paket, Daftar Madrasah DED, dan Rincian Meubelair ASP) serta <strong>Cetak PDF</strong> resmi landscape A4 yang dilengkapi kolom tanda tangan PPK dan Tim Pengurus Barang BMN.</li>
                                 </ol>
                             </div>
                         </div>
