@@ -133,7 +133,12 @@
                 ?>
                 <tr>
                     <td class="text-center font-bold"><?= $p['no_paket']; ?></td>
-                    <td class="font-bold"><?= esc($p['nama_paket']); ?></td>
+                    <td>
+                        <span class="font-bold"><?= esc($p['nama_paket']); ?></span>
+                        <?php if (! empty($p['penyedia_jasa'])): ?>
+                            <br><small style="color: #555;">Penyedia: <?= esc($p['penyedia_jasa']); ?> (<?= esc($p['status_adendum'] ?? 'Definitif'); ?>)</small>
+                        <?php endif; ?>
+                    </td>
                     <td class="text-center"><?= esc($p['tahun_anggaran']); ?></td>
                     <td class="text-center"><?= esc($p['kode_bmn']); ?></td>
                     <td><?= esc($p['jenis_bmn']); ?></td>
@@ -178,6 +183,46 @@
                     <td class="text-right"><?= number_format($p['nilai_kontrak_fisik'], 0, ',', '.'); ?></td>
                     <td class="text-right"><?= number_format($p['total_asp_nilai'], 0, ',', '.'); ?></td>
                     <td class="text-right font-bold"><?= number_format($p['total_gabungan'], 0, ',', '.'); ?></td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+
+    <!-- DAFTAR MADRASAH SASARAN & DOKUMEN ACUAN -->
+    <div class="page-break"></div>
+    <div class="header-title" style="margin-top: 10px;">DAFTAR MADRASAH SASARAN &amp; ACUAN DOKUMEN (DED &amp; RAB FISIK FINAL)</div>
+    <div class="header-subtitle">PEKERJAAN REHABILITASI DAN RENOVASI MADRASAH (PHTC) PROVINSI RIAU</div>
+
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th style="width: 25px;">No</th>
+                <th style="width: 70px;">Paket</th>
+                <th>Nama Madrasah / Sekolah</th>
+                <th style="width: 50px;">Status</th>
+                <th>Kabupaten / Kota</th>
+                <th style="width: 95px;">Nilai Fisik ATR (Rp)</th>
+                <th>Acuan Dokumen DED</th>
+                <th>Acuan Dokumen RAB Fisik Final</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php $no = 1; foreach ($sekolahList as $s): ?>
+                <tr>
+                    <td class="text-center"><?= $no++; ?></td>
+                    <td class="text-center">Paket <?= esc($s['no_paket']); ?></td>
+                    <td class="font-bold"><?= esc($s['nama_sekolah']); ?></td>
+                    <td class="text-center"><?= esc($s['status_sekolah']); ?></td>
+                    <td><?= esc($s['kabupaten'] ?: '-'); ?></td>
+                    <td class="text-right">
+                        <?php if ((float) ($s['nilai_rab_fisik'] ?? 0) > 0): ?>
+                            <?= number_format($s['nilai_rab_fisik'], 0, ',', '.'); ?>
+                        <?php else: ?>
+                            <span style="color: #777;">Termasuk Paket</span>
+                        <?php endif; ?>
+                    </td>
+                    <td><?= esc($s['acuan_ded'] ?: '-'); ?></td>
+                    <td style="color: #0b6623;"><?= esc($s['acuan_rab_fisik'] ?: '-'); ?></td>
                 </tr>
             <?php endforeach; ?>
         </tbody>

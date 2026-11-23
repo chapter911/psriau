@@ -23,6 +23,9 @@ class BmnMadrasahModel extends Model
         'total_gabungan',
         'jumlah_madrasah',
         'jumlah_asp_unit',
+        'penyedia_jasa',
+        'status_adendum',
+        'acuan_rab_fisik',
     ];
     protected $useTimestamps    = true;
 
@@ -85,7 +88,7 @@ class BmnMadrasahModel extends Model
     public function getSekolahList(?string $paketId = null, ?string $status = null, ?string $kabupaten = null, ?string $keyword = null): array
     {
         $builder = $this->db->table('trn_bmn_madrasah_sekolah s')
-            ->select('s.*, p.no_paket, p.nama_paket, p.wilayah AS wilayah_paket')
+            ->select('s.*, p.no_paket, p.nama_paket, p.wilayah AS wilayah_paket, p.status_adendum AS status_adendum_paket, p.penyedia_jasa AS penyedia_jasa_paket')
             ->join('trn_bmn_madrasah_paket p', 'p.id = s.paket_id', 'left');
 
         if ($paketId !== null && $paketId !== '' && $paketId !== '*') {
@@ -102,6 +105,7 @@ class BmnMadrasahModel extends Model
                 ->like('s.nama_sekolah', $keyword)
                 ->orLike('s.kabupaten', $keyword)
                 ->orLike('s.acuan_ded', $keyword)
+                ->orLike('s.acuan_rab_fisik', $keyword)
                 ->groupEnd();
         }
 

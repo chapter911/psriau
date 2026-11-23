@@ -82,7 +82,7 @@
                 <li class="nav-item">
                     <a class="nav-link <?= ($activeTab === 'madrasah') ? 'active font-weight-bold shadow-sm' : 'text-secondary'; ?>" 
                        href="<?= site_url('admin/inventaris/sekolah?tab=madrasah'); ?>" style="border-radius: 8px; font-size: 0.92rem;">
-                        <i class="fas fa-school mr-1"></i> 2. Madrasah Sasaran &amp; Acuan DED
+                        <i class="fas fa-school mr-1"></i> 2. Madrasah Sasaran &amp; Acuan Dokumen (DED &amp; RAB)
                     </a>
                 </li>
                 <li class="nav-item">
@@ -143,6 +143,23 @@
                                     <td class="text-center align-middle font-weight-bold"><?= $p['no_paket']; ?></td>
                                     <td class="align-middle">
                                         <span class="font-weight-bold text-primary"><?= esc($p['nama_paket']); ?></span>
+                                        <?php if (! empty($p['penyedia_jasa'])): ?>
+                                            <small class="d-block text-muted mt-1">
+                                                <i class="fas fa-hard-hat text-warning mr-1"></i> Penyedia: <strong><?= esc($p['penyedia_jasa']); ?></strong>
+                                            </small>
+                                        <?php endif; ?>
+                                        <div class="mt-1 d-flex flex-wrap" style="gap: 4px;">
+                                            <?php if (! empty($p['status_adendum'])): ?>
+                                                <span class="badge badge-light border text-primary small">
+                                                    <i class="fas fa-file-invoice mr-1"></i> <?= esc($p['status_adendum']); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                            <?php if (! empty($p['acuan_rab_fisik'])): ?>
+                                                <span class="badge badge-light border text-success small" title="Acuan Dokumen Fisik / BoQ">
+                                                    <i class="fas fa-paperclip mr-1"></i> <?= esc($p['acuan_rab_fisik']); ?>
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                     <td class="text-center align-middle"><span class="badge badge-light border"><?= esc($p['tahun_anggaran']); ?></span></td>
                                     <td class="align-middle small"><?= esc($p['jenis_bmn']); ?></td>
@@ -268,15 +285,17 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover table-striped w-100 js-datatable" style="border-radius: 8px;">
+                    <table class="table table-bordered table-hover table-striped w-100 js-datatable" style="border-radius: 8px; font-size: 0.9rem;">
                         <thead class="thead-light">
                             <tr class="text-center align-middle">
                                 <th style="width: 45px;">No</th>
-                                <th style="width: 130px;">Paket Kegiatan</th>
+                                <th style="width: 110px;">Paket</th>
                                 <th>Nama Madrasah / Sekolah</th>
-                                <th style="width: 90px;">Status</th>
+                                <th style="width: 85px;">Status</th>
                                 <th>Kabupaten / Kota</th>
-                                <th>Status Acuan Dokumen DED</th>
+                                <th class="text-right" style="width: 140px;">Nilai Fisik ATR (Rp)</th>
+                                <th>Acuan Dokumen DED (Perencanaan)</th>
+                                <th>Acuan Dokumen RAB Fisik (Final / Adendum)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -297,18 +316,33 @@
                                         <?php endif; ?>
                                     </td>
                                     <td class="align-middle"><?= esc($s['kabupaten'] ?: '-'); ?></td>
+                                    <td class="text-right align-middle">
+                                        <?php if ((float) ($s['nilai_rab_fisik'] ?? 0) > 0): ?>
+                                            <span class="font-weight-bold text-dark">Rp <?= number_format($s['nilai_rab_fisik'], 0, ',', '.'); ?></span>
+                                        <?php else: ?>
+                                            <span class="text-muted small">Termasuk Nilai Paket</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="align-middle">
                                         <?php if (! empty($s['acuan_ded'])): ?>
-                                            <div class="d-flex align-items-center" style="gap: 8px;">
+                                            <div class="d-flex align-items-center" style="gap: 6px;">
                                                 <span class="badge badge-light border text-dark font-weight-bold px-2 py-1">
                                                     <i class="fas fa-file-pdf text-danger mr-1"></i> <?= esc($s['acuan_ded']); ?>
                                                 </span>
-                                                <span class="badge badge-success px-2 py-1" title="Dokumen acuan perencanaan terdata di folder DED">
-                                                    <i class="fas fa-check"></i> Acuan Terdata
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-muted small">- Acuan DED Paket -</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td class="align-middle">
+                                        <?php if (! empty($s['acuan_rab_fisik'])): ?>
+                                            <div class="d-flex align-items-center" style="gap: 6px;">
+                                                <span class="badge badge-light border text-success font-weight-bold px-2 py-1">
+                                                    <i class="fas fa-calculator text-success mr-1"></i> <?= esc($s['acuan_rab_fisik']); ?>
                                                 </span>
                                             </div>
                                         <?php else: ?>
-                                            <span class="text-muted small">- Belum Ditautkan -</span>
+                                            <span class="text-muted small">- Acuan BoQ Paket -</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>

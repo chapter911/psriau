@@ -147,10 +147,299 @@ class InventarisSekolah extends BaseController
         ];
 
         // ---------------------------------------------------------------------
-        // SHEET 1: REKAPITULASI PAKET BMN PHTC
+        // SHEET 1: FORMAT ASLI PENELITIAN BMN (MULTI-SECTION LAPORAN RESMI 1:1)
         // ---------------------------------------------------------------------
-        $sheet1 = $spreadsheet->getActiveSheet();
-        $sheet1->setTitle('REKAP_BMN_PHTC');
+        $sheetAsli = $spreadsheet->getActiveSheet();
+        $sheetAsli->setTitle('FORMAT_ASLI_BMN');
+
+        $asliHeaderStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF'], 'size' => 9],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER, 'wrapText' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '1F4E79']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+        ];
+        $asliSubtotalStyle = [
+            'font' => ['bold' => true, 'size' => 9],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D9E1F2']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN, 'color' => ['rgb' => '000000']]],
+        ];
+        $asliTotalStyle = [
+            'font' => ['bold' => true, 'size' => 9],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'B4C6E7']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_MEDIUM, 'color' => ['rgb' => '000000']]],
+        ];
+
+        $pakets = $this->bmnMadrasahModel->getPaketList();
+        $sekolahAll = $this->bmnMadrasahModel->getSekolahList();
+        $aspAll = $this->bmnMadrasahModel->getAspList();
+
+        // Index sekolah dan ASP per paket_id
+        $sekolahByPaket = [];
+        foreach ($sekolahAll as $s) {
+            $sekolahByPaket[$s['paket_id']][] = $s;
+        }
+        $aspByPaket = [];
+        foreach ($aspAll as $a) {
+            $aspByPaket[$a['paket_id']][] = $a;
+        }
+
+        // 1. Bagian Rekapitulasi Provinsi Riau (ATR)
+        $sheetAsli->setCellValue('B1', 'RINCIAN HASIL PENELITIAN BARANG MILIK NEGARA');
+        $sheetAsli->setCellValue('B2', 'Riau');
+        $sheetAsli->setCellValue('B4', 'PEKERJAAN REHABILITASI DAN RENOVASI MADRASAH (PHTC)');
+        $sheetAsli->getStyle('B1:B4')->getFont()->setBold(true);
+
+        $colsAsli = [
+            'A' => 'No',
+            'B' => 'Uraian',
+            'C' => 'Tahun',
+            'D' => 'Jenis BMN',
+            'E' => 'Kode BMN',
+            'F' => 'Merk/Type',
+            'G' => 'Baik',
+            'H' => 'RR',
+            'I' => 'RB',
+            'J' => 'Satuan',
+            'K' => 'Jumlah Barang/Luas',
+            'L' => 'Harga Satuan Kontrak Fisik (Rp)',
+            'M' => 'Total Nilai Kontrak Fisik (Rp)',
+            'N' => 'DED',
+            'O' => 'MK/Supervisi',
+            'P' => 'Nilai Perolehan',
+            'Q' => 'Keterangan',
+        ];
+        foreach ($colsAsli as $col => $title) {
+            $sheetAsli->setCellValue($col . '6', $title);
+        }
+        $sheetAsli->getStyle('A6:Q6')->applyFromArray($asliHeaderStyle);
+        $sheetAsli->getRowDimension(6)->setRowHeight(25);
+
+        $rowCurr = 7;
+        $totalAtrFisikGlobal = 0;
+        foreach ($pakets as $p) {
+            $sheetAsli->setCellValue('A' . $rowCurr, $p['no_paket']);
+            $sheetAsli->setCellValue('B' . $rowCurr, 'REHABILITASI DAN RENOVASI MADRASAH PHTC PROVINSI RIAU ' . $p['no_paket']);
+            $sheetAsli->setCellValue('C' . $rowCurr, $p['tahun_anggaran']);
+            $sheetAsli->setCellValue('D' . $rowCurr, $p['jenis_bmn']);
+            $sheetAsli->setCellValue('E' . $rowCurr, $p['kode_bmn']);
+            $sheetAsli->setCellValue('F' . $rowCurr, '-');
+            $sheetAsli->setCellValue('G' . $rowCurr, 1);
+            $sheetAsli->setCellValue('H' . $rowCurr, 0);
+            $sheetAsli->setCellValue('I' . $rowCurr, 0);
+            $sheetAsli->setCellValue('J' . $rowCurr, 'Unit');
+            $sheetAsli->setCellValue('K' . $rowCurr, 1);
+            $sheetAsli->setCellValue('L' . $rowCurr, (float) $p['nilai_kontrak_fisik']);
+            $sheetAsli->setCellValue('M' . $rowCurr, (float) $p['nilai_kontrak_fisik']);
+            $sheetAsli->setCellValue('N' . $rowCurr, '');
+            $sheetAsli->setCellValue('O' . $rowCurr, (float) $p['nilai_mk_supervisi']);
+            $sheetAsli->setCellValue('P' . $rowCurr, '');
+            $sheetAsli->setCellValue('Q' . $rowCurr, '');
+
+            $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($dataBorder);
+            $sheetAsli->getStyle("A{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("C{$rowCurr}:F{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("G{$rowCurr}:K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("L{$rowCurr}:M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheetAsli->getStyle("O{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+
+            $totalAtrFisikGlobal += (float) $p['nilai_kontrak_fisik'];
+            $rowCurr++;
+        }
+
+        // Subtotal ATR Global
+        $sheetAsli->setCellValue('B' . $rowCurr, 'Jumlah ATR');
+        $sheetAsli->setCellValue('K' . $rowCurr, count($pakets));
+        $sheetAsli->setCellValue('M' . $rowCurr, $totalAtrFisikGlobal);
+        $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($asliSubtotalStyle);
+        $sheetAsli->getStyle("K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheetAsli->getStyle("M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+        $rowCurr += 2;
+
+        // Subtotal Peralatan Mesin (ASP) Global
+        $sheetAsli->setCellValue('B' . $rowCurr, 'Jumlah Peralatan Mesin (ASP)');
+        $sheetAsli->setCellValue('K' . $rowCurr, 0);
+        $sheetAsli->setCellValue('M' . $rowCurr, 0);
+        $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($asliSubtotalStyle);
+        $sheetAsli->getStyle("K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheetAsli->getStyle("M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+        $rowCurr++;
+
+        // TOTAL ATR + PM Global
+        $sheetAsli->setCellValue('B' . $rowCurr, 'TOTAL ATR + PM');
+        $sheetAsli->setCellValue('K' . $rowCurr, count($pakets));
+        $sheetAsli->setCellValue('M' . $rowCurr, $totalAtrFisikGlobal);
+        $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($asliTotalStyle);
+        $sheetAsli->getStyle("K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheetAsli->getStyle("M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+        $rowCurr += 2;
+
+        // 2. Tabel Rekapitulasi Lokasi Wilayah
+        $rekapCols = ['A' => 'No', 'B' => 'Lokasi', 'C' => 'Jumlah ATR (Rp)', 'D' => 'Jumlah ASP (Rp)', 'E' => 'Total ATR + PM (Rp)'];
+        foreach ($rekapCols as $col => $title) {
+            $sheetAsli->setCellValue($col . $rowCurr, $title);
+        }
+        $sheetAsli->getStyle("A{$rowCurr}:E{$rowCurr}")->applyFromArray($asliHeaderStyle);
+        $rowCurr++;
+
+        $totalAtrLok = 0; $totalAspLok = 0; $totalGabLok = 0;
+        foreach ($pakets as $p) {
+            $sheetAsli->setCellValue('A' . $rowCurr, $p['no_paket']);
+            $sheetAsli->setCellValue('B' . $rowCurr, $p['wilayah']);
+            $sheetAsli->setCellValue('C' . $rowCurr, (float) $p['nilai_kontrak_fisik']);
+            $sheetAsli->setCellValue('D' . $rowCurr, (float) $p['total_asp_nilai']);
+            $sheetAsli->setCellValue('E' . $rowCurr, (float) $p['total_gabungan']);
+
+            $sheetAsli->getStyle("A{$rowCurr}:E{$rowCurr}")->applyFromArray($dataBorder);
+            $sheetAsli->getStyle("A{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("C{$rowCurr}:E{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+
+            $totalAtrLok += (float) $p['nilai_kontrak_fisik'];
+            $totalAspLok += (float) $p['total_asp_nilai'];
+            $totalGabLok += (float) $p['total_gabungan'];
+            $rowCurr++;
+        }
+        // Total Rekap Lokasi
+        $sheetAsli->setCellValue('A' . $rowCurr, 'TOTAL');
+        $sheetAsli->mergeCells("A{$rowCurr}:B{$rowCurr}");
+        $sheetAsli->setCellValue('C' . $rowCurr, $totalAtrLok);
+        $sheetAsli->setCellValue('D' . $rowCurr, $totalAspLok);
+        $sheetAsli->setCellValue('E' . $rowCurr, $totalGabLok);
+        $sheetAsli->getStyle("A{$rowCurr}:E{$rowCurr}")->applyFromArray($asliTotalStyle);
+        $sheetAsli->getStyle("A{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+        $sheetAsli->getStyle("C{$rowCurr}:E{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+        $rowCurr += 3;
+
+        // 3. Rincian per Paket (Paket 1 s/d 9 Hierarkis)
+        foreach ($pakets as $p) {
+            $pId = (int) $p['id'];
+            $sekolahList = $sekolahByPaket[$pId] ?? [];
+            $aspList = $aspByPaket[$pId] ?? [];
+
+            $sheetAsli->setCellValue('B' . $rowCurr, 'RINCIAN HASIL PENELITIAN BARANG MILIK NEGARA');
+            $sheetAsli->getStyle('B' . $rowCurr)->getFont()->setBold(true);
+            $rowCurr++;
+            $sheetAsli->setCellValue('B' . $rowCurr, $p['wilayah']);
+            $sheetAsli->getStyle('B' . $rowCurr)->getFont()->setBold(true);
+            $rowCurr += 2;
+            $sheetAsli->setCellValue('B' . $rowCurr, 'PEKERJAAN REHABILITASI DAN RENOVASI MADRASAH (PHTC)');
+            $sheetAsli->getStyle('B' . $rowCurr)->getFont()->setBold(true);
+            $rowCurr += 2;
+
+            foreach ($colsAsli as $col => $title) {
+                $sheetAsli->setCellValue($col . $rowCurr, $title);
+            }
+            $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($asliHeaderStyle);
+            $rowCurr++;
+
+            // Item ATR Paket
+            $sheetAsli->setCellValue('A' . $rowCurr, 1);
+            $sheetAsli->setCellValue('B' . $rowCurr, 'Rehabilitasi Dan Renovasi Madrasah PHTC Provinsi Riau ' . $p['no_paket']);
+            $sheetAsli->setCellValue('C' . $rowCurr, $p['tahun_anggaran']);
+            $sheetAsli->setCellValue('D' . $rowCurr, $p['jenis_bmn']);
+            $sheetAsli->setCellValue('E' . $rowCurr, $p['kode_bmn']);
+            $sheetAsli->setCellValue('F' . $rowCurr, '-');
+            $sheetAsli->setCellValue('G' . $rowCurr, 1);
+            $sheetAsli->setCellValue('H' . $rowCurr, 0);
+            $sheetAsli->setCellValue('I' . $rowCurr, 0);
+            $sheetAsli->setCellValue('J' . $rowCurr, 'Unit');
+            $sheetAsli->setCellValue('K' . $rowCurr, 1);
+            $sheetAsli->setCellValue('L' . $rowCurr, (float) $p['nilai_kontrak_fisik']);
+            $sheetAsli->setCellValue('M' . $rowCurr, (float) $p['nilai_kontrak_fisik']);
+            $sheetAsli->setCellValue('N' . $rowCurr, '');
+            $sheetAsli->setCellValue('O' . $rowCurr, (float) $p['nilai_mk_supervisi']);
+            $sheetAsli->setCellValue('P' . $rowCurr, '');
+            $sheetAsli->setCellValue('Q' . $rowCurr, '');
+
+            $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($dataBorder);
+            $sheetAsli->getStyle("A{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("C{$rowCurr}:F{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("G{$rowCurr}:K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("L{$rowCurr}:M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheetAsli->getStyle("O{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+            $rowCurr++;
+
+            // Sub-baris Madrasah Sasaran
+            foreach ($sekolahList as $s) {
+                $sheetAsli->setCellValue('B' . $rowCurr, $s['nama_sekolah']);
+                $sheetAsli->setCellValue('Q' . $rowCurr, $s['status_sekolah']);
+                $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($dataBorder);
+                $sheetAsli->getStyle("B{$rowCurr}")->getAlignment()->setIndent(2);
+                $sheetAsli->getStyle("Q{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $rowCurr++;
+            }
+
+            // Subtotal ATR Paket
+            $sheetAsli->setCellValue('B' . $rowCurr, 'Jumlah ATR');
+            $sheetAsli->setCellValue('K' . $rowCurr, 1);
+            $sheetAsli->setCellValue('M' . $rowCurr, (float) $p['nilai_kontrak_fisik']);
+            $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($asliSubtotalStyle);
+            $sheetAsli->getStyle("K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+            $rowCurr++;
+
+            // Rincian Peralatan Mesin (ASP)
+            $noAsp = 2;
+            $volAspPaket = 0;
+            $nilaiAspPaket = 0;
+            foreach ($aspList as $a) {
+                $sheetAsli->setCellValue('A' . $rowCurr, $noAsp++);
+                $sheetAsli->setCellValue('B' . $rowCurr, $a['nama_barang']);
+                $sheetAsli->setCellValue('C' . $rowCurr, $a['tahun']);
+                $sheetAsli->setCellValue('D' . $rowCurr, $a['jenis_bmn']);
+                $sheetAsli->setCellValue('E' . $rowCurr, $a['kode_bmn']);
+                $sheetAsli->setCellValue('F' . $rowCurr, $a['merk_tipe']);
+                $sheetAsli->setCellValue('G' . $rowCurr, $a['kondisi_baik']);
+                $sheetAsli->setCellValue('H' . $rowCurr, 0);
+                $sheetAsli->setCellValue('I' . $rowCurr, 0);
+                $sheetAsli->setCellValue('J' . $rowCurr, $a['satuan']);
+                $sheetAsli->setCellValue('K' . $rowCurr, (int) $a['jumlah']);
+                $sheetAsli->setCellValue('L' . $rowCurr, (float) $a['harga_satuan']);
+                $sheetAsli->setCellValue('M' . $rowCurr, (float) $a['total_nilai']);
+                $sheetAsli->setCellValue('N' . $rowCurr, '');
+                $sheetAsli->setCellValue('O' . $rowCurr, '');
+                $sheetAsli->setCellValue('P' . $rowCurr, '');
+                $sheetAsli->setCellValue('Q' . $rowCurr, '');
+
+                $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($dataBorder);
+                $sheetAsli->getStyle("A{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheetAsli->getStyle("C{$rowCurr}:F{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheetAsli->getStyle("G{$rowCurr}:J{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheetAsli->getStyle("K{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+                $sheetAsli->getStyle("L{$rowCurr}:M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+
+                $volAspPaket += (int) $a['jumlah'];
+                $nilaiAspPaket += (float) $a['total_nilai'];
+                $rowCurr++;
+            }
+
+            // Subtotal ASP Paket
+            $sheetAsli->setCellValue('B' . $rowCurr, 'Jumlah Peralatan Mesin (ASP)');
+            $sheetAsli->setCellValue('K' . $rowCurr, $volAspPaket);
+            $sheetAsli->setCellValue('M' . $rowCurr, $nilaiAspPaket);
+            $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($asliSubtotalStyle);
+            $sheetAsli->getStyle("K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+            $rowCurr++;
+
+            // TOTAL ATR + PM Paket
+            $sheetAsli->setCellValue('B' . $rowCurr, 'TOTAL ATR + PM');
+            $sheetAsli->setCellValue('K' . $rowCurr, 1 + $volAspPaket);
+            $sheetAsli->setCellValue('M' . $rowCurr, (float) $p['nilai_kontrak_fisik'] + $nilaiAspPaket);
+            $sheetAsli->getStyle("A{$rowCurr}:Q{$rowCurr}")->applyFromArray($asliTotalStyle);
+            $sheetAsli->getStyle("K{$rowCurr}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheetAsli->getStyle("M{$rowCurr}")->getNumberFormat()->setFormatCode('#,##0');
+            $rowCurr += 3;
+        }
+
+        foreach (range('A', 'Q') as $col) {
+            $sheetAsli->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // ---------------------------------------------------------------------
+        // SHEET 2: REKAPITULASI PAKET BMN PHTC (TABULAR ANALITIS)
+        // ---------------------------------------------------------------------
+        $sheet1 = $spreadsheet->createSheet();
+        $sheet1->setTitle('REKAP_PAKET_ANALITIS');
 
         $sheet1->setCellValue('A1', 'RINCIAN HASIL PENELITIAN BARANG MILIK NEGARA (BMN)');
         $sheet1->setCellValue('A2', 'PEKERJAAN REHABILITASI DAN RENOVASI MADRASAH (PHTC) PROVINSI RIAU');
@@ -166,16 +455,18 @@ class InventarisSekolah extends BaseController
             'D5' => 'Kode BMN',
             'E5' => 'Jenis BMN',
             'F5' => 'Wilayah / Lokasi',
-            'G5' => 'Jml Madrasah',
-            'H5' => 'Kontrak Fisik (ATR) (Rp)',
-            'I5' => 'MK / Supervisi (Rp)',
-            'J5' => 'Peralatan & Mesin (ASP) (Rp)',
-            'K5' => 'Total ATR + ASP (Rp)',
+            'G5' => 'Penyedia Jasa Konstruksi',
+            'H5' => 'Status Adendum Fisik',
+            'I5' => 'Jml Madrasah',
+            'J5' => 'Kontrak Fisik (ATR) (Rp)',
+            'K5' => 'MK / Supervisi (Rp)',
+            'L5' => 'Peralatan & Mesin (ASP) (Rp)',
+            'M5' => 'Total ATR + ASP (Rp)',
         ];
         foreach ($headers1 as $col => $title) {
             $sheet1->setCellValue($col, $title);
         }
-        $sheet1->getStyle('A5:K5')->applyFromArray($headerStyle);
+        $sheet1->getStyle('A5:M5')->applyFromArray($headerStyle);
         $sheet1->getRowDimension(5)->setRowHeight(28);
 
         $pakets = $this->bmnMadrasahModel->getPaketList();
@@ -192,17 +483,19 @@ class InventarisSekolah extends BaseController
             $sheet1->setCellValue('D' . $r1, $p['kode_bmn']);
             $sheet1->setCellValue('E' . $r1, $p['jenis_bmn']);
             $sheet1->setCellValue('F' . $r1, $p['wilayah']);
-            $sheet1->setCellValue('G' . $r1, (int) $p['jumlah_madrasah']);
-            $sheet1->setCellValue('H' . $r1, (float) $p['nilai_kontrak_fisik']);
-            $sheet1->setCellValue('I' . $r1, (float) $p['nilai_mk_supervisi']);
-            $sheet1->setCellValue('J' . $r1, (float) $p['total_asp_nilai']);
-            $sheet1->setCellValue('K' . $r1, (float) $p['total_gabungan']);
+            $sheet1->setCellValue('G' . $r1, $p['penyedia_jasa'] ?: '-');
+            $sheet1->setCellValue('H' . $r1, $p['status_adendum'] ?: 'Definitif');
+            $sheet1->setCellValue('I' . $r1, (int) $p['jumlah_madrasah']);
+            $sheet1->setCellValue('J' . $r1, (float) $p['nilai_kontrak_fisik']);
+            $sheet1->setCellValue('K' . $r1, (float) $p['nilai_mk_supervisi']);
+            $sheet1->setCellValue('L' . $r1, (float) $p['total_asp_nilai']);
+            $sheet1->setCellValue('M' . $r1, (float) $p['total_gabungan']);
 
-            $sheet1->getStyle("A{$r1}:K{$r1}")->applyFromArray($dataBorder);
+            $sheet1->getStyle("A{$r1}:M{$r1}")->applyFromArray($dataBorder);
             $sheet1->getStyle("A{$r1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet1->getStyle("C{$r1}:D{$r1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet1->getStyle("G{$r1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet1->getStyle("H{$r1}:K{$r1}")->getNumberFormat()->setFormatCode('#,##0');
+            $sheet1->getStyle("H{$r1}:I{$r1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet1->getStyle("J{$r1}:M{$r1}")->getNumberFormat()->setFormatCode('#,##0');
 
             $totalFisik += (float) $p['nilai_kontrak_fisik'];
             $totalMk    += (float) $p['nilai_mk_supervisi'];
@@ -213,20 +506,20 @@ class InventarisSekolah extends BaseController
 
         // Row Total
         $sheet1->setCellValue('A' . $r1, 'TOTAL KESELURUHAN (PAKET 1 - 9)');
-        $sheet1->mergeCells("A{$r1}:F{$r1}");
-        $sheet1->setCellValue('G' . $r1, count($this->bmnMadrasahModel->getSekolahList()));
-        $sheet1->setCellValue('H' . $r1, $totalFisik);
-        $sheet1->setCellValue('I' . $r1, $totalMk);
-        $sheet1->setCellValue('J' . $r1, $totalAsp);
-        $sheet1->setCellValue('K' . $r1, $totalGab);
+        $sheet1->mergeCells("A{$r1}:H{$r1}");
+        $sheet1->setCellValue('I' . $r1, count($this->bmnMadrasahModel->getSekolahList()));
+        $sheet1->setCellValue('J' . $r1, $totalFisik);
+        $sheet1->setCellValue('K' . $r1, $totalMk);
+        $sheet1->setCellValue('L' . $r1, $totalAsp);
+        $sheet1->setCellValue('M' . $r1, $totalGab);
 
-        $sheet1->getStyle("A{$r1}:K{$r1}")->applyFromArray($totalStyle);
+        $sheet1->getStyle("A{$r1}:M{$r1}")->applyFromArray($totalStyle);
         $sheet1->getStyle("A{$r1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-        $sheet1->getStyle("G{$r1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-        $sheet1->getStyle("H{$r1}:K{$r1}")->getNumberFormat()->setFormatCode('#,##0');
+        $sheet1->getStyle("I{$r1}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet1->getStyle("J{$r1}:M{$r1}")->getNumberFormat()->setFormatCode('#,##0');
         $sheet1->getRowDimension($r1)->setRowHeight(24);
 
-        foreach (range('A', 'K') as $col) {
+        foreach (range('A', 'M') as $col) {
             $sheet1->getColumnDimension($col)->setAutoSize(true);
         }
 
@@ -236,7 +529,7 @@ class InventarisSekolah extends BaseController
         $sheet2 = $spreadsheet->createSheet();
         $sheet2->setTitle('MADRASAH_DAN_DED');
 
-        $sheet2->setCellValue('A1', 'DAFTAR MADRASAH SASARAN & STATUS ACUAN DOKUMEN DED');
+        $sheet2->setCellValue('A1', 'DAFTAR MADRASAH SASARAN & STATUS ACUAN DOKUMEN DED & RAB FISIK');
         $sheet2->setCellValue('A2', 'Pekerjaan Rehabilitasi & Renovasi Madrasah PHTC Provinsi Riau (Paket 1 - 9)');
         $sheet2->getStyle('A1:A2')->getFont()->setBold(true);
         $sheet2->getStyle('A1')->getFont()->setSize(13);
@@ -247,12 +540,14 @@ class InventarisSekolah extends BaseController
             'C4' => 'Nama Madrasah / Sekolah',
             'D4' => 'Status',
             'E4' => 'Kabupaten / Kota',
-            'F4' => 'Status Acuan Dokumen DED (Perencanaan)',
+            'F4' => 'Nilai Fisik ATR (Rp)',
+            'G4' => 'Acuan Dokumen DED (Perencanaan)',
+            'H4' => 'Acuan Dokumen RAB Fisik (Final / Adendum)',
         ];
         foreach ($headers2 as $col => $title) {
             $sheet2->setCellValue($col, $title);
         }
-        $sheet2->getStyle('A4:F4')->applyFromArray($headerStyle);
+        $sheet2->getStyle('A4:H4')->applyFromArray($headerStyle);
         $sheet2->getRowDimension(4)->setRowHeight(25);
 
         $sekolahRows = $this->bmnMadrasahModel->getSekolahList();
@@ -264,14 +559,17 @@ class InventarisSekolah extends BaseController
             $sheet2->setCellValue('C' . $r2, $s['nama_sekolah']);
             $sheet2->setCellValue('D' . $r2, $s['status_sekolah']);
             $sheet2->setCellValue('E' . $r2, $s['kabupaten']);
-            $sheet2->setCellValue('F' . $r2, $s['acuan_ded']);
+            $sheet2->setCellValue('F' . $r2, (float) ($s['nilai_rab_fisik'] ?? 0));
+            $sheet2->setCellValue('G' . $r2, $s['acuan_ded'] ?: '-');
+            $sheet2->setCellValue('H' . $r2, $s['acuan_rab_fisik'] ?: '-');
 
-            $sheet2->getStyle("A{$r2}:F{$r2}")->applyFromArray($dataBorder);
+            $sheet2->getStyle("A{$r2}:H{$r2}")->applyFromArray($dataBorder);
             $sheet2->getStyle("A{$r2}:B{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet2->getStyle("D{$r2}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet2->getStyle("F{$r2}")->getNumberFormat()->setFormatCode('#,##0');
             $r2++;
         }
-        foreach (range('A', 'F') as $col) {
+        foreach (range('A', 'H') as $col) {
             $sheet2->getColumnDimension($col)->setAutoSize(true);
         }
 
